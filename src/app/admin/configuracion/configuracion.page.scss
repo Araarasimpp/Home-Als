@@ -1,189 +1,484 @@
-.configuracion-page {
-  padding: 28px 32px 48px;
-  max-width: 640px;
-  max-width: 100%;
+:host {
+  display: block;
+  min-height: 100%;
+  background: var(--surface);
+}
+
+.config-page {
+  padding: 0 0 48px;
 }
 
 .page-header {
-  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border-soft);
 }
 
 .page-header h1 {
-  font-size: 26px;
-  font-weight: 700;
   margin: 0;
-}
-
-.panel {
-  background: var(--k-card-bg);
-  border: 1px solid var(--k-border);
-  border-radius: 14px;
-  padding: 22px;
-  margin-bottom: 20px;
-  max-width: 560px;
-}
-
-.panel h2 {
-  font-size: 16px;
-  font-weight: 700;
-  margin: 0 0 4px;
-}
-
-.subtitle {
-  font-size: 13px;
-  color: var(--k-text-soft);
-  margin: 0 0 16px;
-}
-
-.field {
-  margin-bottom: 16px;
-}
-
-.field label {
-  display: block;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--k-text-soft);
-  margin-bottom: 6px;
-}
-
-.field input,
-.field textarea {
-  width: 100%;
-  padding: 11px 13px;
-  border-radius: 10px;
-  border: 1px solid var(--k-border);
-  background: var(--k-bg-alt);
-  color: var(--k-text);
-  font-size: 14px;
-  font-family: var(--k-font);
-  box-sizing: border-box;
-  resize: none;
-}
-
-.field input:focus,
-.field textarea:focus {
-  outline: none;
-  border-color: var(--k-amber);
-}
-
-.hint {
-  font-size: 12px;
-  color: var(--k-text-soft);
-  margin: 6px 0 0;
-}
-
-.error-msg {
-  color: var(--k-coral);
-  font-size: 13px;
-  margin: 8px 0;
-}
-
-.ok-msg {
-  color: var(--k-teal);
-  font-size: 13px;
-  margin: 8px 0;
-}
-
-.btn-primary,
-.btn-secondary {
-  padding: 11px 22px;
-  border-radius: 10px;
-  border: none;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
-  cursor: pointer;
 }
 
-.btn-primary {
-  background: var(--k-ink);
-  color: var(--k-paper);
-}
-
-.btn-secondary {
-  background: var(--k-teal);
-  color: #fff;
-}
-
-.btn-primary:disabled,
-.btn-secondary:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-// Zonas de domicilio
-.zona-row {
+.layout {
   display: grid;
-  grid-template-columns: 1fr 110px 32px;
-  gap: 8px;
-  margin-bottom: 8px;
-  align-items: center;
+  grid-template-columns: minmax(0, 640px) 380px;
+  gap: 40px;
+  align-items: start;
+  padding: 28px 28px 0;
+  max-width: 1120px;
 }
 
-.zona-row input {
-  padding: 9px 11px;
-  border-radius: 9px;
-  border: 1px solid var(--k-border);
-  background: var(--k-bg-alt);
-  color: var(--k-text);
-  font-size: 13px;
-  font-family: var(--k-font);
+.col-form {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
   min-width: 0;
 }
 
-.zona-row input:focus {
-  outline: none;
-  border-color: var(--k-amber);
+// ---------- Secciones ----------
+.section-head {
+  margin-bottom: 12px;
 }
 
-.btn-eliminar-zona {
-  border: none;
-  background: none;
-  color: var(--k-coral);
+.section-head h2,
+.preview-head h2 {
+  margin: 0;
   font-size: 14px;
-  cursor: pointer;
-  width: 32px;
-  height: 32px;
+  font-weight: 600;
 }
 
-.btn-agregar-zona {
-  border: none;
-  background: var(--k-ink);
-  color: var(--k-paper);
-  border-radius: 8px;
+.section-head p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+
+.card {
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.card-flush {
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+}
+
+// ---------- Campos ----------
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.field-inline {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.hint-body {
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+input,
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 12px;
+  height: 38px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+textarea {
+  height: auto;
+  padding: 10px 12px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+}
+
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.input-corto {
+  width: 96px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+// ---------- Botones ----------
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.btn:hover {
+  border-color: var(--text-muted);
+}
+
+.btn ion-icon {
   font-size: 16px;
-  cursor: pointer;
-  width: 32px;
-  height: 32px;
 }
 
-.btn-agregar-zona:disabled {
-  opacity: 0.5;
-  cursor: default;
+.btn-primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn-primary:hover {
+  border-color: var(--accent-hover);
+  background: var(--accent-hover);
+}
+
+.btn:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-muted);
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.icon-btn.danger:hover {
+  background: var(--danger-wash);
+  color: var(--danger);
+}
+
+.icon-btn.add {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.icon-btn.add:hover {
+  background: var(--accent-hover);
+}
+
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+// ---------- Barra de guardado ----------
+.save-bar {
+  position: sticky;
+  bottom: calc(16px + var(--tabbar-offset, 0px));
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: -12px;
+  padding: 10px 10px 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+  font-size: 13px;
+  animation: subir 180ms var(--ease);
+}
+
+@keyframes subir {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.save-text {
+  color: var(--text-2);
+}
+
+.save-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--st-entregado);
+  font-weight: 500;
+}
+
+.save-ok ion-icon {
+  font-size: 16px;
+}
+
+.save-error {
+  color: var(--danger);
+}
+
+.save-actions {
+  display: flex;
+  gap: 8px;
+}
+
+// ---------- Zonas ----------
+.zona-head,
+.zona-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 140px 34px;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px;
+}
+
+.zona-head {
+  padding-top: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.zona-valor-head {
+  padding-left: 12px;
+}
+
+.zona-row {
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.zona-row input {
+  height: 34px;
+  border-color: transparent;
+  background: none;
+  padding: 0 8px;
+}
+
+.zona-row input:hover {
+  border-color: var(--border);
+}
+
+.zona-row input:focus {
+  background: var(--surface);
+}
+
+.money {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.money span {
+  position: absolute;
+  left: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.money input {
+  padding-left: 20px;
+  text-align: left;
 }
 
 .zona-nueva {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px dashed var(--k-border);
+  border-bottom: none;
+  background: var(--surface-2);
 }
 
-.empty-msg {
-  color: var(--k-text-soft);
+.zona-nueva input {
+  border-color: var(--border-strong);
+  background: var(--surface);
+}
+
+.zona-empty {
+  margin: 0;
+  padding: 16px 12px;
+  border-bottom: 1px solid var(--border-soft);
   font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+
+.inline-error {
   margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--danger);
+}
+
+// ---------- Vista previa ----------
+.col-preview {
+  position: sticky;
+  top: 24px;
+}
+
+.preview-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.preview-frame {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #f4f5f7; // papel: siempre claro, también en modo oscuro
+  overflow: hidden;
+}
+
+.preview-frame iframe {
+  display: block;
+  width: 100%;
+  height: 760px;
+  border: none;
+  background: #ffffff;
+}
+
+.loading {
+  padding: 48px 20px;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+// ---------- Responsivo ----------
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 680px;
+  }
+
+  // En pantallas angostas la vista previa va justo después de los datos del
+  // rótulo: la columna del formulario "se abre" y todo queda en una sola fila.
+  .layout {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .col-form {
+    display: contents;
+  }
+
+  .col-form > * {
+    order: 3;
+  }
+
+  .col-form > .sec-rotulo {
+    order: 1;
+  }
+
+  .col-preview {
+    position: static;
+    order: 2;
+    margin-top: -12px;
+  }
+
+  .save-bar {
+    margin-top: 0;
+  }
 }
 
 @media (max-width: 720px) {
-  .configuracion-page {
-    padding: 18px 14px 40px;
+  .page-header {
+    min-height: 56px;
+    padding: 0 16px;
   }
 
-  .panel {
-    padding: 16px;
+  .page-header h1 {
+    font-size: 20px;
   }
 
+  .layout {
+    padding: 20px 16px 0;
+  }
+
+  .field-inline {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .input-corto {
+    width: 100%;
+    text-align: left;
+  }
+
+  input,
+  textarea {
+    font-size: 16px; // evita el zoom automático en iPhone
+    height: 44px;
+  }
+
+  textarea {
+    height: auto;
+  }
+
+  .zona-head,
   .zona-row {
-    grid-template-columns: 1fr 90px 32px;
+    grid-template-columns: minmax(0, 1fr) 110px 40px;
+  }
+
+  .save-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .save-actions .btn {
+    flex: 1;
+    justify-content: center;
+    height: 42px;
   }
 }

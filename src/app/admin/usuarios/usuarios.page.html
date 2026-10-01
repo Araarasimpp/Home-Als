@@ -8,7 +8,8 @@
         <input
           type="text"
           [(ngModel)]="busqueda"
-          placeholder="Buscar por nombre o correo..."
+          placeholder="Buscar por nombre o correo"
+          aria-label="Buscar usuarios"
         />
       </div>
     </div>
@@ -31,9 +32,37 @@
           <tr *ngFor="let u of filtrados" [class.fila-inactiva]="!u.activo">
             <td>
               <div class="nombre-cell">
-                <span class="avatar">{{ inicial(u.nombre) }}</span>
-                <span>{{ u.nombre }}</span>
-                <span class="tag-tu" *ngIf="u.id === miId">Tú</span>
+                <label
+                  class="foto-btn"
+                  [class.subiendo]="subiendoFotoId === u.id"
+                  [title]="u.avatar_url ? 'Cambiar foto' : 'Subir foto'"
+                >
+                  <app-avatar [nombre]="u.nombre" [url]="u.avatar_url" [size]="34"></app-avatar>
+                  <span class="foto-overlay" aria-hidden="true">
+                    {{ subiendoFotoId === u.id ? '…' : (u.avatar_url ? 'Cambiar' : 'Foto') }}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    class="sr-only"
+                    [disabled]="subiendoFotoId === u.id"
+                    (change)="onFotoElegida(u, $event)"
+                    [attr.aria-label]="(u.avatar_url ? 'Cambiar foto de ' : 'Subir foto de ') + u.nombre"
+                  />
+                </label>
+                <div class="nombre-texto">
+                  <span>
+                    {{ u.nombre }}
+                    <span class="tag-tu" *ngIf="u.id === miId">Tú</span>
+                  </span>
+                  <button
+                    class="link-quitar"
+                    *ngIf="u.avatar_url && subiendoFotoId !== u.id"
+                    (click)="quitarFoto(u)"
+                  >
+                    Quitar foto
+                  </button>
+                </div>
               </div>
             </td>
             <td class="text-soft">{{ u.email || '—' }}</td>
@@ -44,6 +73,7 @@
                 [ngModel]="u.role"
                 (ngModelChange)="cambiarRol(u, $event)"
                 [disabled]="u.id === miId || guardandoId === u.id"
+                [attr.aria-label]="'Rol de ' + u.nombre"
               >
                 <option *ngFor="let r of roles" [value]="r.valor">{{ r.etiqueta }}</option>
               </select>
@@ -71,7 +101,7 @@
     </ng-container>
 
     <ng-template #cargando>
-      <p class="empty-msg">Cargando usuarios...</p>
+      <p class="empty-msg">Cargando usuarios…</p>
     </ng-template>
   </div>
 </div>

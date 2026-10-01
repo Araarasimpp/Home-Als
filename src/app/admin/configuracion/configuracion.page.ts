@@ -1,8 +1,13 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { IonIcon } from '@ionic/angular';
+import { addIcons } from 'ionicons';
+import { add, trashOutline, downloadOutline, checkmark } from 'ionicons/icons';
 import * as XLSX from 'xlsx';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { documentoRotulos, PedidoRotulo, rotuloHtml } from '../../shared/rotulo/rotulo';
 
 interface Configuracion {
   nombre_negocio: string;
@@ -18,10 +23,23 @@ interface Zona {
   valor: number;
 }
 
+// Pedido de ejemplo solo para la vista previa
+const PEDIDO_EJEMPLO: PedidoRotulo = {
+  numero: 128,
+  cliente_nombre: 'Luz Marina Rodríguez',
+  cliente_telefono: '310 482 1937',
+  direccion: 'Cra. 78 #38-21 sur',
+  barrio: 'Kennedy',
+  observaciones: 'Llamar al llegar',
+  total: 86500,
+  created_at: new Date().toISOString(),
+  productos: ['Termo 1 L x2'],
+};
+
 @Component({
   selector: 'app-configuracion',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, IonIcon],
   templateUrl: './configuracion.page.html',
   styleUrls: ['./configuracion.page.scss'],
 })
@@ -38,18 +56,32 @@ export class ConfiguracionPage implements OnInit {
     texto_garantia: '',
     stock_bajo_umbral: 5,
   };
+  private original = '';
+
+  vistaPrevia: SafeHtml = '';
 
   zonas: Zona[] = [];
   nuevaZonaNombre = '';
   nuevaZonaValor: number | null = null;
   guardandoZona = false;
+  errorZona = '';
 
   exportando = false;
 
-  constructor(private supabase: SupabaseService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private supabase: SupabaseService,
+    private cdr: ChangeDetectorRef,
+    private sanitizer: DomSanitizer
+  ) {
+    addIcons({ add, trashOutline, downloadOutline, checkmark });
+  }
 
   async ngOnInit(): Promise<void> {
     await Promise.all([this.cargar(), this.cargarZonas()]);
+  }
+
+  get hayCambios(): boolean {
+    return JSON.stringify(this.form) !== this.original;
   }
 
   async cargar(): Promise<void> {
@@ -63,20 +95,49 @@ export class ConfiguracionPage implements OnInit {
     if (!error && data) {
       this.form = data as Configuracion;
     }
+    this.original = JSON.stringify(this.form);
+    this.actualizarVistaPrevia();
     this.loading = false;
     this.cdr.detectChanges();
+  }
+
+  /** Se llama cada vez que cambia un campo del rótulo. */
+  onCambio(): void {
+    this.guardadoOk = false;
+    this.actualizarVistaPrevia();
+  }
+
+  private actualizarVistaPrevia(): void {
+    const html = documentoRotulos(
+      [
+        rotuloHtml(PEDIDO_EJEMPLO, {
+          nombre_negocio: this.form.nombre_negocio || 'Home ALS',
+          telefonos: this.form.telefonos?.trim() || null,
+          redes: this.form.redes?.trim() || null,
+          texto_garantia: this.form.texto_garantia?.trim() || null,
+        }),
+      ],
+      'Vista previa'
+    );
+    // El HTML lo arma nuestro propio código y escapa cada dato que viene del formulario
+    this.vistaPrevia = this.sanitizer.bypassSecurityTrustHtml(html);
   }
 
   async guardar(): Promise<void> {
     this.errorMsg = '';
     this.guardadoOk = false;
 
-    if (!this.form.nombre_negocio.trim()) {
-      this.errorMsg = 'El nombre del negocio es obligatorio.';
+    if (!this.form.nombre_negocio?.trim()) {
+      this.errorMsg = 'Escribe el nombre del negocio.';
+      return;
+    }
+    if (this.form.stock_bajo_umbral == null || this.form.stock_bajo_umbral < 0) {
+      this.errorMsg = 'El umbral de stock bajo debe ser 0 o más.';
       return;
     }
 
     this.guardando = true;
+    this.cdr.detectChanges();
     const { error } = await this.supabase.client
       .from('configuracion')
       .update(this.form)
@@ -85,11 +146,18 @@ export class ConfiguracionPage implements OnInit {
     this.guardando = false;
 
     if (error) {
-      this.errorMsg = 'No se pudo guardar. Intenta de nuevo.';
+      this.errorMsg = 'No se pudo guardar. ' + error.message;
     } else {
+      this.original = JSON.stringify(this.form);
       this.guardadoOk = true;
     }
     this.cdr.detectChanges();
+  }
+
+  descartar(): void {
+    this.form = JSON.parse(this.original);
+    this.errorMsg = '';
+    this.actualizarVistaPrevia();
   }
 
   // ---------- Zonas de domicilio ----------
@@ -107,11 +175,19 @@ export class ConfiguracionPage implements OnInit {
   }
 
   async agregarZona(): Promise<void> {
-    if (!this.nuevaZonaNombre.trim() || this.nuevaZonaValor == null) return;
+    this.errorZona = '';
+    const nombre = this.nuevaZonaNombre.trim();
+    if (!nombre || this.nuevaZonaValor == null) return;
+
+    if (this.zonas.some((z) => z.nombre.trim().toLowerCase() === nombre.toLowerCase())) {
+      this.errorZona = `Ya existe la zona "${nombre}".`;
+      return;
+    }
 
     this.guardandoZona = true;
+    this.cdr.detectChanges();
     const { error } = await this.supabase.client.from('zonas_domicilio').insert({
-      nombre: this.nuevaZonaNombre.trim(),
+      nombre,
       valor: this.nuevaZonaValor,
     });
     this.guardandoZona = false;
@@ -120,15 +196,22 @@ export class ConfiguracionPage implements OnInit {
       this.nuevaZonaNombre = '';
       this.nuevaZonaValor = null;
       await this.cargarZonas();
+    } else {
+      this.errorZona = 'No se pudo agregar la zona. ' + error.message;
     }
     this.cdr.detectChanges();
   }
 
   async actualizarZona(zona: Zona): Promise<void> {
-    await this.supabase.client
+    this.errorZona = '';
+    const { error } = await this.supabase.client
       .from('zonas_domicilio')
       .update({ nombre: zona.nombre, valor: zona.valor })
       .eq('id', zona.id);
+    if (error) {
+      this.errorZona = `No se pudo guardar "${zona.nombre}". ` + error.message;
+      this.cdr.detectChanges();
+    }
   }
 
   async eliminarZona(zona: Zona): Promise<void> {
@@ -142,7 +225,18 @@ export class ConfiguracionPage implements OnInit {
 
     if (!error) {
       await this.cargarZonas();
+    } else {
+      this.errorZona = 'No se pudo eliminar la zona. ' + error.message;
+      this.cdr.detectChanges();
     }
+  }
+
+  formatoMoneda(valor: number): string {
+    return Number(valor || 0).toLocaleString('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      maximumFractionDigits: 0,
+    });
   }
 
   // ---------- Exportar datos ----------
@@ -169,25 +263,12 @@ export class ConfiguracionPage implements OnInit {
     ]);
 
     const libro = XLSX.utils.book_new();
-
-    XLSX.utils.book_append_sheet(
-      libro,
-      XLSX.utils.json_to_sheet(pedidosRes.data ?? []),
-      'Pedidos'
-    );
-    XLSX.utils.book_append_sheet(
-      libro,
-      XLSX.utils.json_to_sheet(productosRes.data ?? []),
-      'Productos'
-    );
-    XLSX.utils.book_append_sheet(
-      libro,
-      XLSX.utils.json_to_sheet(cuadresRes.data ?? []),
-      'Cuadres'
-    );
+    XLSX.utils.book_append_sheet(libro, XLSX.utils.json_to_sheet(pedidosRes.data ?? []), 'Pedidos');
+    XLSX.utils.book_append_sheet(libro, XLSX.utils.json_to_sheet(productosRes.data ?? []), 'Productos');
+    XLSX.utils.book_append_sheet(libro, XLSX.utils.json_to_sheet(cuadresRes.data ?? []), 'Cuadres');
 
     const hoy = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(libro, `respaldo_kaesuri_${hoy}.xlsx`);
+    XLSX.writeFile(libro, `respaldo_home_als_${hoy}.xlsx`);
 
     this.exportando = false;
     this.cdr.detectChanges();

@@ -345,26 +345,6 @@
   min-width: 0;
 }
 
-.avatar {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: var(--selected);
-  color: var(--text-2);
-  font-size: 9px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.avatar.empty {
-  box-sizing: border-box;
-  background: none;
-  border: 1.5px dashed var(--border-strong);
-}
-
 .dom-select {
   flex: 1;
   min-width: 0;

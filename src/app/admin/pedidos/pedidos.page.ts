@@ -9,18 +9,8 @@ import { add, searchOutline, ellipsisHorizontal, printOutline, close } from 'ion
 import { SupabaseService } from '../../core/services/supabase.service';
 import { EstadoPedido } from '../../shared/models/models';
 import { EstadoIconComponent } from '../../shared/estado-icon/estado-icon.component';
-import { ROTULO_LOGO_BASE64 } from '../rotulo-logo';
-
-// Datos del negocio para el rótulo. Edítalos aquí, o si más adelante quieres
-// cambiarlos desde la app sin tocar código, se puede mover a una tabla
-// "configuracion" con una sola fila.
-const NEGOCIO = {
-  nombre: 'Variedades JYB',
-  telefonos: '318 8156960 - 310 7425663',
-  redes: '@variedadesjyb',
-  garantia:
-    'Todos nuestros productos cuentan con garantía. Guarda este documento ya que es el soporte para la garantía.',
-};
+import { AvatarComponent } from '../../shared/avatar/avatar.component';
+import { cargarDatosNegocio, documentoRotulos, rotuloHtml } from '../../shared/rotulo/rotulo';
 
 interface PedidoFila {
   id: string;
@@ -42,6 +32,7 @@ interface PedidoFila {
 interface Domiciliario {
   id: string;
   nombre: string;
+  avatar_url: string | null;
 }
 
 interface GrupoPedidos {
@@ -60,7 +51,7 @@ const ORDEN_ESTADOS: EstadoPedido[] = ['pendiente', 'en_ruta', 'entregado', 'can
 @Component({
   selector: 'app-pedidos',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IonIcon, EstadoIconComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IonIcon, EstadoIconComponent, AvatarComponent],
   templateUrl: './pedidos.page.html',
   styleUrls: ['./pedidos.page.scss'],
 })
@@ -223,13 +214,14 @@ export class PedidosPage implements OnInit, OnDestroy {
   async cargarDomiciliarios(): Promise<void> {
     const { data, error } = await this.supabase.client
       .from('profiles')
-      .select('id, nombre, role');
+      // '*' para incluir avatar_url sin fallar si la columna aún no existe
+      .select('*');
 
     if (!error && data) {
       this.nombresPorId = new Map(data.map((p: any) => [p.id, p.nombre]));
       this.domiciliarios = (data as any[])
         .filter((p) => p.role === 'domiciliario')
-        .map((p) => ({ id: p.id, nombre: p.nombre }))
+        .map((p) => ({ id: p.id, nombre: p.nombre, avatar_url: p.avatar_url ?? null }))
         .sort((a, b) => a.nombre.localeCompare(b.nombre));
     }
     this.cdr.detectChanges();
@@ -418,14 +410,9 @@ export class PedidosPage implements OnInit, OnDestroy {
     return this.domiciliarios.find((d) => d.id === id)?.nombre ?? this.nombresPorId.get(id) ?? 'Sin asignar';
   }
 
-  iniciales(nombre: string | null | undefined): string {
-    if (!nombre) return '';
-    return nombre
-      .trim()
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((w) => w[0]?.toUpperCase() ?? '')
-      .join('');
+  fotoDomiciliario(id: string | null): string | null {
+    if (!id) return null;
+    return this.domiciliarios.find((d) => d.id === id)?.avatar_url ?? null;
   }
 
   etiquetaEstado(estado: EstadoPedido): string {
@@ -471,33 +458,64 @@ export class PedidosPage implements OnInit, OnDestroy {
   async imprimirRotulos(): Promise<void> {
     if (this.seleccionados.size === 0) return;
 
+    // La ventana se abre antes de cualquier await: si se abre después, el
+    // navegador la trata como ventana emergente y la bloquea.
+    const ventana = window.open('', '_blank');
+    if (!ventana) {
+      alert('El navegador bloqueó la ventana de impresión. Permite ventanas emergentes para este sitio.');
+      return;
+    }
+    ventana.document.write('<p style="font-family:sans-serif;padding:24px">Preparando rótulos…</p>');
+
     this.imprimiendo = true;
     this.cdr.detectChanges();
     const ids = Array.from(this.seleccionados);
 
-    // Traemos los items de cada pedido con el nombre del producto para el rótulo
-    const { data: items, error } = await this.supabase.client
-      .from('pedido_items')
-      .select('pedido_id, cantidad, producto:productos(nombre)')
-      .in('pedido_id', ids);
+    // Productos de cada pedido y datos del negocio (de Configuración), en paralelo
+    const [{ data: items, error }, negocio] = await Promise.all([
+      this.supabase.client
+        .from('pedido_items')
+        .select('pedido_id, cantidad, producto:productos(nombre)')
+        .in('pedido_id', ids),
+      cargarDatosNegocio(this.supabase.client),
+    ]);
 
     if (error) {
+      ventana.close();
       this.imprimiendo = false;
       alert('No se pudieron preparar los rótulos. ' + error.message);
       this.cdr.detectChanges();
       return;
     }
 
-    const pedidosSeleccionados = this.pedidos.filter((p) => this.seleccionados.has(p.id));
-    const html = this.construirHtmlRotulos(pedidosSeleccionados, items ?? []);
+    const rotulos = this.pedidos
+      .filter((p) => this.seleccionados.has(p.id))
+      .map((p) =>
+        rotuloHtml(
+          {
+            ...p,
+            productos: (items ?? [])
+              .filter((i: any) => i.pedido_id === p.id)
+              .map((i: any) => `${i.producto?.nombre ?? 'Producto'} x${i.cantidad}`),
+          },
+          negocio
+        )
+      );
 
-    const ventana = window.open('', '_blank');
-    if (ventana) {
-      ventana.document.write(html);
-      ventana.document.close();
-      ventana.focus();
-      setTimeout(() => ventana.print(), 300);
-    }
+    ventana.document.open();
+    ventana.document.write(documentoRotulos(rotulos));
+    ventana.document.close();
+    ventana.focus();
+    // Imprime cuando cargue el logo; el temporizador es por si el evento no llega.
+    // La bandera evita que el diálogo se abra dos veces.
+    let yaImpreso = false;
+    const imprimir = () => {
+      if (yaImpreso) return;
+      yaImpreso = true;
+      ventana.print();
+    };
+    ventana.onload = imprimir;
+    setTimeout(imprimir, 800);
 
     // Se marca como impreso apenas se abre la ventana de impresión
     // (no hay forma confiable de detectar si el usuario canceló el diálogo)
@@ -509,78 +527,6 @@ export class PedidosPage implements OnInit, OnDestroy {
     this.seleccionados.clear();
     this.imprimiendo = false;
     await this.cargarPedidos();
-  }
-
-  private construirHtmlRotulos(pedidos: PedidoFila[], items: any[]): string {
-    const rotulos = pedidos
-      .map((p) => {
-        const productos = items
-          .filter((i) => i.pedido_id === p.id)
-          .map((i) => `${i.producto?.nombre ?? 'Producto'} x${i.cantidad}`)
-          .join('<br>');
-
-        const fecha = new Date(p.created_at);
-        const fechaStr = `${String(fecha.getDate()).padStart(2, '0')} / ${String(
-          fecha.getMonth() + 1
-        ).padStart(2, '0')} / ${fecha.getFullYear()}`;
-
-        return `
-        <div class="rotulo">
-          <div class="rotulo-header">
-            <img class="marca-logo" src="${ROTULO_LOGO_BASE64}" alt="${NEGOCIO.nombre}" />
-            <div class="contacto">
-              <div>${NEGOCIO.telefonos}</div>
-              <div>${NEGOCIO.redes}</div>
-            </div>
-            <div class="fecha-box">${fechaStr}</div>
-          </div>
-          <div class="valor-cobrar">
-            <span>VALOR A COBRAR:</span>
-            <strong>${this.formatoMoneda(p.total)}</strong>
-          </div>
-          <table class="datos">
-            <tr><td>Pedido:</td><td>#${p.numero}</td></tr>
-            <tr><td>Nombre:</td><td>${p.cliente_nombre}</td></tr>
-            <tr><td>Dirección:</td><td>${p.direccion}</td></tr>
-            <tr><td>Barrio:</td><td>${p.barrio ?? '—'}</td></tr>
-            <tr><td>Producto:</td><td>${productos || '—'}</td></tr>
-            <tr><td>Celular:</td><td>${p.cliente_telefono ?? '—'}</td></tr>
-            <tr><td>Observación:</td><td>${p.observaciones ?? '—'}</td></tr>
-          </table>
-          <p class="garantia">${NEGOCIO.garantia}</p>
-        </div>
-      `;
-      })
-      .join('');
-
-    return `
-      <html>
-        <head>
-          <title>Rótulos</title>
-          <style>
-            body { font-family: Arial, sans-serif; }
-            .rotulo {
-              width: 320px;
-              border: 2px solid #000;
-              border-radius: 14px;
-              padding: 16px;
-              margin: 0 auto 24px;
-              page-break-after: always;
-            }
-            .rotulo-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px; }
-            .marca-logo { width: 64px; height: 64px; object-fit: contain; }
-            .contacto { font-size: 11px; text-align: right; }
-            .fecha-box { border: 1px solid #000; padding: 4px 8px; font-size: 11px; }
-            .valor-cobrar { border: 1px solid #000; padding: 8px; margin-bottom: 10px; font-size: 14px; display: flex; justify-content: space-between; }
-            .datos { width: 100%; font-size: 13px; border-collapse: collapse; }
-            .datos td { padding: 3px 0; vertical-align: top; }
-            .datos td:first-child { font-weight: bold; width: 90px; }
-            .garantia { font-size: 10px; text-align: center; margin-top: 12px; border-top: 1px dashed #000; padding-top: 8px; }
-          </style>
-        </head>
-        <body>${rotulos}</body>
-      </html>
-    `;
   }
 
   // --- Formatos ---

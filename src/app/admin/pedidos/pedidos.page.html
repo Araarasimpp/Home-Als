@@ -101,8 +101,10 @@
 
           <div class="c-dom">
             <ng-container *ngIf="editable(p); else domiciliarioFijo">
-              <span class="avatar" *ngIf="p.domiciliario_id">{{ iniciales(nombreDomiciliario(p.domiciliario_id)) }}</span>
-              <span class="avatar empty" *ngIf="!p.domiciliario_id" aria-hidden="true"></span>
+              <app-avatar
+                [nombre]="p.domiciliario_id ? nombreDomiciliario(p.domiciliario_id) : null"
+                [url]="fotoDomiciliario(p.domiciliario_id)"
+              ></app-avatar>
               <select
                 class="dom-select"
                 [class.unassigned]="!p.domiciliario_id"
@@ -120,7 +122,10 @@
             </ng-container>
             <ng-template #domiciliarioFijo>
               <ng-container *ngIf="p.domiciliario_id; else sinDom">
-                <span class="avatar">{{ iniciales(nombreDomiciliario(p.domiciliario_id)) }}</span>
+                <app-avatar
+                  [nombre]="nombreDomiciliario(p.domiciliario_id)"
+                  [url]="fotoDomiciliario(p.domiciliario_id)"
+                ></app-avatar>
                 <span class="dom-name">{{ nombreDomiciliario(p.domiciliario_id) }}</span>
               </ng-container>
               <ng-template #sinDom><span class="muted">—</span></ng-template>
