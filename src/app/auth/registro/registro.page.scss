@@ -1,0 +1,76 @@
+// Registro: tarjeta más ancha con campos en dos columnas para que el
+// formulario quepa sin tanto desplazamiento. En celular vuelve a una columna.
+
+.auth-shell {
+  padding-top: calc(32px + env(safe-area-inset-top));
+  padding-bottom: calc(32px + env(safe-area-inset-bottom));
+}
+
+.auth-card-ancha {
+  max-width: 480px;
+  gap: 22px;
+}
+
+.auth-head {
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+}
+
+.auth-head .brand-mark {
+  width: 56px;
+  height: 56px;
+}
+
+.auth-head h1 {
+  font-size: 20px;
+}
+
+.auth-head p {
+  margin-top: 2px;
+  font-size: 13px;
+}
+
+.form-registro {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 12px;
+}
+
+.col-completa {
+  grid-column: 1 / -1;
+}
+
+.medidor-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: -4px;
+}
+
+.field label {
+  white-space: nowrap;
+}
+
+.submit-btn {
+  margin-top: 2px;
+}
+
+.switch-link {
+  padding-top: 16px;
+}
+
+@media (max-width: 520px) {
+  .form-registro {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .form-registro > * {
+    grid-column: 1 / -1;
+  }
+
+  .auth-head .brand-mark {
+    width: 48px;
+    height: 48px;
+  }
+}

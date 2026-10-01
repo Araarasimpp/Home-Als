@@ -1,0 +1,69 @@
+<div class="auth-shell">
+  <div class="auth-card">
+    <div class="auth-head">
+      <img class="brand-mark" src="assets/icon/logo.png" alt="Home ALS" />
+      <div>
+        <h1>Crea una contraseña nueva</h1>
+        <p *ngIf="email">Para {{ email }}</p>
+      </div>
+    </div>
+
+    <p class="loading-msg" *ngIf="estado === 'verificando'">Verificando el enlace…</p>
+
+    <ng-container *ngIf="estado === 'invalido'">
+      <p class="error-msg" role="alert">
+        Este enlace no es válido o ya venció. Los enlaces sirven una sola vez y duran una hora.
+      </p>
+      <a class="submit-btn submit-link" routerLink="/auth/recuperar">Pedir un enlace nuevo</a>
+    </ng-container>
+
+    <form class="auth-form" *ngIf="estado === 'listo'" (ngSubmit)="onGuardar()">
+      <div class="field">
+        <label for="password">Contraseña nueva</label>
+        <div class="password-wrap">
+          <input
+            id="password"
+            name="password"
+            [type]="verClave ? 'text' : 'password'"
+            autocomplete="new-password"
+            [(ngModel)]="password"
+            (ngModelChange)="actualizarEvaluacion()"
+            [attr.aria-invalid]="intentoEnviar && !evaluacion.valida"
+            aria-describedby="medidor-clave"
+          />
+          <button
+            type="button"
+            class="reveal-btn"
+            (click)="verClave = !verClave"
+            [attr.aria-pressed]="verClave"
+            [attr.aria-label]="verClave ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          >
+            {{ verClave ? 'Ocultar' : 'Mostrar' }}
+          </button>
+        </div>
+        <app-medidor-clave id="medidor-clave" [evaluacion]="evaluacion"></app-medidor-clave>
+      </div>
+
+      <div class="field">
+        <label for="confirmar">Repite la contraseña</label>
+        <input
+          id="confirmar"
+          name="confirmar"
+          [type]="verClave ? 'text' : 'password'"
+          autocomplete="new-password"
+          [(ngModel)]="confirmar"
+          [attr.aria-invalid]="noCoinciden"
+        />
+        <p class="field-error" *ngIf="noCoinciden">No coincide con la contraseña.</p>
+      </div>
+
+      <p class="error-msg" role="alert" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+      <button type="submit" class="submit-btn" [disabled]="loading">
+        {{ loading ? 'Guardando…' : 'Guardar contraseña' }}
+      </button>
+    </form>
+
+    <p class="switch-link"><a routerLink="/auth/login">Volver a iniciar sesión</a></p>
+  </div>
+</div>

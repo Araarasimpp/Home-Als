@@ -8,7 +8,7 @@
       </div>
     </div>
 
-    <p class="ok-msg" role="status" *ngIf="recienRegistrado">Cuenta creada. Ya puedes iniciar sesión.</p>
+    <p class="ok-msg" role="status" *ngIf="avisoOk">{{ avisoOk }}</p>
 
     <form class="auth-form" (ngSubmit)="onLogin()">
       <div class="field">
@@ -17,8 +17,10 @@
           id="email"
           name="email"
           type="email"
-          autocomplete="email"
+          autocomplete="username"
           inputmode="email"
+          autocapitalize="off"
+          spellcheck="false"
           [(ngModel)]="email"
           placeholder="nombre@correo.com"
           [attr.aria-invalid]="!!errorMsg"
@@ -26,7 +28,10 @@
       </div>
 
       <div class="field">
-        <label for="password">Contraseña</label>
+        <div class="field-row">
+          <label for="password">Contraseña</label>
+          <a class="field-link" routerLink="/auth/recuperar">¿La olvidaste?</a>
+        </div>
         <div class="password-wrap">
           <input
             id="password"
@@ -34,18 +39,32 @@
             [type]="verClave ? 'text' : 'password'"
             autocomplete="current-password"
             [(ngModel)]="password"
+            (keydown)="revisarMayus($event)"
+            (keyup)="revisarMayus($event)"
+            (blur)="bloqMayus = false"
             [attr.aria-invalid]="!!errorMsg"
+            aria-describedby="aviso-mayus"
           />
-          <button type="button" class="reveal-btn" (click)="verClave = !verClave">
+          <button
+            type="button"
+            class="reveal-btn"
+            (click)="verClave = !verClave"
+            [attr.aria-pressed]="verClave"
+            [attr.aria-label]="verClave ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          >
             {{ verClave ? 'Ocultar' : 'Mostrar' }}
           </button>
         </div>
+        <p id="aviso-mayus" class="warn-msg" *ngIf="bloqMayus">Bloq Mayús está activado.</p>
       </div>
 
-      <p class="error-msg" role="alert" *ngIf="errorMsg">{{ errorMsg }}</p>
+      <p class="error-msg" role="alert" *ngIf="errorMsg">
+        {{ errorMsg }}
+        <ng-container *ngIf="segundosBloqueo > 0"> Podrás intentar en <strong class="num">{{ textoBloqueo }}</strong>.</ng-container>
+      </p>
 
-      <button type="submit" class="submit-btn" [disabled]="loading">
-        {{ loading ? 'Ingresando…' : 'Ingresar' }}
+      <button type="submit" class="submit-btn" [disabled]="loading || segundosBloqueo > 0">
+        {{ loading ? 'Ingresando…' : segundosBloqueo > 0 ? 'Espera ' + textoBloqueo : 'Ingresar' }}
       </button>
     </form>
 

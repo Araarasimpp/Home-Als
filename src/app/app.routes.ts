@@ -14,6 +14,20 @@ export const routes: Routes = [
     loadComponent: () => import('./auth/registro/registro.page').then((m) => m.RegistroPage),
   },
   {
+    path: 'auth/recuperar',
+    loadComponent: () => import('./auth/recuperar/recuperar.page').then((m) => m.RecuperarPage),
+  },
+  {
+    path: 'auth/nueva-clave',
+    loadComponent: () => import('./auth/nueva-clave/nueva-clave.page').then((m) => m.NuevaClavePage),
+  },
+  {
+    // El RoleGuard manda aquí cuando alguien entra a una sección de otro rol:
+    // se devuelve al inicio, que redirige a la sección de su propio rol.
+    path: 'auth/no-autorizado',
+    redirectTo: '',
+  },
+  {
     path: 'admin',
     loadChildren: () => import('./admin/admin.routes').then((m) => m.ADMIN_ROUTES),
   },
@@ -30,5 +44,10 @@ export const routes: Routes = [
     path: 'despachador',
     loadChildren: () =>
       import('./despachador/despachador.routes').then((m) => m.DESPACHADOR_ROUTES),
+  },
+  {
+    // Cualquier otra dirección vuelve al inicio
+    path: '**',
+    redirectTo: '',
   },
 ];

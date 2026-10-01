@@ -25,21 +25,37 @@ export class SupabaseService {
         // usuario cierre sesión explícitamente (funciona igual en PC y móvil).
         persistSession: true,
         autoRefreshToken: true,
+        // El enlace de recuperación de contraseña se procesa a mano en
+        // /auth/nueva-clave, así ninguna otra página toma tokens de la URL.
         detectSessionInUrl: false,
       },
     });
   }
 
   async login(email: string, password: string) {
-    return this.client.auth.signInWithPassword({ email, password });
+    // Si había otra persona en este dispositivo, no reutilizar su perfil
+    this.currentProfile = null;
+    return this.client.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
   }
 
   async register(email: string, password: string, nombre: string, telefono?: string) {
     return this.client.auth.signUp({
-      email,
+      email: email.trim().toLowerCase(),
       password,
       options: { data: { nombre, telefono } },
     });
+  }
+
+  /** Envía el correo para crear una contraseña nueva. */
+  async recuperarClave(email: string) {
+    return this.client.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+      redirectTo: `${window.location.origin}/auth/nueva-clave`,
+    });
+  }
+
+  /** Cambia la contraseña de la sesión actual (la abre el enlace de recuperación). */
+  async cambiarClave(password: string) {
+    return this.client.auth.updateUser({ password });
   }
 
   async logout() {
