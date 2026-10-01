@@ -1,0 +1,26 @@
+<div class="layout">
+  <button class="theme-toggle" (click)="toggleTheme()">
+    <ion-icon [name]="theme.isDark() ? 'sunny-outline' : 'moon-outline'"></ion-icon>
+  </button>
+
+  <main class="content">
+    <router-outlet></router-outlet>
+  </main>
+
+  <nav class="pill-nav">
+    <a routerLink="/vendedor" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+      <ion-icon name="home-outline"></ion-icon>
+      <span class="dot"></span>
+    </a>
+
+    <div class="pill-center">
+      <a routerLink="/vendedor/nuevo-pedido" class="pill-action">
+        <ion-icon name="add"></ion-icon>
+      </a>
+    </div>
+
+    <button class="pill-action" (click)="logout()">
+      <ion-icon name="log-out-outline"></ion-icon>
+    </button>
+  </nav>
+</div>

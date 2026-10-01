@@ -1,0 +1,129 @@
+<div class="productos-page">
+  <header class="page-header">
+    <div>
+      <h1>Productos</h1>
+    </div>
+    <div class="header-actions">
+      <div class="search-box">
+        <input
+          type="text"
+          [(ngModel)]="busqueda"
+          placeholder="Buscar por nombre o SKU..."
+        />
+      </div>
+      <button class="btn-primary" (click)="abrirNuevo()">+ Nuevo producto</button>
+      <label class="btn-secondary btn-excel">
+        {{ cargandoExcel ? 'Cargando...' : 'Cargar Excel' }}
+        <input
+          type="file"
+          accept=".xlsx,.xls"
+          hidden
+          (change)="onArchivoExcel($event)"
+          [disabled]="cargandoExcel"
+        />
+      </label>
+    </div>
+  </header>
+
+  <div class="resumen-carga" *ngIf="resumenCarga">
+    <p class="resumen-ok" *ngIf="resumenCarga.creados">
+      {{ resumenCarga.creados }} producto(s) cargado(s)/actualizado(s) correctamente.
+    </p>
+    <p class="resumen-error" *ngFor="let e of resumenCarga.errores">{{ e }}</p>
+    <button class="cerrar-resumen" (click)="resumenCarga = null">✕</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab" [class.active]="tab === 'activos'" (click)="cambiarTab('activos')">
+      Activos
+    </button>
+    <button class="tab" [class.active]="tab === 'todos'" (click)="cambiarTab('todos')">
+      Todos los productos
+    </button>
+  </div>
+
+  <div class="table-card">
+    <ng-container *ngIf="!loading; else cargando">
+      <table *ngIf="filtrados.length; else vacio">
+        <thead>
+          <tr>
+            <th class="col-check"></th>
+            <th>Nombre</th>
+            <th>SKU</th>
+            <th>Categoría</th>
+            <th>Precio base</th>
+            <th>Precio sugerido</th>
+            <th>Disponible</th>
+            <th>Estado</th>
+            <th class="col-check"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of paginados">
+            <td class="col-check">
+              <input
+                type="checkbox"
+                [checked]="seleccionados.has(p.id)"
+                (change)="toggleSeleccion(p.id)"
+              />
+            </td>
+            <td>
+              <div class="nombre-cell">
+                <span class="avatar" [class.tiene-foto]="p.imagen_url">
+                  <img *ngIf="p.imagen_url" [src]="p.imagen_url" [alt]="p.nombre" />
+                  <ng-container *ngIf="!p.imagen_url">{{ inicial(p.nombre) }}</ng-container>
+                </span>
+                <span>{{ p.nombre }}</span>
+              </div>
+            </td>
+            <td class="text-soft">{{ p.sku }}</td>
+            <td class="text-soft">{{ p.categoria || '—' }}</td>
+            <td class="text-soft">{{ formatoMoneda(p.precio_base) }}</td>
+            <td>{{ formatoMoneda(p.precio_sugerido) }}</td>
+            <td>{{ p.stock }}</td>
+            <td>
+              <span class="badge" [ngClass]="estadoStock(p.stock).clase" *ngIf="p.activo">
+                {{ estadoStock(p.stock).texto }}
+              </span>
+              <span class="badge estado-archivado" *ngIf="!p.activo">Archivado</span>
+            </td>
+            <td class="col-check menu-cell">
+              <button class="menu-btn" (click)="toggleMenu(p.id)">⋯</button>
+              <div class="menu-popover" *ngIf="menuAbiertoId === p.id">
+                <button (click)="abrirEditar(p)">Editar</button>
+                <button *ngIf="p.activo" class="danger" (click)="eliminarProducto(p)">Eliminar</button>
+                <button *ngIf="!p.activo" (click)="reactivarProducto(p)">Reactivar</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <ng-template #vacio>
+        <p class="empty-msg">No hay productos que coincidan con la búsqueda.</p>
+      </ng-template>
+    </ng-container>
+
+    <ng-template #cargando>
+      <p class="empty-msg">Cargando productos...</p>
+    </ng-template>
+
+    <footer class="table-footer" *ngIf="filtrados.length">
+      <span class="text-soft">
+        Mostrando {{ paginados.length }} de {{ filtrados.length }} productos
+      </span>
+      <div class="pager">
+        <button (click)="irAPagina(-1)" [disabled]="paginaActual === 1">←</button>
+        <span>{{ paginaActual }} / {{ totalPaginas }}</span>
+        <button (click)="irAPagina(1)" [disabled]="paginaActual === totalPaginas">→</button>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<app-producto-form
+  *ngIf="modalAbierto"
+  [producto]="productoEditando"
+  (cerrar)="cerrarModal()"
+  (guardado)="onGuardado()"
+></app-producto-form>
