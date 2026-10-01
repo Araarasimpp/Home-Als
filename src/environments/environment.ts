@@ -5,8 +5,8 @@
 // src/environments/environment.ts (desarrollo)
 export const environment = {
   production: false,
-  supabaseUrl: 'https://mswqdzpsynvdanxdfidf.supabase.co',
-  supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zd3FkenBzeW52ZGFueGRmaWRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2ODcyNTQsImV4cCI6MjEwNTI2MzI1NH0.HsrN07w2w74s2iol3csU__6Tzrbi6Z1IXYDU-fcQevI'
+  supabaseUrl: 'https://qnumwwgadflkhvqvszzv.supabase.co',
+  supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW13d2dhZGZsa2h2cXZzenp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4MjMwNzAsImV4cCI6MjEwNjM5OTA3MH0.d0HpIuUXVWALruZlC5g00_lPktFmrEZv4xV69e9vz3Y'
 };
 
 /*
