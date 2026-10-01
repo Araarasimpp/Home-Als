@@ -1,10 +1,13 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { IonIcon } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { callOutline, logoWhatsapp, navigateOutline } from 'ionicons/icons';
+import { callOutline, logoWhatsapp, navigateOutline, alertCircleOutline } from 'ionicons/icons';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { inicioDiaColombia } from '../../shared/fecha-colombia';
+import { EstadoIconComponent } from '../../shared/estado-icon/estado-icon.component';
 import { EntregarPedidoComponent } from '../entregar-pedido/entregar-pedido.component';
 
 interface PedidoRuta {
@@ -17,25 +20,31 @@ interface PedidoRuta {
   valor_domicilio: number;
   total: number;
   observaciones: string | null;
-  productos: string;
+  productos: string[];
 }
 
 @Component({
   selector: 'app-inicio-domiciliario',
   standalone: true,
-  imports: [CommonModule, IonIcon, EntregarPedidoComponent],
+  imports: [CommonModule, RouterLink, IonIcon, EstadoIconComponent, EntregarPedidoComponent],
   templateUrl: './inicio.page.html',
-  styleUrls: ['./inicio.page.scss'],
+  styleUrls: ['../../shared/ui.scss', './inicio.page.scss'],
 })
 export class InicioDomiciliarioPage implements OnInit, OnDestroy {
   loading = true;
   pedidos: PedidoRuta[] = [];
   pedidoEntregando: PedidoRuta | null = null;
 
+  // Resumen del día
+  entregadosHoy = 0;
+  efectivoEnMano = 0; // efectivo cobrado hoy que todavía no está en un cuadre
+  porCuadrar = 0;
+
   private canal: RealtimeChannel | null = null;
+  private temporizador: ReturnType<typeof setTimeout> | null = null;
 
   constructor(private supabase: SupabaseService, private cdr: ChangeDetectorRef) {
-    addIcons({ callOutline, logoWhatsapp, navigateOutline });
+    addIcons({ callOutline, logoWhatsapp, navigateOutline, alertCircleOutline });
   }
 
   async ngOnInit(): Promise<void> {
@@ -44,6 +53,7 @@ export class InicioDomiciliarioPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.temporizador) clearTimeout(this.temporizador);
     if (this.canal) {
       this.supabase.client.removeChannel(this.canal);
     }
@@ -52,14 +62,15 @@ export class InicioDomiciliarioPage implements OnInit, OnDestroy {
   private suscribirRealtime(): void {
     this.canal = this.supabase.client
       .channel('mis-pedidos-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, () =>
-        this.cargarPedidos()
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, () => {
+        if (this.temporizador) clearTimeout(this.temporizador);
+        this.temporizador = setTimeout(() => this.cargarPedidos(), 300);
+      })
       .subscribe();
   }
 
   async cargarPedidos(): Promise<void> {
-    this.loading = true;
+    if (!this.pedidos.length) this.loading = true;
     const user = await this.supabase.getCurrentUser();
 
     if (!user) {
@@ -68,18 +79,26 @@ export class InicioDomiciliarioPage implements OnInit, OnDestroy {
       return;
     }
 
-    const { data, error } = await this.supabase.client
-      .from('pedidos')
-      .select(
-        'id, numero, cliente_nombre, cliente_telefono, direccion, barrio, valor_domicilio, total, observaciones'
-      )
-      .eq('domiciliario_id', user.id)
-      .eq('estado', 'en_ruta')
-      .order('created_at', { ascending: true });
+    const [rutaRes, hoyRes] = await Promise.all([
+      this.supabase.client
+        .from('pedidos')
+        .select(
+          'id, numero, cliente_nombre, cliente_telefono, direccion, barrio, valor_domicilio, total, observaciones'
+        )
+        .eq('domiciliario_id', user.id)
+        .eq('estado', 'en_ruta')
+        .order('created_at', { ascending: true }),
+      this.supabase.client
+        .from('pedidos')
+        .select('total, metodo_pago, cuadre_id')
+        .eq('domiciliario_id', user.id)
+        .eq('estado', 'entregado')
+        .gte('entregado_at', inicioDiaColombia().toISOString()),
+    ]);
 
-    let pedidos = (data as any[]) ?? [];
+    let pedidos = (rutaRes.data as any[]) ?? [];
 
-    if (!error && pedidos.length) {
+    if (!rutaRes.error && pedidos.length) {
       const { data: items } = await this.supabase.client
         .from('pedido_items')
         .select('pedido_id, cantidad, producto:productos(nombre)')
@@ -92,10 +111,21 @@ export class InicioDomiciliarioPage implements OnInit, OnDestroy {
         ...p,
         productos: (items ?? [])
           .filter((i: any) => i.pedido_id === p.id)
-          .map((i: any) => `${i.producto?.nombre ?? 'Producto'} — Cantidad: ${i.cantidad}`)
-          .join('\n'),
+          .map((i: any) =>
+            i.cantidad > 1
+              ? `${i.producto?.nombre ?? 'Producto'} ×${i.cantidad}`
+              : `${i.producto?.nombre ?? 'Producto'}`
+          ),
       }));
     }
+
+    const hoy = (hoyRes.data ?? []) as { total: number; metodo_pago: string | null; cuadre_id: string | null }[];
+    this.entregadosHoy = hoy.length;
+    const sinCuadre = hoy.filter((p) => !p.cuadre_id);
+    this.porCuadrar = sinCuadre.length;
+    this.efectivoEnMano = sinCuadre
+      .filter((p) => p.metodo_pago === 'efectivo')
+      .reduce((s, p) => s + Number(p.total || 0), 0);
 
     this.pedidos = pedidos as PedidoRuta[];
     this.loading = false;
@@ -125,7 +155,7 @@ export class InicioDomiciliarioPage implements OnInit, OnDestroy {
     return soloNumeros.length > 10 ? soloNumeros : `57${soloNumeros}`;
   }
 
-  // ---------- Marcar entregado (modal, como ya lo teníamos) ----------
+  // ---------- Marcar entregado ----------
 
   abrirEntrega(pedido: PedidoRuta): void {
     this.pedidoEntregando = pedido;
@@ -141,7 +171,7 @@ export class InicioDomiciliarioPage implements OnInit, OnDestroy {
   }
 
   formatoMoneda(valor: number): string {
-    return valor.toLocaleString('es-CO', {
+    return Number(valor || 0).toLocaleString('es-CO', {
       style: 'currency',
       currency: 'COP',
       maximumFractionDigits: 0,

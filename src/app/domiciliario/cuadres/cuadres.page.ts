@@ -31,7 +31,7 @@ interface PedidoSinCuadrar {
   standalone: true,
   imports: [CommonModule, FormsModule, ImagenPreviewComponent],
   templateUrl: './cuadres.page.html',
-  styleUrls: ['./cuadres.page.scss', '../../shared/filtro-fecha.scss'],
+  styleUrls: ['../../shared/ui.scss', './cuadres.page.scss', '../../shared/filtro-fecha.scss'],
 })
 export class CuadresPage implements OnInit {
   loading = true;

@@ -2,6 +2,9 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { IonIcon } from '@ionic/angular';
+import { addIcons } from 'ionicons';
+import { add, remove, searchOutline, chevronBackOutline, trashOutline, checkmark } from 'ionicons/icons';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { Producto } from '../../shared/models/models';
 
@@ -13,12 +16,18 @@ interface ItemCarrito {
   precioUnitario: number;
 }
 
+interface Zona {
+  id: string;
+  nombre: string;
+  valor: number;
+}
+
 @Component({
   selector: 'app-nuevo-pedido',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, IonIcon],
   templateUrl: './nuevo-pedido.page.html',
-  styleUrls: ['./nuevo-pedido.page.scss'],
+  styleUrls: ['../../shared/ui.scss', './nuevo-pedido.page.scss'],
 })
 export class NuevoPedidoPage implements OnInit {
   loadingProductos = true;
@@ -31,23 +40,30 @@ export class NuevoPedidoPage implements OnInit {
   clienteTelefono = '';
   direccion = '';
   barrio = '';
-  zonas: { id: string; nombre: string; valor: number }[] = [];
+  zonas: Zona[] = [];
   valorDomicilio: number = 0;
   observaciones = '';
 
   guardando = false;
   errorMsg = '';
+  /** Se activa al intentar crear: desde ahí se marcan los campos obligatorios vacíos. */
+  intentoEnviar = false;
+  /** Número del pedido recién creado (muestra la confirmación). */
+  creado: number | null = null;
+
+  mostrarSugerenciasBarrio = false;
 
   constructor(
     private supabase: SupabaseService,
     private router: Router,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) {
+    addIcons({ add, remove, searchOutline, chevronBackOutline, trashOutline, checkmark });
+  }
 
   async ngOnInit(): Promise<void> {
-    await this.cargarProductos();
-    await this.cargarZonas();
+    await Promise.all([this.cargarProductos(), this.cargarZonas()]);
   }
 
   async cargarZonas(): Promise<void> {
@@ -62,9 +78,7 @@ export class NuevoPedidoPage implements OnInit {
     this.cdr.detectChanges();
   }
 
-  mostrarSugerenciasBarrio = false;
-
-  get sugerenciasBarrio(): { id: string; nombre: string; valor: number }[] {
+  get sugerenciasBarrio(): Zona[] {
     const q = this.barrio.trim().toLowerCase();
     if (!q) return this.zonas;
     return this.zonas.filter((z) => z.nombre.toLowerCase().includes(q));
@@ -128,6 +142,7 @@ export class NuevoPedidoPage implements OnInit {
     } else {
       this.carrito.push({ producto, cantidad: 1, precioUnitario: producto.precio_sugerido });
     }
+    this.errorMsg = '';
   }
 
   incrementar(item: ItemCarrito): void {
@@ -153,6 +168,10 @@ export class NuevoPedidoPage implements OnInit {
     return item.cantidad * (item.precioUnitario - item.producto.precio_base);
   }
 
+  get unidades(): number {
+    return this.carrito.reduce((s, i) => s + i.cantidad, 0);
+  }
+
   get subtotal(): number {
     return this.carrito.reduce((sum, i) => sum + i.cantidad * i.precioUnitario, 0);
   }
@@ -166,34 +185,42 @@ export class NuevoPedidoPage implements OnInit {
   }
 
   async onCrearPedido(): Promise<void> {
+    if (this.guardando) return;
     this.errorMsg = '';
+    this.intentoEnviar = true;
 
     if (this.carrito.length === 0) {
       this.errorMsg = 'Agrega al menos un producto al pedido.';
       return;
     }
 
-    if (!this.clienteNombre || !this.direccion) {
-      this.errorMsg = 'Nombre del cliente y dirección son obligatorios.';
+    if (!this.clienteNombre.trim() || !this.direccion.trim()) {
+      this.errorMsg = 'Falta el nombre del cliente o la dirección.';
+      return;
+    }
+
+    if (this.carrito.some((i) => !(Number(i.precioUnitario) > 0))) {
+      this.errorMsg = 'Revisa los precios: ningún producto puede quedar en $0.';
       return;
     }
 
     this.guardando = true;
+    this.cdr.detectChanges();
 
     const items = this.carrito.map((i) => ({
       producto_id: i.producto.id,
       cantidad: i.cantidad,
-      precio_unitario: i.precioUnitario,
+      precio_unitario: Number(i.precioUnitario),
       precio_base: i.producto.precio_base,
     }));
 
     const { data, error } = await this.supabase.client.rpc('crear_pedido', {
-      p_cliente_nombre: this.clienteNombre,
-      p_cliente_telefono: this.clienteTelefono || null,
-      p_direccion: this.direccion,
-      p_barrio: this.barrio || null,
+      p_cliente_nombre: this.clienteNombre.trim(),
+      p_cliente_telefono: this.clienteTelefono.trim() || null,
+      p_direccion: this.direccion.trim(),
+      p_barrio: this.barrio.trim() || null,
       p_valor_domicilio: Number(this.valorDomicilio) || 0,
-      p_observaciones: this.observaciones || null,
+      p_observaciones: this.observaciones.trim() || null,
       p_items: items,
     });
 
@@ -207,15 +234,28 @@ export class NuevoPedidoPage implements OnInit {
       return;
     }
 
-    const numeroPedido = data as number;
-    alert(`Pedido #${numeroPedido} creado con éxito.`);
+    this.creado = data as number;
+    this.cdr.detectChanges();
+  }
 
-    const volverA = (this.route.snapshot.data['volverA'] as string) ?? '/vendedor';
-    this.router.navigateByUrl(volverA);
+  /** Limpia todo para crear otro pedido (y recarga el stock). */
+  async otroPedido(): Promise<void> {
+    this.carrito = [];
+    this.clienteNombre = '';
+    this.clienteTelefono = '';
+    this.direccion = '';
+    this.barrio = '';
+    this.valorDomicilio = 0;
+    this.observaciones = '';
+    this.busquedaProducto = '';
+    this.intentoEnviar = false;
+    this.errorMsg = '';
+    this.creado = null;
+    await this.cargarProductos();
   }
 
   formatoMoneda(valor: number): string {
-    return (valor || 0).toLocaleString('es-CO', {
+    return (Number(valor) || 0).toLocaleString('es-CO', {
       style: 'currency',
       currency: 'COP',
       maximumFractionDigits: 0,

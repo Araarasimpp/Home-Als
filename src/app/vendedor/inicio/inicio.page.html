@@ -1,56 +1,110 @@
-<div class="inicio-vendedor">
+<div class="page">
+  <header class="head">
+    <div>
+      <p class="fecha">{{ hoyTexto }}</p>
+      <h1>{{ nombre ? 'Hola, ' + nombre : 'Inicio' }}</h1>
+    </div>
+    <a class="btn btn-primary" routerLink="/vendedor/nuevo-pedido">
+      <ion-icon name="add" aria-hidden="true"></ion-icon>
+      Nuevo pedido
+    </a>
+  </header>
 
   <ng-container *ngIf="!loading; else cargando">
-    <section class="stats-grid">
-      <div class="stat-card destacada">
-        <span class="stat-label">Ventas de hoy</span>
-        <span class="stat-valor">{{ formatoMoneda(ventasHoy) }}</span>
+    <!-- Hoy -->
+    <section class="kpis" aria-label="Resumen de hoy">
+      <div class="kpi kpi-principal">
+        <span class="kpi-label">Tu comisión de hoy</span>
+        <span class="kpi-valor num">{{ formatoMoneda(comisionHoy) }}</span>
+        <span class="kpi-nota num">en {{ formatoMoneda(ventasHoy) }} vendidos</span>
       </div>
-      <div class="stat-card">
-        <span class="stat-label">Comisión de hoy</span>
-        <span class="stat-valor">{{ formatoMoneda(comisionHoy) }}</span>
+      <div class="kpi">
+        <span class="kpi-label">Pedidos de hoy</span>
+        <span class="kpi-valor num">{{ pedidosHoy }}</span>
       </div>
-      <div class="stat-card">
-        <span class="stat-label">En ruta</span>
-        <span class="stat-valor">{{ pedidosEnRuta }}</span>
+      <div class="kpi">
+        <span class="kpi-label">En ruta</span>
+        <span class="kpi-valor num">{{ pedidosEnRuta }}</span>
       </div>
-      <div class="stat-card">
-        <span class="stat-label">Entregados hoy</span>
-        <span class="stat-valor">{{ entregadosHoy }}</span>
+      <div class="kpi">
+        <span class="kpi-label">Entregados hoy</span>
+        <span class="kpi-valor num">{{ entregadosHoy }}</span>
       </div>
     </section>
 
-    <section class="panel">
-      <h2>Ventas de la semana</h2>
-      <div class="bar-chart">
-        <div class="bar-col" *ngFor="let b of ventasSemana">
-          <div class="bar-track">
-            <div class="bar-fill" [class.hoy]="b.esHoy" [style.height.%]="b.alturaPct"></div>
+    <!-- Gráfica -->
+    <section class="panel" aria-labelledby="t-semana">
+      <div class="panel-head">
+        <div>
+          <h2 id="t-semana">{{ metrica === 'comision' ? 'Tu comisión' : 'Tus ventas' }}</h2>
+          <p class="panel-sub num">
+            <strong>{{ formatoMoneda(metrica === 'comision' ? totalPeriodo.comision : totalPeriodo.ventas) }}</strong>
+            en {{ periodo }} días, {{ totalPeriodo.pedidos }} {{ totalPeriodo.pedidos === 1 ? 'pedido' : 'pedidos' }}
+          </p>
+        </div>
+        <div class="controles">
+          <div class="segmented" role="group" aria-label="Qué mostrar">
+            <button [class.on]="metrica === 'comision'" [attr.aria-pressed]="metrica === 'comision'" (click)="cambiarMetrica('comision')">Comisión</button>
+            <button [class.on]="metrica === 'ventas'" [attr.aria-pressed]="metrica === 'ventas'" (click)="cambiarMetrica('ventas')">Ventas</button>
           </div>
-          <span class="bar-label">{{ b.label }}</span>
+          <div class="segmented" role="group" aria-label="Periodo">
+            <button [class.on]="periodo === 7" [attr.aria-pressed]="periodo === 7" (click)="cambiarPeriodo(7)">7 días</button>
+            <button [class.on]="periodo === 30" [attr.aria-pressed]="periodo === 30" (click)="cambiarPeriodo(30)">30 días</button>
+          </div>
         </div>
+      </div>
+      <div class="chart">
+        <canvas #canvas role="img" [attr.aria-label]="'Gráfica de ' + (metrica === 'comision' ? 'comisión' : 'ventas') + ' de los últimos ' + periodo + ' días'"></canvas>
       </div>
     </section>
 
-    <section class="panel">
-      <h2>Mis pedidos</h2>
-      <div class="pedido-row" *ngFor="let p of misPedidos">
-        <div class="pedido-info">
-          <span class="pedido-cliente">{{ p.cliente_nombre }}</span>
-          <span class="pedido-num">#{{ p.numero }}</span>
+    <!-- Mis pedidos -->
+    <section aria-labelledby="t-pedidos">
+      <div class="lista-head">
+        <h2 id="t-pedidos">Mis pedidos</h2>
+        <div class="tabs" role="group" aria-label="Filtrar pedidos">
+          <button [class.on]="filtro === 'activos'" [attr.aria-pressed]="filtro === 'activos'" (click)="filtro = 'activos'">
+            Activos <span class="num">{{ porAsignar + pedidosEnRuta }}</span>
+          </button>
+          <button [class.on]="filtro === 'entregado'" [attr.aria-pressed]="filtro === 'entregado'" (click)="filtro = 'entregado'">Entregados</button>
+          <button [class.on]="filtro === 'todos'" [attr.aria-pressed]="filtro === 'todos'" (click)="filtro = 'todos'">Todos</button>
         </div>
-        <span class="badge" [class.entregado]="p.estado === 'entregado'">
-          {{ etiquetaEstado(p.estado) }}
-        </span>
-        <span class="pedido-total">{{ formatoMoneda(p.total) }}</span>
       </div>
-      <p class="empty-msg" *ngIf="!misPedidos.length">
-        Todavía no tienes pedidos en ruta ni entregados.
-      </p>
+
+      <div class="lista" *ngIf="pedidosFiltrados.length; else vacio">
+        <div class="fila" *ngFor="let p of pedidosFiltrados">
+          <app-estado-icon [estado]="p.estado" [size]="16"></app-estado-icon>
+          <div class="fila-texto">
+            <span class="fila-cliente">{{ p.cliente_nombre }}</span>
+            <span class="fila-meta num">
+              #{{ p.numero }}<ng-container *ngIf="p.barrio">, {{ p.barrio }}</ng-container>, {{ etiquetaEstado(p.estado) | lowercase }}, {{ fechaCorta(p.created_at) }}
+            </span>
+          </div>
+          <div class="fila-montos">
+            <span class="num fila-total">{{ formatoMoneda(p.total) }}</span>
+            <span class="num fila-comision" *ngIf="p.estado !== 'cancelado'">+{{ formatoMoneda(p.comision) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #vacio>
+        <div class="vacio">
+          <ng-container *ngIf="filtro === 'activos'; else vacioOtro">
+            <p class="vacio-titulo">No tienes pedidos activos</p>
+            <p>Los pedidos que crees aparecen aquí hasta que se entreguen.</p>
+            <a class="btn btn-primary" routerLink="/vendedor/nuevo-pedido">Crear pedido</a>
+          </ng-container>
+          <ng-template #vacioOtro>
+            <p>No hay pedidos en esta lista.</p>
+          </ng-template>
+        </div>
+      </ng-template>
     </section>
   </ng-container>
 
   <ng-template #cargando>
-    <p class="empty-msg">Cargando...</p>
+    <div class="kpis" aria-busy="true" aria-label="Cargando">
+      <div class="kpi" *ngFor="let i of [1, 2, 3, 4]"><span class="sk sk-a"></span><span class="sk sk-b"></span></div>
+    </div>
   </ng-template>
 </div>

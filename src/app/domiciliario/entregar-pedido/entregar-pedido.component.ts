@@ -1,6 +1,9 @@
-import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { IonIcon } from '@ionic/angular';
+import { addIcons } from 'ionicons';
+import { cashOutline, phonePortraitOutline, cameraOutline, close } from 'ionicons/icons';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { MetodoPago } from '../../shared/models/models';
 
@@ -14,11 +17,11 @@ interface PedidoResumen {
 @Component({
   selector: 'app-entregar-pedido',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, IonIcon],
   templateUrl: './entregar-pedido.component.html',
   styleUrls: ['./entregar-pedido.component.scss'],
 })
-export class EntregarPedidoComponent {
+export class EntregarPedidoComponent implements OnDestroy {
   @Input() pedido!: PedidoResumen;
   @Output() cerrar = new EventEmitter<void>();
   @Output() entregado = new EventEmitter<void>();
@@ -30,36 +33,51 @@ export class EntregarPedidoComponent {
   guardando = false;
   errorMsg = '';
 
-  constructor(private supabase: SupabaseService, private cdr: ChangeDetectorRef) {}
+  constructor(private supabase: SupabaseService, private cdr: ChangeDetectorRef) {
+    addIcons({ cashOutline, phonePortraitOutline, cameraOutline, close });
+  }
+
+  ngOnDestroy(): void {
+    if (this.previewComprobante) URL.revokeObjectURL(this.previewComprobante);
+  }
+
+  elegirMetodo(m: MetodoPago): void {
+    this.metodoPago = m;
+    this.errorMsg = '';
+  }
 
   onArchivoSeleccionado(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
 
+    if (this.previewComprobante) URL.revokeObjectURL(this.previewComprobante);
     this.archivoComprobante = file;
     this.previewComprobante = URL.createObjectURL(file);
+    this.errorMsg = '';
   }
 
   async onConfirmar(): Promise<void> {
+    if (this.guardando) return;
     this.errorMsg = '';
 
     if (!this.metodoPago) {
-      this.errorMsg = 'Selecciona el método de pago.';
+      this.errorMsg = 'Elige cómo te pagaron.';
       return;
     }
 
     if (this.metodoPago === 'transferencia' && !this.archivoComprobante) {
-      this.errorMsg = 'Adjunta la foto del comprobante de transferencia.';
+      this.errorMsg = 'Toma o sube la foto del comprobante de la transferencia.';
       return;
     }
 
     this.guardando = true;
+    this.cdr.detectChanges();
 
     try {
       let comprobanteUrl: string | null = null;
 
-      if (this.archivoComprobante) {
+      if (this.metodoPago === 'transferencia' && this.archivoComprobante) {
         comprobanteUrl = await this.subirComprobante(this.archivoComprobante);
       }
 
@@ -84,7 +102,7 @@ export class EntregarPedidoComponent {
       this.entregado.emit();
     } catch {
       this.guardando = false;
-      this.errorMsg = 'No se pudo subir el comprobante. Intenta de nuevo.';
+      this.errorMsg = 'No se pudo subir el comprobante. Revisa tu conexión e intenta de nuevo.';
       this.cdr.detectChanges();
     }
   }
@@ -106,6 +124,15 @@ export class EntregarPedidoComponent {
   }
 
   onCerrar(): void {
+    if (this.guardando) return;
     this.cerrar.emit();
+  }
+
+  formatoMoneda(valor: number): string {
+    return Number(valor || 0).toLocaleString('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      maximumFractionDigits: 0,
+    });
   }
 }

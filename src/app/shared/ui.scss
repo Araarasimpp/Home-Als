@@ -1,0 +1,297 @@
+// src/app/shared/ui.scss
+// Piezas de interfaz compartidas por las pantallas de vendedor y domiciliario.
+// Se agrega en styleUrls junto al .scss propio de cada página.
+
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 20px 16px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  color: var(--text);
+}
+
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.head h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.fecha {
+  margin: 0 0 2px;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.fecha::first-letter {
+  text-transform: uppercase;
+}
+
+h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+// ---------- Botones ----------
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.btn ion-icon {
+  font-size: 18px;
+}
+
+.btn:hover {
+  border-color: var(--text-muted);
+}
+
+.btn-primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn-primary:hover {
+  border-color: var(--accent-hover);
+  background: var(--accent-hover);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.btn-block {
+  width: 100%;
+  height: 48px;
+  font-size: 15px;
+}
+
+// ---------- KPIs ----------
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 16px;
+  min-width: 0;
+}
+
+.kpi + .kpi {
+  border-left: 1px solid var(--border);
+}
+
+.kpi-label {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.kpi-valor {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.kpi-nota {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.kpi-principal .kpi-valor {
+  color: var(--accent);
+}
+
+// ---------- Panel ----------
+.panel {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.panel-sub {
+  margin: 3px 0 0;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.panel-sub strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.controles {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+// ---------- Segmentado ----------
+.segmented,
+.tabs {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.segmented button,
+.tabs button {
+  height: 30px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--text-soft);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.segmented button.on,
+.tabs button.on {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(22, 24, 29, 0.08), 0 0 0 1px var(--border);
+}
+
+.tabs button .num {
+  margin-left: 2px;
+  color: var(--text-muted);
+}
+
+// ---------- Vacío y carga ----------
+.vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 28px 16px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+
+.vacio p {
+  margin: 0;
+  max-width: 340px;
+}
+
+.vacio .btn {
+  margin-top: 8px;
+}
+
+.vacio-titulo {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sk {
+  display: block;
+  border-radius: 4px;
+  background: var(--surface-2);
+  animation: pulso 1.2s ease-in-out infinite;
+}
+
+.sk-a {
+  width: 60%;
+  height: 10px;
+}
+
+.sk-b {
+  width: 40%;
+  height: 18px;
+  margin-top: 6px;
+}
+
+@keyframes pulso {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+// ---------- Celular ----------
+@media (max-width: 640px) {
+  .page {
+    padding: 16px 14px 24px;
+    gap: 20px;
+  }
+
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kpi:nth-child(3) {
+    border-left: none;
+  }
+
+  .kpi:nth-child(n + 3) {
+    border-top: 1px solid var(--border);
+  }
+
+  .kpi-valor {
+    font-size: 18px;
+  }
+
+  .controles {
+    width: 100%;
+  }
+
+  .controles .segmented {
+    flex: 1;
+  }
+
+  .controles .segmented button {
+    flex: 1;
+  }
+}

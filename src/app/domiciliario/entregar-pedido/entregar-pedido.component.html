@@ -1,42 +1,68 @@
-<div class="modal-backdrop" (click)="onCerrar()">
-  <div class="modal-card" (click)="$event.stopPropagation()">
-    <header class="modal-header">
-      <h2>Entregar pedido #{{ pedido.numero }}</h2>
-      <button class="close-btn" (click)="onCerrar()">✕</button>
+<div class="fondo" (click)="onCerrar()">
+  <div
+    class="hoja"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="t-entregar"
+    (click)="$event.stopPropagation()"
+  >
+    <span class="agarre" aria-hidden="true"></span>
+    <header class="hoja-head">
+      <div>
+        <h2 id="t-entregar">Entregar pedido #{{ pedido.numero }}</h2>
+        <p>{{ pedido.cliente_nombre }}</p>
+      </div>
+      <button class="cerrar" (click)="onCerrar()" aria-label="Cerrar">
+        <ion-icon name="close"></ion-icon>
+      </button>
     </header>
 
-    <div class="modal-body">
-      <p class="resumen">
-        <span>{{ pedido.cliente_nombre }}</span>
-        <span class="monto">{{ pedido.total | number }}</span>
-      </p>
-
-      <label class="metodo-opcion" [class.selected]="metodoPago === 'efectivo'">
-        <input type="radio" name="metodo" value="efectivo" [(ngModel)]="metodoPago" />
-        <span>Efectivo</span>
-      </label>
-
-      <label class="metodo-opcion" [class.selected]="metodoPago === 'transferencia'">
-        <input type="radio" name="metodo" value="transferencia" [(ngModel)]="metodoPago" />
-        <span>Transferencia</span>
-      </label>
-
-      <div class="comprobante-uploader" *ngIf="metodoPago === 'transferencia'">
-        <label class="comprobante-preview" [class.empty]="!previewComprobante">
-          <img *ngIf="previewComprobante" [src]="previewComprobante" alt="Comprobante" />
-          <span *ngIf="!previewComprobante">Toca para subir foto del comprobante</span>
-          <input type="file" accept="image/*" (change)="onArchivoSeleccionado($event)" hidden />
-        </label>
-      </div>
-
-      <p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
+    <div class="monto">
+      <span>Valor cobrado</span>
+      <strong class="num">{{ formatoMoneda(pedido.total) }}</strong>
     </div>
 
-    <footer class="modal-footer">
-      <button class="btn-secondary" (click)="onCerrar()">Cancelar</button>
-      <button class="btn-primary" (click)="onConfirmar()" [disabled]="guardando">
-        {{ guardando ? 'Confirmando...' : 'Confirmar entrega' }}
+    <fieldset class="metodos">
+      <legend>¿Cómo te pagaron?</legend>
+      <button
+        type="button"
+        class="metodo"
+        [class.on]="metodoPago === 'efectivo'"
+        [attr.aria-pressed]="metodoPago === 'efectivo'"
+        (click)="elegirMetodo('efectivo')"
+      >
+        <ion-icon name="cash-outline" aria-hidden="true"></ion-icon>
+        Efectivo
       </button>
-    </footer>
+      <button
+        type="button"
+        class="metodo"
+        [class.on]="metodoPago === 'transferencia'"
+        [attr.aria-pressed]="metodoPago === 'transferencia'"
+        (click)="elegirMetodo('transferencia')"
+      >
+        <ion-icon name="phone-portrait-outline" aria-hidden="true"></ion-icon>
+        Transferencia
+      </button>
+    </fieldset>
+
+    <label class="comprobante" *ngIf="metodoPago === 'transferencia'" [class.con-foto]="previewComprobante">
+      <img *ngIf="previewComprobante" [src]="previewComprobante" alt="Comprobante de la transferencia" />
+      <span class="comprobante-vacio" *ngIf="!previewComprobante">
+        <ion-icon name="camera-outline" aria-hidden="true"></ion-icon>
+        Toma o sube la foto del comprobante
+      </span>
+      <span class="comprobante-cambiar" *ngIf="previewComprobante">Cambiar foto</span>
+      <input type="file" accept="image/*" (change)="onArchivoSeleccionado($event)" class="oculto" />
+    </label>
+
+    <p class="error" role="alert" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+    <div class="hoja-acciones">
+      <button class="btn" (click)="onCerrar()" [disabled]="guardando">Cancelar</button>
+      <button class="btn btn-primary" (click)="onConfirmar()" [disabled]="guardando">
+        {{ guardando ? 'Confirmando…' : 'Confirmar entrega' }}
+      </button>
+    </div>
   </div>
 </div>
