@@ -106,13 +106,16 @@
               <select
                 class="dom-select"
                 [class.unassigned]="!p.domiciliario_id"
-                [ngModel]="p.domiciliario_id"
-                (ngModelChange)="asignarDomiciliario(p, $event)"
+                (change)="onCambioDomiciliario(p, $event)"
                 [disabled]="guardandoId === p.id"
                 [attr.aria-label]="'Domiciliario del pedido ' + p.numero"
               >
-                <option [ngValue]="null">{{ p.domiciliario_id ? 'Quitar domiciliario' : 'Asignar' }}</option>
-                <option *ngFor="let d of domiciliarios" [ngValue]="d.id">{{ d.nombre }}</option>
+                <option value="" [selected]="!p.domiciliario_id">
+                  {{ p.domiciliario_id ? 'Quitar domiciliario' : 'Asignar' }}
+                </option>
+                <option *ngFor="let d of domiciliarios" [value]="d.id" [selected]="d.id === p.domiciliario_id">
+                  {{ d.nombre }}
+                </option>
               </select>
             </ng-container>
             <ng-template #domiciliarioFijo>
@@ -166,12 +169,11 @@
     </span>
     <select
       class="bar-select"
-      [ngModel]="''"
-      (ngModelChange)="asignarSeleccionados($event)"
+      (change)="onAsignarLote($event)"
       [disabled]="asignandoLote || !domiciliarios.length"
       aria-label="Asignar domiciliario a la selección"
     >
-      <option value="" disabled>{{ asignandoLote ? 'Asignando…' : 'Asignar domiciliario' }}</option>
+      <option value="" selected disabled>{{ asignandoLote ? 'Asignando…' : 'Asignar domiciliario' }}</option>
       <option *ngFor="let d of domiciliarios" [value]="d.id">{{ d.nombre }}</option>
     </select>
     <button class="bar-btn" (click)="imprimirRotulos()" [disabled]="imprimiendo">

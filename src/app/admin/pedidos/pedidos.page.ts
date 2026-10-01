@@ -88,6 +88,11 @@ export class PedidosPage implements OnInit, OnDestroy {
   });
 
   private canal: RealtimeChannel | null = null;
+  // Control de recargas: nunca dos cargas a la vez, y los eventos de realtime
+  // que llegan seguidos se agrupan en una sola recarga.
+  private cargando = false;
+  private recargaPendiente = false;
+  private temporizadorRealtime: ReturnType<typeof setTimeout> | null = null;
 
   readonly estados: { valor: FiltroEstado; etiqueta: string }[] = [
     { valor: 'todos', etiqueta: 'Todos' },
@@ -127,6 +132,7 @@ export class PedidosPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.temporizadorRealtime) clearTimeout(this.temporizadorRealtime);
     if (this.canal) {
       this.supabase.client.removeChannel(this.canal);
     }
@@ -138,12 +144,38 @@ export class PedidosPage implements OnInit, OnDestroy {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'pedidos' },
-        () => this.cargarPedidos()
+        () => this.programarRecarga()
       )
       .subscribe();
   }
 
+  private programarRecarga(): void {
+    if (this.temporizadorRealtime) clearTimeout(this.temporizadorRealtime);
+    this.temporizadorRealtime = setTimeout(() => {
+      this.temporizadorRealtime = null;
+      this.cargarPedidos();
+    }, 250);
+  }
+
   async cargarPedidos(): Promise<void> {
+    if (this.cargando) {
+      // Ya hay una carga en curso: se repite una vez cuando termine
+      this.recargaPendiente = true;
+      return;
+    }
+    this.cargando = true;
+    try {
+      await this.cargarPedidosAhora();
+    } finally {
+      this.cargando = false;
+    }
+    if (this.recargaPendiente) {
+      this.recargaPendiente = false;
+      await this.cargarPedidos();
+    }
+  }
+
+  private async cargarPedidosAhora(): Promise<void> {
     // Solo mostramos el estado de carga la primera vez; las recargas por
     // realtime actualizan la lista sin parpadear.
     if (!this.pedidos.length) this.loading = true;
@@ -260,7 +292,25 @@ export class PedidosPage implements OnInit, OnDestroy {
     return p.estado !== 'entregado' && p.estado !== 'cancelado';
   }
 
+  /** Solo se dispara cuando una persona elige una opción en el select. */
+  onCambioDomiciliario(pedido: PedidoFila, evento: Event): void {
+    const valor = (evento.target as HTMLSelectElement).value;
+    this.asignarDomiciliario(pedido, valor || null);
+  }
+
+  onAsignarLote(evento: Event): void {
+    const select = evento.target as HTMLSelectElement;
+    const valor = select.value;
+    select.value = ''; // vuelve a mostrar "Asignar domiciliario"
+    this.asignarSeleccionados(valor);
+  }
+
   async asignarDomiciliario(pedido: PedidoFila, domiciliarioId: string | null): Promise<void> {
+    // Sin cambio real, no se escribe nada. Esto evita además cualquier ciclo
+    // escritura → realtime → recarga → escritura.
+    if ((domiciliarioId || null) === (pedido.domiciliario_id || null)) return;
+    if (this.guardandoId) return;
+
     // Un pedido ya entregado (o cancelado) no se puede reasignar: eso
     // rompería el cuadre y el historial de quién lo entregó de verdad.
     if (!this.editable(pedido)) {
@@ -291,7 +341,7 @@ export class PedidosPage implements OnInit, OnDestroy {
 
   /** Asigna el mismo domiciliario a todos los pedidos seleccionados que aún se puedan asignar. */
   async asignarSeleccionados(domiciliarioId: string): Promise<void> {
-    if (!domiciliarioId) return;
+    if (!domiciliarioId || this.asignandoLote) return;
     const ids = this.pedidos
       .filter((p) => this.seleccionados.has(p.id) && this.editable(p))
       .map((p) => p.id);
