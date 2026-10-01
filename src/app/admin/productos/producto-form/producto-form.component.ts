@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { Producto } from '../../../shared/models/models';
+import { comprimirImagen, extensionDe } from '../../../shared/imagenes/comprimir';
 
 // Para un producto nuevo aún no existe el id, así que lo hacemos opcional
 // solo dentro de este formulario (el resto de los campos usan el mismo
@@ -55,6 +56,7 @@ export class ProductoFormComponent implements OnChanges {
     const file = input.files?.[0];
     if (!file) return;
 
+    if (this.previewUrl?.startsWith('blob:')) URL.revokeObjectURL(this.previewUrl);
     this.archivoImagen = file;
     this.previewUrl = URL.createObjectURL(file);
   }
@@ -115,13 +117,14 @@ export class ProductoFormComponent implements OnChanges {
     }
   }
 
-  private async subirImagen(file: File): Promise<string> {
-    const extension = file.name.split('.').pop();
-    const ruta = `${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
+  private async subirImagen(original: File): Promise<string> {
+    // Se comprime antes de subir (máx. 1200 px, ~350 KB)
+    const file = await comprimirImagen(original, 'producto');
+    const ruta = `${Date.now()}-${Math.random().toString(36).slice(2)}.${extensionDe(file)}`;
 
     const { error } = await this.supabase.client.storage
       .from('productos')
-      .upload(ruta, file, { upsert: false });
+      .upload(ruta, file, { upsert: false, contentType: file.type, cacheControl: '31536000' });
 
     if (error) throw error;
 

@@ -200,7 +200,8 @@ export class DashboardPage implements OnInit, OnDestroy {
     const [hoyRes, gananciaRes, sinAsignarRes, cuadresRes, stockRes, enRutaRes, recientesRes, perfilesRes] =
       await Promise.all([
         db.from('pedidos').select('total, estado').gte('created_at', inicioHoy),
-        db.rpc('ganancias_hoy'),
+        // Ganancia real de hoy: ventas − costos − comisiones (los dos esquemas de vendedor)
+        db.rpc('ganancia_tienda', { p_desde: inicioHoy, p_hasta: new Date().toISOString() }),
         db
           .from('pedidos')
           .select('total, created_at')
@@ -235,7 +236,13 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.ventasHoy = hoy
       .filter((p) => ESTADOS_VENTA.includes(p.estado))
       .reduce((s, p) => s + Number(p.total || 0), 0);
-    this.gananciaHoy = Number(gananciaRes.data ?? 0);
+    if (gananciaRes.error) {
+      // Si todavía no se ejecutó supabase/comision-porcentaje.sql, se usa la función anterior
+      const viejo = await db.rpc('ganancias_hoy');
+      this.gananciaHoy = Number(viejo.data ?? 0);
+    } else {
+      this.gananciaHoy = Number(gananciaRes.data ?? 0);
+    }
     this.pedidosHoy = hoy.filter((p) => p.estado !== 'cancelado').length;
     this.entregadosHoy = hoy.filter((p) => p.estado === 'entregado').length;
 

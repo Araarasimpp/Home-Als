@@ -2,8 +2,9 @@ import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import { SupabaseService, UserRole } from '../../core/services/supabase.service';
+import { ComisionTipo, SupabaseService, UserRole } from '../../core/services/supabase.service';
 import { AvatarComponent } from '../../shared/avatar/avatar.component';
+import { comprimirImagen } from '../../shared/imagenes/comprimir';
 
 interface UsuarioFila {
   id: string;
@@ -13,7 +14,13 @@ interface UsuarioFila {
   role: UserRole;
   activo: boolean;
   avatar_url: string | null;
+  comision_tipo: ComisionTipo;
+  comision_porcentaje: number;
 }
+
+/** Lo que se elige en el selector de rol. "Vendedor por porcentaje" es un
+ * vendedor normal con comision_tipo = 'porcentaje' (mismos permisos). */
+type RolVista = UserRole | 'vendedor_porcentaje';
 
 const BUCKET_AVATARS = 'avatars';
 const TAMANO_FOTO = 256; // px, cuadrada
@@ -35,10 +42,11 @@ export class UsuariosPage implements OnInit, OnDestroy {
 
   private canal: RealtimeChannel | null = null;
 
-  readonly roles: { valor: UserRole; etiqueta: string }[] = [
+  readonly roles: { valor: RolVista; etiqueta: string }[] = [
     { valor: 'admin', etiqueta: 'Admin' },
     { valor: 'despachador', etiqueta: 'Despachador' },
     { valor: 'vendedor', etiqueta: 'Vendedor' },
+    { valor: 'vendedor_porcentaje', etiqueta: 'Vendedor por porcentaje' },
     { valor: 'domiciliario', etiqueta: 'Domiciliario' },
   ];
 
@@ -87,6 +95,8 @@ export class UsuariosPage implements OnInit, OnDestroy {
         role: u.role,
         activo: u.activo,
         avatar_url: u.avatar_url ?? null,
+        comision_tipo: u.comision_tipo === 'porcentaje' ? 'porcentaje' : 'margen',
+        comision_porcentaje: Number(u.comision_porcentaje ?? 50),
       }));
     }
     this.loading = false;
@@ -103,22 +113,63 @@ export class UsuariosPage implements OnInit, OnDestroy {
     );
   }
 
-  async cambiarRol(usuario: UsuarioFila, nuevoRol: UserRole): Promise<void> {
-    if (usuario.id === this.miId || nuevoRol === usuario.role) return;
+  /** Rol tal como se muestra en el selector. */
+  rolVista(u: UsuarioFila): RolVista {
+    return u.role === 'vendedor' && u.comision_tipo === 'porcentaje' ? 'vendedor_porcentaje' : u.role;
+  }
+
+  async cambiarRol(usuario: UsuarioFila, valor: RolVista): Promise<void> {
+    if (usuario.id === this.miId || valor === this.rolVista(usuario)) return;
+
+    const cambios =
+      valor === 'vendedor_porcentaje'
+        ? { role: 'vendedor' as UserRole, comision_tipo: 'porcentaje' as ComisionTipo }
+        : { role: valor as UserRole, comision_tipo: 'margen' as ComisionTipo };
 
     this.guardandoId = usuario.id;
-    const { error } = await this.supabase.client
-      .from('profiles')
-      .update({ role: nuevoRol })
-      .eq('id', usuario.id);
-
+    this.cdr.detectChanges();
+    const { error } = await this.supabase.client.from('profiles').update(cambios).eq('id', usuario.id);
     this.guardandoId = null;
 
     if (error) {
+      alert(
+        /comision_tipo/.test(error.message)
+          ? 'Falta ejecutar el archivo supabase/comision-porcentaje.sql en Supabase.'
+          : 'No se pudo cambiar el rol. ' + error.message
+      );
       await this.cargarUsuarios();
-    } else {
-      this.cdr.detectChanges();
+      return;
     }
+    Object.assign(usuario, cambios);
+    this.cdr.detectChanges();
+  }
+
+  /** Porcentaje de la ganancia para un vendedor por porcentaje. */
+  async cambiarPorcentaje(usuario: UsuarioFila, evento: Event): Promise<void> {
+    const input = evento.target as HTMLInputElement;
+    const valor = Math.round(Number(input.value));
+    if (!Number.isFinite(valor) || valor < 0 || valor > 100) {
+      alert('El porcentaje debe estar entre 0 y 100.');
+      input.value = String(usuario.comision_porcentaje);
+      return;
+    }
+    if (valor === usuario.comision_porcentaje) return;
+
+    this.guardandoId = usuario.id;
+    this.cdr.detectChanges();
+    const { error } = await this.supabase.client
+      .from('profiles')
+      .update({ comision_porcentaje: valor })
+      .eq('id', usuario.id);
+    this.guardandoId = null;
+
+    if (error) {
+      alert('No se pudo guardar el porcentaje. ' + error.message);
+      input.value = String(usuario.comision_porcentaje);
+    } else {
+      usuario.comision_porcentaje = valor;
+    }
+    this.cdr.detectChanges();
   }
 
   async toggleActivo(usuario: UsuarioFila): Promise<void> {
@@ -164,7 +215,9 @@ export class UsuariosPage implements OnInit, OnDestroy {
     this.cdr.detectChanges();
 
     try {
-      const foto = await this.recortarCuadrada(archivo, TAMANO_FOTO);
+      // Primero se reduce (las fotos de celular son enormes) y luego se recorta cuadrada
+      const reducida = await comprimirImagen(archivo, 'avatar');
+      const foto = await this.recortarCuadrada(reducida, TAMANO_FOTO);
       const ruta = `${usuario.id}.jpg`;
 
       const { error: errorSubida } = await this.supabase.client.storage
@@ -245,7 +298,7 @@ export class UsuariosPage implements OnInit, OnDestroy {
     });
   }
 
-  etiquetaRol(role: UserRole): string {
+  etiquetaRol(role: RolVista): string {
     return this.roles.find((r) => r.valor === role)?.etiqueta ?? role;
   }
 }

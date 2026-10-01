@@ -53,6 +53,13 @@ export class NuevoPedidoPage implements OnInit {
 
   mostrarSugerenciasBarrio = false;
 
+  /**
+   * Porcentaje de la ganancia si quien crea el pedido es "vendedor por
+   * porcentaje"; null si cobra por margen (lo que venda sobre el precio base).
+   * Es solo una vista previa: la comisión real la calcula la base de datos.
+   */
+  porcentajeComision: number | null = null;
+
   constructor(
     private supabase: SupabaseService,
     private router: Router,
@@ -63,7 +70,15 @@ export class NuevoPedidoPage implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    await Promise.all([this.cargarProductos(), this.cargarZonas()]);
+    const [perfil] = await Promise.all([
+      this.supabase.getCurrentProfile(),
+      this.cargarProductos(),
+      this.cargarZonas(),
+    ]);
+    if (perfil?.role === 'vendedor' && perfil.comision_tipo === 'porcentaje') {
+      this.porcentajeComision = Number(perfil.comision_porcentaje ?? 50);
+    }
+    this.cdr.detectChanges();
   }
 
   async cargarZonas(): Promise<void> {
@@ -162,10 +177,24 @@ export class NuevoPedidoPage implements OnInit {
     this.carrito = this.carrito.filter((i) => i.producto.id !== item.producto.id);
   }
 
-  // Comisión que deja ESTE item con el precio actual (puede subir si el
-  // vendedor editó el precio hacia arriba, o bajar si lo editó hacia abajo)
+  /** Ganancia de la tienda en este item: venta − costo (sin costo, se usa el precio base). */
+  gananciaDe(item: ItemCarrito): number {
+    const costo = item.producto.costo ?? item.producto.precio_base;
+    return item.cantidad * (Number(item.precioUnitario) - costo);
+  }
+
+  // Comisión que deja ESTE item con el precio actual.
+  //  - Por margen: lo que se cobre por encima del precio base.
+  //  - Por porcentaje: ese porcentaje de la ganancia de la tienda.
   comisionDe(item: ItemCarrito): number {
+    if (this.porcentajeComision !== null) {
+      return Math.round((this.gananciaDe(item) * this.porcentajeComision) / 100);
+    }
     return item.cantidad * (item.precioUnitario - item.producto.precio_base);
+  }
+
+  get productosSinCosto(): number {
+    return this.carrito.filter((i) => i.producto.costo == null).length;
   }
 
   get unidades(): number {
@@ -177,7 +206,9 @@ export class NuevoPedidoPage implements OnInit {
   }
 
   get comisionTotal(): number {
-    return this.carrito.reduce((sum, i) => sum + this.comisionDe(i), 0);
+    const total = this.carrito.reduce((sum, i) => sum + this.comisionDe(i), 0);
+    // Por porcentaje, si el pedido deja pérdida la comisión es 0 (igual que en la base de datos)
+    return this.porcentajeComision !== null ? Math.max(0, total) : total;
   }
 
   get total(): number {

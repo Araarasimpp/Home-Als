@@ -16,7 +16,9 @@
       <div class="kpi kpi-principal">
         <span class="kpi-label">Tu comisión de hoy</span>
         <span class="kpi-valor num">{{ formatoMoneda(comisionHoy) }}</span>
-        <span class="kpi-nota num">en {{ formatoMoneda(ventasHoy) }} vendidos</span>
+        <span class="kpi-nota num">
+          {{ porcentaje !== null ? 'Tu ' + porcentaje + '% de la ganancia, ' : '' }}en {{ formatoMoneda(ventasHoy) }} vendidos
+        </span>
       </div>
       <div class="kpi">
         <span class="kpi-label">Pedidos de hoy</span>

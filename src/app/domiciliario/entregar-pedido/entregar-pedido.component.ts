@@ -6,6 +6,7 @@ import { addIcons } from 'ionicons';
 import { cashOutline, phonePortraitOutline, cameraOutline, close } from 'ionicons/icons';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { MetodoPago } from '../../shared/models/models';
+import { comprimirImagen, extensionDe } from '../../shared/imagenes/comprimir';
 
 interface PedidoResumen {
   id: string;
@@ -107,13 +108,15 @@ export class EntregarPedidoComponent implements OnDestroy {
     }
   }
 
-  private async subirComprobante(file: File): Promise<string> {
-    const extension = file.name.split('.').pop();
-    const ruta = `${this.pedido.id}-${Date.now()}.${extension}`;
+  private async subirComprobante(original: File): Promise<string> {
+    // Se comprime antes de subir (máx. 1600 px, ~500 KB, sigue siendo legible).
+    // Importante con datos móviles: una foto sin comprimir pesa 3-8 MB.
+    const file = await comprimirImagen(original, 'comprobante');
+    const ruta = `${this.pedido.id}-${Date.now()}.${extensionDe(file)}`;
 
     const { error } = await this.supabase.client.storage
       .from('comprobantes')
-      .upload(ruta, file, { upsert: false });
+      .upload(ruta, file, { upsert: false, contentType: file.type });
 
     if (error) throw error;
 

@@ -208,6 +208,41 @@ tbody tr:last-child td {
   cursor: pointer;
 }
 
+.rol-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.pct {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
+.pct input {
+  width: 56px;
+  height: 30px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  text-align: right;
+}
+
+.pct input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
 .rol-select:disabled {
   opacity: 0.6;
   cursor: default;

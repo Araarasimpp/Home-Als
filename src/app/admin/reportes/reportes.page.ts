@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import * as XLSX from 'xlsx';
+import { descargarExcelVentas } from './excel-ventas';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { EstadoPedido } from '../../shared/models/models';
 import { hoyColombiaISO, inicioDiaColombia, finDiaColombia, formatoFechaCO } from '../../shared/fecha-colombia';
@@ -12,6 +12,8 @@ interface FilaReporte {
   estado: EstadoPedido;
   created_at: string;
   vendedorNombre: string;
+  /** "Margen" o "50% de la ganancia" */
+  esquema: string;
   total: number;
   valorDomicilio: number;
   comision: number;
@@ -34,7 +36,7 @@ type FiltroEstado = 'todos' | EstadoPedido;
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './reportes.page.html',
-  styleUrls: ['./reportes.page.scss'],
+  styleUrls: ['./reportes.page.scss', './reportes-esquema.scss'],
 })
 export class ReportesPage implements OnInit {
   loading = true;
@@ -72,6 +74,7 @@ export class ReportesPage implements OnInit {
   }
 
   async cargarVendedores(): Promise<void> {
+    // Incluye a los vendedores por margen y por porcentaje (ambos tienen rol "vendedor")
     const { data, error } = await this.supabase.client
       .from('profiles')
       .select('id, nombre')
@@ -115,7 +118,8 @@ export class ReportesPage implements OnInit {
 
     let query = this.supabase.client
       .from('pedidos')
-      .select('id, numero, estado, created_at, vendedor_id, total, valor_domicilio, comision')
+      // '*' para incluir comision_tipo y comision_porcentaje sin fallar si aún no existen
+      .select('*')
       .gte('created_at', inicio.toISOString())
       .lte('created_at', fin.toISOString())
       .order('created_at', { ascending: false });
@@ -132,7 +136,7 @@ export class ReportesPage implements OnInit {
       this.supabase.client.from('profiles').select('id, nombre'),
     ]);
 
-    const pedidos = pedidosRes.data ?? [];
+    const pedidos = (pedidosRes.data ?? []) as any[];
     const nombresPorId = new Map((perfilesRes.data ?? []).map((p: any) => [p.id, p.nombre]));
 
     this.pedidosUnicos = pedidos.map((p) => ({
@@ -159,19 +163,28 @@ export class ReportesPage implements OnInit {
         if (!p) continue;
 
         const costo = (item as any).producto?.costo ?? null;
-        const precioVenta = (item as any).precio_unitario;
-        const precioBase = (item as any).precio_base;
-        const cantidad = (item as any).cantidad;
-        // Ganancia de la TIENDA = precio_base - costo (no precio_unitario,
-        // que ya trae la comisión del vendedor mezclada adentro).
-        const gananciaItem = cantidad * (precioBase - (costo != null ? costo : precioBase));
+        const precioVenta = Number((item as any).precio_unitario);
+        const precioBase = Number((item as any).precio_base);
+        const cantidad = Number((item as any).cantidad);
+        const costoEfectivo = costo != null ? Number(costo) : precioBase;
+
+        const porPorcentaje = p.comision_tipo === 'porcentaje';
+        const pct = Number(p.comision_porcentaje ?? 0);
+
+        // Ganancia de la TIENDA en este producto, ya descontada la parte del vendedor:
+        //  - Por margen: precio base − costo (lo que cobre por encima del base es del vendedor).
+        //  - Por porcentaje: (precio de venta − costo) menos el % que se lleva el vendedor.
+        const gananciaItem = porPorcentaje
+          ? Math.round(cantidad * (precioVenta - costoEfectivo) * (1 - pct / 100))
+          : cantidad * (precioBase - costoEfectivo);
 
         filasNuevas.push({
           pedidoId: p.id,
           numero: p.numero,
           estado: p.estado,
           created_at: p.created_at,
-          vendedorNombre: nombresPorId.get(p.vendedor_id) ?? 'Vendedor',
+          vendedorNombre: (nombresPorId.get(p.vendedor_id) as string) ?? 'Vendedor',
+          esquema: porPorcentaje ? `${pct}% de la ganancia` : 'Margen',
           total: Number(p.total ?? 0),
           valorDomicilio: Number(p.valor_domicilio ?? 0),
           comision: Number(p.comision ?? 0),
@@ -209,46 +222,29 @@ export class ReportesPage implements OnInit {
     return this.filas.reduce((s, f) => s + f.cantidad, 0);
   }
 
-  descargarExcel(): void {
-    if (!this.filas.length) return;
+  /**
+   * Excel con el formato de la planilla de la tienda (una hoja por vendedor,
+   * colores por mensajero y comisiones al final). Respeta los filtros de
+   * fechas, vendedor y estado; con "Todos" deja por fuera los cancelados.
+   */
+  async descargarExcel(): Promise<void> {
+    if (this.descargando) return;
     this.descargando = true;
-
-    const datos = this.filas.map((f) => ({
-      Pedido: f.numero,
-      Estado: this.etiquetaEstado(f.estado),
-      Fecha: formatoFechaCO(f.created_at, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-      Vendedor: f.vendedorNombre,
-      Producto: f.productoNombre,
-      Costo: f.costo ?? '',
-      'Precio venta': f.precioVenta,
-      Cantidad: f.cantidad,
-      'Ganancia tienda': f.gananciaItem,
-      'Total pedido': f.total,
-      Domicilio: f.valorDomicilio,
-      'Ganancia vendedor': f.comision,
-    }));
-
-    datos.push({
-      Pedido: '' as any,
-      Estado: '' as any,
-      Fecha: '' as any,
-      Vendedor: '' as any,
-      Producto: 'TOTALES',
-      Costo: '' as any,
-      'Precio venta': '' as any,
-      Cantidad: this.totalCantidad,
-      'Ganancia tienda': this.totalGananciaTienda,
-      'Total pedido': this.totalPedido,
-      Domicilio: this.totalDomicilio,
-      'Ganancia vendedor': this.totalComision,
-    });
-
-    const hoja = XLSX.utils.json_to_sheet(datos);
-    const libro = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(libro, hoja, 'Reporte');
-    XLSX.writeFile(libro, `reporte_${this.desde}_a_${this.hasta}.xlsx`);
-
-    this.descargando = false;
+    this.cdr.detectChanges();
+    try {
+      const pedidos = await descargarExcelVentas(this.supabase.client, {
+        desde: this.desde,
+        hasta: this.hasta,
+        vendedorId: this.vendedorId,
+        estado: this.estado,
+      });
+      if (!pedidos) alert('No hay ventas para descargar con estos filtros.');
+    } catch (err: any) {
+      alert('No se pudo generar el Excel. ' + (err?.message ?? ''));
+    } finally {
+      this.descargando = false;
+      this.cdr.detectChanges();
+    }
   }
 
   etiquetaEstado(estado: EstadoPedido): string {

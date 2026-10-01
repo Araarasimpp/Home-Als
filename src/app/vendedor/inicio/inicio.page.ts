@@ -60,6 +60,8 @@ const ETIQUETAS: Record<EstadoPedido, string> = {
 export class InicioPage implements OnInit, OnDestroy {
   loading = true;
   nombre = '';
+  /** Porcentaje de la ganancia si es vendedor por porcentaje; null si cobra por margen. */
+  porcentaje: number | null = null;
   readonly hoyTexto = new Date().toLocaleDateString('es-CO', {
     weekday: 'long',
     day: 'numeric',
@@ -105,6 +107,7 @@ export class InicioPage implements OnInit, OnDestroy {
     ]);
     this.userId = user?.id ?? null;
     this.nombre = (perfil?.nombre ?? '').split(' ')[0];
+    if (perfil?.comision_tipo === 'porcentaje') this.porcentaje = Number(perfil.comision_porcentaje ?? 50);
     await this.cargar();
     this.suscribirRealtime();
     this.observadorTema = new MutationObserver(() => this.dibujar(true));

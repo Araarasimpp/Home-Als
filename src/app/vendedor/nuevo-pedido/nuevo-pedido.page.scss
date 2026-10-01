@@ -361,6 +361,13 @@
   color: var(--st-entregado);
 }
 
+.sin-costo {
+  display: block;
+  margin-top: 2px;
+  font-style: normal;
+  color: var(--st-ruta-text);
+}
+
 .negativa {
   color: var(--danger) !important;
 }

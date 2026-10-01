@@ -106,9 +106,14 @@
                 </label>
                 <span class="num item-subtotal">{{ formatoMoneda(item.cantidad * item.precioUnitario) }}</span>
               </div>
-              <p class="item-nota num">
+              <p class="item-nota num" *ngIf="porcentajeComision === null">
                 Base {{ formatoMoneda(item.producto.precio_base) }}.
                 <span [class.negativa]="comisionDe(item) < 0">Comisión {{ formatoMoneda(comisionDe(item)) }}</span>
+              </p>
+              <p class="item-nota num" *ngIf="porcentajeComision !== null">
+                Ganancia {{ formatoMoneda(gananciaDe(item)) }}.
+                <span [class.negativa]="comisionDe(item) < 0">Tu {{ porcentajeComision }}%: {{ formatoMoneda(comisionDe(item)) }}</span>
+                <em class="sin-costo" *ngIf="item.producto.costo == null"> Sin costo registrado: se calcula sobre el precio base.</em>
               </p>
             </div>
           </div>
@@ -184,7 +189,7 @@
             <div><dt>Productos</dt><dd class="num">{{ formatoMoneda(subtotal) }}</dd></div>
             <div><dt>Domicilio</dt><dd class="num">{{ formatoMoneda(valorDomicilio) }}</dd></div>
             <div class="total"><dt>Total a cobrar</dt><dd class="num">{{ formatoMoneda(total) }}</dd></div>
-            <div class="comision"><dt>Tu comisión (incluida)</dt><dd class="num" [class.negativa]="comisionTotal < 0">{{ formatoMoneda(comisionTotal) }}</dd></div>
+            <div class="comision"><dt>{{ porcentajeComision !== null ? 'Tu comisión (' + porcentajeComision + '% de la ganancia)' : 'Tu comisión (incluida)' }}</dt><dd class="num" [class.negativa]="comisionTotal < 0">{{ formatoMoneda(comisionTotal) }}</dd></div>
           </dl>
           <p class="error" role="alert" *ngIf="errorMsg">{{ errorMsg }}</p>
           <button class="btn btn-primary btn-block" (click)="onCrearPedido()" [disabled]="guardando">

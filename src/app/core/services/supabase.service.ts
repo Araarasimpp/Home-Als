@@ -4,6 +4,8 @@ import { environment } from '../../../environments/environment';
 
 export type UserRole = 'admin' | 'vendedor' | 'domiciliario' | 'despachador';
 
+export type ComisionTipo = 'margen' | 'porcentaje';
+
 export interface Profile {
   id: string;
   nombre: string;
@@ -11,6 +13,10 @@ export interface Profile {
   telefono?: string;
   role: UserRole;
   activo: boolean;
+  /** Solo aplica a vendedores. 'margen' = lo que cobre sobre el precio base. */
+  comision_tipo?: ComisionTipo;
+  /** Porcentaje de la ganancia (0-100) cuando comision_tipo = 'porcentaje'. */
+  comision_porcentaje?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -76,7 +82,8 @@ export class SupabaseService {
 
     const { data, error } = await this.client
       .from('profiles')
-      .select('id, nombre, email, telefono, role, activo')
+      // '*' para incluir las columnas de comisión sin fallar si aún no existen
+      .select('*')
       .eq('id', user.id)
       .single();
 

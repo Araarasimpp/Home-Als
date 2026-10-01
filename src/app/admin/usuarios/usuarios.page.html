@@ -68,15 +68,32 @@
             <td class="text-soft">{{ u.email || '—' }}</td>
             <td class="text-soft">{{ u.telefono || '—' }}</td>
             <td>
-              <select
-                class="rol-select"
-                [ngModel]="u.role"
-                (ngModelChange)="cambiarRol(u, $event)"
-                [disabled]="u.id === miId || guardandoId === u.id"
-                [attr.aria-label]="'Rol de ' + u.nombre"
-              >
-                <option *ngFor="let r of roles" [value]="r.valor">{{ r.etiqueta }}</option>
-              </select>
+              <div class="rol-cell">
+                <select
+                  class="rol-select"
+                  [ngModel]="rolVista(u)"
+                  (ngModelChange)="cambiarRol(u, $event)"
+                  [disabled]="u.id === miId || guardandoId === u.id"
+                  [attr.aria-label]="'Rol de ' + u.nombre"
+                >
+                  <option *ngFor="let r of roles" [value]="r.valor">{{ r.etiqueta }}</option>
+                </select>
+                <label class="pct" *ngIf="rolVista(u) === 'vendedor_porcentaje'" [title]="'Porcentaje de la ganancia para ' + u.nombre">
+                  <input
+                    type="number"
+                    class="num"
+                    min="0"
+                    max="100"
+                    step="1"
+                    inputmode="numeric"
+                    [value]="u.comision_porcentaje"
+                    (change)="cambiarPorcentaje(u, $event)"
+                    [disabled]="guardandoId === u.id"
+                    [attr.aria-label]="'Porcentaje de comisión de ' + u.nombre"
+                  />
+                  <span>% de la ganancia</span>
+                </label>
+              </div>
             </td>
             <td>
               <span class="badge" [class.activo]="u.activo">{{ u.activo ? 'Activo' : 'Inactivo' }}</span>

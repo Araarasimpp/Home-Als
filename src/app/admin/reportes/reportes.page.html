@@ -2,7 +2,7 @@
   <header class="page-header">
     <h1>Reportes</h1>
     <button class="btn-excel" (click)="descargarExcel()" [disabled]="!filas.length || descargando">
-      Descargar Excel
+      {{ descargando ? 'Generando…' : 'Descargar Excel' }}
     </button>
   </header>
 
@@ -60,7 +60,10 @@
             <td class="text-soft">#{{ f.numero }}</td>
             <td><span class="badge" [ngClass]="claseEstado(f.estado)">{{ etiquetaEstado(f.estado) }}</span></td>
             <td class="text-soft">{{ formatoFecha(f.created_at) }}</td>
-            <td>{{ f.vendedorNombre }}</td>
+            <td>
+              {{ f.vendedorNombre }}
+              <span class="esquema" *ngIf="f.esquema !== 'Margen'">{{ f.esquema }}</span>
+            </td>
             <td>{{ f.productoNombre }}</td>
             <td class="text-soft">{{ f.costo != null ? formatoMoneda(f.costo) : '—' }}</td>
             <td class="text-soft">{{ formatoMoneda(f.precioVenta) }}</td>
