@@ -24,11 +24,11 @@
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 640px) 380px;
+  grid-template-columns: minmax(0, 620px) 440px;
   gap: 40px;
   align-items: start;
   padding: 28px 28px 0;
-  max-width: 1120px;
+  max-width: 1180px;
 }
 
 .col-form {
@@ -383,7 +383,7 @@ textarea:focus {
 .preview-frame iframe {
   display: block;
   width: 100%;
-  height: 760px;
+  height: 560px;
   border: none;
   background: #ffffff;
 }

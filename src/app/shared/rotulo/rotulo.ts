@@ -67,13 +67,6 @@ function moneda(valor: number): string {
   });
 }
 
-function fecha(iso: string): string {
-  const d = new Date(iso);
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  return `${dd}/${mm}/${d.getFullYear()}`;
-}
-
 /** "318 8156960 - 310 7425663" → una línea por número. */
 function lineasTelefono(telefonos: string | null): string[] {
   return (telefonos ?? '')
@@ -93,30 +86,34 @@ export function rotuloHtml(p: PedidoRotulo, n: DatosNegocio): string {
   const fila = (etiqueta: string, valor: string | null | undefined, clase = '') =>
     `<tr${clase ? ` class="${clase}"` : ''}><th>${etiqueta}</th><td>${valor ? valor : '—'}</td></tr>`;
 
+  const d = new Date(p.created_at);
+  const dia = String(d.getDate()).padStart(2, '0');
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+
   return `
   <section class="rotulo">
-    <img class="logo" src="${ROTULO_LOGO_BASE64}" alt="${esc(n.nombre_negocio)}" />
+    <header class="cabecera">
+      <img class="logo" src="${ROTULO_LOGO_BASE64}" alt="${esc(n.nombre_negocio)}" />
 
-    <div class="contacto">
-      <div class="contacto-datos">
-        ${telefonos}
+      <div class="contacto">
+        <div class="fecha">
+          <span class="etiqueta">Fecha</span>
+          <div class="fecha-cajas">
+            <span>${dia}</span><span>${mes}</span><span class="anio">${d.getFullYear()}</span>
+          </div>
+        </div>
+        ${telefonos ? `<div class="telefonos">${telefonos}</div>` : ''}
         ${n.redes ? `<div class="redes">${esc(n.redes)}</div>` : ''}
       </div>
-      <div class="fecha">
-        <span>Fecha</span>
-        <strong>${fecha(p.created_at)}</strong>
-      </div>
-    </div>
+    </header>
 
     <div class="cobro">
-      <div>
-        <span class="cobro-label">Valor a cobrar</span>
-        <span class="pedido">Pedido N.º ${esc(p.numero)}</span>
-      </div>
+      <span class="cobro-label">Valor a cobrar</span>
       <strong class="cobro-valor">${moneda(p.total)}</strong>
     </div>
 
     <table class="datos">
+      ${fila('Pedido', '#' + esc(p.numero), 'pedido')}
       ${fila('Nombre', esc(p.cliente_nombre), 'destacado')}
       ${fila('Dirección', esc(p.direccion), 'destacado')}
       ${fila('Barrio', esc(p.barrio))}
@@ -140,71 +137,90 @@ export const ROTULO_CSS = `
     print-color-adjust: exact;
   }
   .rotulo {
-    width: 340px;
+    width: 400px;
     margin: 0 auto 24px;
     padding: 14px 18px 16px;
     border: 2px solid #000;
     border-radius: 14px;
     page-break-after: always;
     break-after: page;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
   .rotulo:last-child { page-break-after: auto; break-after: auto; }
 
-  /* El logo manda: grande y centrado, sin alterar su diseño */
+  /* Cabecera: el logo manda a la izquierda, contacto a la derecha */
+  .cabecera {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #000;
+  }
   .logo {
-    display: block;
-    width: 210px;
-    height: 210px;
-    margin: 0 auto 8px;
+    flex: 0 0 auto;
+    width: 172px;
+    height: 172px;
     object-fit: contain;
   }
-
   .contacto {
+    flex: 1;
+    min-width: 0;
     display: flex;
-    justify-content: space-between;
-    align-items: stretch;
-    gap: 12px;
-    padding: 8px 0;
-    border-top: 1px solid #000;
-    border-bottom: 1px solid #000;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    text-align: right;
     font-size: 12px;
     line-height: 1.35;
   }
-  .contacto-datos { font-weight: bold; }
-  .redes { font-weight: normal; margin-top: 2px; }
-  .fecha {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: flex-end;
-    text-align: right;
+  .etiqueta {
+    display: block;
+    margin-bottom: 3px;
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
   }
-  .fecha span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
-  .fecha strong { font-size: 14px; }
+  .fecha-cajas { display: flex; gap: 4px; justify-content: flex-end; }
+  .fecha-cajas span {
+    min-width: 30px;
+    padding: 3px 4px;
+    border: 1px solid #000;
+    border-radius: 3px;
+    font-size: 13px;
+    font-weight: bold;
+    text-align: center;
+  }
+  .fecha-cajas .anio { min-width: 46px; }
+  .telefonos { font-weight: bold; font-size: 13px; }
+  .redes { font-size: 12px; }
 
   .cobro {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 10px;
-    margin: 10px 0;
-    padding: 8px 12px;
-    border: 2px solid #000;
-    border-radius: 8px;
+    margin: 12px 0 10px;
   }
   .cobro-label {
-    display: block;
-    font-size: 11px;
+    font-size: 15px;
     font-weight: bold;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.02em;
   }
-  .pedido { display: block; font-size: 12px; margin-top: 2px; }
-  .cobro-valor { font-size: 22px; white-space: nowrap; }
+  .cobro-valor {
+    padding: 6px 14px;
+    border: 2px solid #000;
+    border-radius: 6px;
+    font-size: 22px;
+    white-space: nowrap;
+  }
 
   .datos { width: 100%; border-collapse: collapse; font-size: 13px; }
   .datos th, .datos td { padding: 3px 0; vertical-align: top; text-align: left; }
-  .datos th { width: 88px; font-weight: bold; }
+  .datos th { width: 92px; font-weight: bold; }
+  .datos tr.pedido td { font-weight: bold; }
   .datos tr.destacado td { font-size: 15px; font-weight: bold; }
 
   .garantia {
@@ -222,14 +238,27 @@ export const ROTULO_CSS = `
 `;
 
 /** Documento completo listo para imprimir (uno o varios rótulos). */
-export function documentoRotulos(rotulos: string[], titulo = 'Rótulos'): string {
+export function documentoRotulos(rotulos: string[], titulo = 'Rótulos', cssExtra = ''): string {
   return `<!doctype html>
 <html lang="es">
   <head>
     <meta charset="utf-8" />
     <title>${esc(titulo)}</title>
-    <style>${ROTULO_CSS}</style>
+    <style>${ROTULO_CSS}${cssExtra}</style>
   </head>
   <body>${rotulos.join('')}</body>
 </html>`;
 }
+
+/**
+ * Para la vista previa dentro de un iframe angosto: reduce el rótulo para que
+ * quepa completo (las media queries se miden contra el ancho del iframe).
+ * La impresión real no usa esto.
+ */
+export const ROTULO_CSS_VISTA_PREVIA = `
+  body { padding: 12px 0; }
+  .rotulo { margin-bottom: 0; }
+  @media (max-width: 430px) { body { zoom: 0.9; } }
+  @media (max-width: 390px) { body { zoom: 0.82; } }
+  @media (max-width: 350px) { body { zoom: 0.74; } }
+`;

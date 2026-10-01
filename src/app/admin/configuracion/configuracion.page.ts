@@ -7,7 +7,12 @@ import { addIcons } from 'ionicons';
 import { add, trashOutline, downloadOutline, checkmark } from 'ionicons/icons';
 import * as XLSX from 'xlsx';
 import { SupabaseService } from '../../core/services/supabase.service';
-import { documentoRotulos, PedidoRotulo, rotuloHtml } from '../../shared/rotulo/rotulo';
+import {
+  documentoRotulos,
+  PedidoRotulo,
+  ROTULO_CSS_VISTA_PREVIA,
+  rotuloHtml,
+} from '../../shared/rotulo/rotulo';
 
 interface Configuracion {
   nombre_negocio: string;
@@ -117,7 +122,8 @@ export class ConfiguracionPage implements OnInit {
           texto_garantia: this.form.texto_garantia?.trim() || null,
         }),
       ],
-      'Vista previa'
+      'Vista previa',
+      ROTULO_CSS_VISTA_PREVIA
     );
     // El HTML lo arma nuestro propio código y escapa cada dato que viene del formulario
     this.vistaPrevia = this.sanitizer.bypassSecurityTrustHtml(html);

@@ -1,125 +1,179 @@
-<div class="dashboard">
-  <header class="dashboard-header">
-    <div>
-      <h1>Dashboard</h1>
-      <p class="subtitle">Resumen de ventas, pedidos y entregas de Variedades JYB</p>
+<div class="dash">
+  <header class="page-header">
+    <div class="title">
+      <h1>Inicio</h1>
+      <span class="subtitle">{{ hoy }}</span>
     </div>
-    <div class="header-actions">
-      <a routerLink="/admin/pedidos/nuevo" class="btn-primary">+ Nuevo pedido</a>
-      <a routerLink="/admin/pedidos" class="btn-secondary">Ver pedidos</a>
-    </div>
+    <a class="btn" routerLink="/admin/pedidos">Ver pedidos</a>
+    <a class="btn btn-primary" routerLink="/admin/pedidos/nuevo">Nuevo pedido</a>
   </header>
 
   <ng-container *ngIf="!loading; else cargando">
-    <section class="stats-row">
-      <div class="stat-card destacada">
-        <span class="stat-label">Ventas de hoy</span>
-        <span class="stat-valor">{{ formatoMoneda(ventasHoy) }}</span>
-        <span class="stat-caption">Ganancia: {{ formatoMoneda(gananciaHoy) }}</span>
+    <div class="content">
+      <!-- Resumen del día -->
+      <div class="kpis" role="list">
+        <div class="kpi" role="listitem">
+          <span class="kpi-label">Ventas de hoy</span>
+          <span class="kpi-valor num">{{ formatoMoneda(ventasHoy) }}</span>
+          <span class="kpi-nota num">Ganancia {{ formatoMoneda(gananciaHoy) }}</span>
+        </div>
+        <div class="kpi" role="listitem">
+          <span class="kpi-label">Pedidos de hoy</span>
+          <span class="kpi-valor num">{{ pedidosHoy }}</span>
+          <span class="kpi-nota num">{{ entregadosHoy }} {{ entregadosHoy === 1 ? 'entregado' : 'entregados' }}</span>
+        </div>
+        <div class="kpi" role="listitem">
+          <span class="kpi-label">En ruta</span>
+          <span class="kpi-valor num">{{ pedidosEnRuta }}</span>
+          <span class="kpi-nota num">
+            {{ domiciliarios.length }} {{ domiciliarios.length === 1 ? 'domiciliario' : 'domiciliarios' }}
+          </span>
+        </div>
+        <a class="kpi kpi-link" role="listitem" routerLink="/admin/cuadres">
+          <span class="kpi-label">Por recibir en cuadres</span>
+          <span class="kpi-valor num">{{ formatoMoneda(porCobrarCuadres) }}</span>
+          <span class="kpi-nota num">
+            {{ cuadresPendientes ? cuadresPendientes + ' sin confirmar' : 'Todo confirmado' }}
+          </span>
+        </a>
       </div>
-      <div class="stat-card">
-        <span class="stat-label">Pedidos pendientes</span>
-        <span class="stat-valor">{{ pedidosPendientes }}</span>
-        <span class="stat-caption">Por asignar domiciliario</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-label">En ruta</span>
-        <span class="stat-valor">{{ pedidosEnRuta }}</span>
-        <span class="stat-caption">Entregas en curso</span>
-      </div>
-      <div class="stat-card" [class.alerta]="cuadresPendientes.length">
-        <span class="stat-label">Cuadres por confirmar</span>
-        <span class="stat-valor">{{ cuadresPendientes.length }}</span>
-        <span class="stat-caption">{{ cuadresPendientes.length ? 'Requieren revisión' : 'Todo al día' }}</span>
-      </div>
-    </section>
 
-    <section class="main-grid">
-      <div class="panel panel-chart">
-        <h2>Ventas de la semana</h2>
-        <div class="bar-chart">
-          <div class="bar-col" *ngFor="let b of ventasSemana">
-            <div class="bar-track">
-              <div class="bar-fill" [class.hoy]="b.esHoy" [style.height.%]="b.alturaPct"></div>
+      <!-- Ventas -->
+      <section class="panel" aria-labelledby="t-ventas">
+        <div class="panel-head">
+          <div>
+            <h2 id="t-ventas">Ventas</h2>
+            <p class="panel-sub num">
+              <strong>{{ metrica === 'ventas' ? formatoMoneda(totalPeriodo) : pedidosPeriodo + ' pedidos' }}</strong>
+              en {{ periodo === 90 ? 'los últimos 3 meses' : 'los últimos ' + periodo + ' días' }}
+              <span
+                class="variacion"
+                *ngIf="variacion !== null"
+                [class.sube]="variacion > 0"
+                [class.baja]="variacion < 0"
+                [title]="'Comparado con los ' + (periodo === 90 ? '3 meses' : periodo + ' días') + ' anteriores'"
+              >
+                {{ variacion > 0 ? '↑' : variacion < 0 ? '↓' : '' }} {{ variacion > 0 ? variacion : -variacion }}% vs. periodo anterior
+              </span>
+            </p>
+          </div>
+          <div class="controles">
+            <div class="segmented" role="group" aria-label="Qué mostrar">
+              <button [class.on]="metrica === 'ventas'" [attr.aria-pressed]="metrica === 'ventas'" (click)="cambiarMetrica('ventas')">
+                Dinero
+              </button>
+              <button [class.on]="metrica === 'pedidos'" [attr.aria-pressed]="metrica === 'pedidos'" (click)="cambiarMetrica('pedidos')">
+                Pedidos
+              </button>
             </div>
-            <span class="bar-label">{{ b.label }}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel panel-reminders">
-        <h2>Cuadres por confirmar</h2>
-        <div class="reminder-list" *ngIf="cuadresPendientes.length; else sinCuadres">
-          <div class="reminder-item" *ngFor="let c of cuadresPendientes.slice(0, 4)">
-            <span class="reminder-nombre">{{ nombreDomiciliario(c.domiciliario_id) }}</span>
-            <span class="reminder-monto">{{ formatoMoneda(c.total_a_entregar) }}</span>
-          </div>
-        </div>
-        <ng-template #sinCuadres>
-          <p class="empty-inline">No hay cuadres pendientes de confirmar.</p>
-        </ng-template>
-        <a routerLink="/admin/cuadres" class="btn-block">Ver cuadres</a>
-      </div>
-    </section>
-
-    <section class="main-grid">
-      <div class="panel panel-list">
-        <div class="panel-header">
-          <h2>Pedidos recientes</h2>
-          <a routerLink="/admin/pedidos" class="ver-todos">Ver todos</a>
-        </div>
-        <div class="pedido-row" *ngFor="let p of pedidosRecientes">
-          <span class="pedido-num text-soft">#{{ p.numero }}</span>
-          <span class="pedido-cliente">{{ p.cliente_nombre }}</span>
-          <span class="badge" [ngClass]="claseEstado(p.estado)">{{ etiquetaEstado(p.estado) }}</span>
-          <span class="pedido-total">{{ formatoMoneda(p.total) }}</span>
-        </div>
-        <p class="empty-inline" *ngIf="!pedidosRecientes.length">Todavía no hay pedidos.</p>
-      </div>
-
-      <div class="panel panel-domiciliarios">
-        <h2>Domiciliarios en ruta</h2>
-        <div class="dom-row" *ngFor="let d of domiciliariosActivos">
-          <span class="avatar">{{ d.nombre.charAt(0) }}</span>
-          <span class="dom-nombre">{{ d.nombre }}</span>
-          <span class="dom-cantidad">{{ d.cantidad }} pedidos</span>
-        </div>
-        <p class="empty-inline" *ngIf="!domiciliariosActivos.length">Nadie en ruta ahora mismo.</p>
-      </div>
-
-      <div class="panel panel-donut">
-        <h2>Pedidos de hoy</h2>
-        <div class="donut-wrap" *ngIf="totalPedidosHoy; else sinDonut">
-          <div class="donut" [style.background]="donutGradient">
-            <div class="donut-hole">
-              <span class="donut-pct">{{ pctEntregado }}%</span>
-              <span class="donut-label">Entregado</span>
-            </div>
-          </div>
-          <div class="donut-legend">
-            <div class="legend-item" *ngFor="let s of donutSegmentos">
-              <span class="legend-dot" [style.background]="s.color"></span>
-              <span>{{ etiquetaEstado(s.estado) }} · {{ s.pct }}%</span>
+            <div class="segmented" role="group" aria-label="Periodo">
+              <button
+                *ngFor="let p of periodos"
+                [class.on]="periodo === p.valor"
+                [attr.aria-pressed]="periodo === p.valor"
+                (click)="cambiarPeriodo(p.valor)"
+              >
+                {{ p.etiqueta }}
+              </button>
             </div>
           </div>
         </div>
-        <ng-template #sinDonut>
-          <p class="empty-inline">Todavía no hay pedidos hoy.</p>
-        </ng-template>
-      </div>
-    </section>
+        <div class="chart-ventas" [class.cargando]="cargandoGrafica">
+          <canvas #canvasVentas role="img" [attr.aria-label]="'Gráfica de ventas, ' + (periodo === 90 ? 'últimos 3 meses' : 'últimos ' + periodo + ' días')"></canvas>
+        </div>
+        <p class="panel-foot">Cuenta los pedidos en ruta y entregados. Pasa el cursor o toca una barra para ver el detalle.</p>
+      </section>
 
-    <section class="panel panel-stock">
-      <h2>Stock bajo</h2>
-      <div class="stock-row" *ngFor="let prod of productosStockBajo">
-        <span>{{ prod.nombre }}</span>
-        <span class="stock-cantidad">{{ prod.stock }} unidades</span>
+      <div class="cols">
+        <!-- Necesita atención -->
+        <section aria-labelledby="t-atencion">
+          <div class="section-head">
+            <h2 id="t-atencion">Necesita atención</h2>
+            <span class="num count">{{ tareas.length }}</span>
+          </div>
+          <div class="lista" *ngIf="tareas.length; else todoAlDia">
+            <div class="tarea" *ngFor="let t of tareas">
+              <span class="dot" [ngClass]="'dot-' + t.tipo" aria-hidden="true"></span>
+              <div class="tarea-texto">
+                <span class="tarea-titulo">{{ t.titulo }}</span>
+                <span class="tarea-detalle">{{ t.detalle }}</span>
+              </div>
+              <span class="num tarea-monto" *ngIf="t.monto !== null">{{ formatoMoneda(t.monto) }}</span>
+              <a class="btn btn-sm" [routerLink]="t.ruta">{{ t.accion }}</a>
+            </div>
+          </div>
+          <ng-template #todoAlDia>
+            <div class="vacio">
+              <p class="vacio-titulo">Todo al día</p>
+              <p>No hay cuadres por confirmar, pedidos sin domiciliario ni productos con stock bajo.</p>
+            </div>
+          </ng-template>
+        </section>
+
+        <div class="col-side">
+          <!-- Estados de hoy -->
+          <section aria-labelledby="t-estados">
+            <div class="section-head">
+              <h2 id="t-estados">Pedidos de hoy</h2>
+            </div>
+            <div class="estados">
+              <div class="donut">
+                <canvas #canvasEstados role="img" aria-label="Pedidos de hoy por estado"></canvas>
+                <div class="donut-centro" aria-hidden="true">
+                  <span class="num">{{ pctEntregado }}%</span>
+                  <small>entregado</small>
+                </div>
+              </div>
+              <ul class="leyenda">
+                <li *ngFor="let e of estadosHoy">
+                  <app-estado-icon [estado]="e.estado" [size]="12"></app-estado-icon>
+                  <span class="leyenda-nombre">{{ e.etiqueta }}</span>
+                  <span class="num">{{ e.cantidad }}</span>
+                </li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- En ruta -->
+          <section aria-labelledby="t-ruta">
+            <div class="section-head">
+              <h2 id="t-ruta">En ruta ahora</h2>
+              <span class="num count">{{ domiciliarios.length }}</span>
+            </div>
+            <div class="dom" *ngFor="let d of domiciliarios">
+              <app-avatar [nombre]="d.nombre" [url]="d.avatar_url" [size]="26"></app-avatar>
+              <span class="dom-nombre">{{ d.nombre }}</span>
+              <span class="dom-pedidos num">{{ d.cantidad }} {{ d.cantidad === 1 ? 'pedido' : 'pedidos' }}</span>
+              <span class="dom-valor num">{{ formatoMoneda(d.valor) }}</span>
+            </div>
+            <p class="vacio-inline" *ngIf="!domiciliarios.length">Nadie está en ruta en este momento.</p>
+          </section>
+
+          <!-- Recientes -->
+          <section aria-labelledby="t-recientes">
+            <div class="section-head">
+              <h2 id="t-recientes">Últimos pedidos</h2>
+              <a class="ver-todos" routerLink="/admin/pedidos">Ver todos</a>
+            </div>
+            <div class="reciente" *ngFor="let p of recientes">
+              <app-estado-icon [estado]="p.estado"></app-estado-icon>
+              <span class="num reciente-num">#{{ p.numero }}</span>
+              <span class="reciente-cliente">{{ p.cliente_nombre }}</span>
+              <span class="num reciente-total">{{ formatoMoneda(p.total) }}</span>
+            </div>
+            <p class="vacio-inline" *ngIf="!recientes.length">Todavía no hay pedidos.</p>
+          </section>
+        </div>
       </div>
-      <p class="empty-inline" *ngIf="!productosStockBajo.length">Ningún producto está bajo de stock.</p>
-    </section>
+    </div>
   </ng-container>
 
   <ng-template #cargando>
-    <p class="empty-inline">Cargando reporte...</p>
+    <div class="content" aria-busy="true" aria-label="Cargando resumen">
+      <div class="kpis sk-kpis">
+        <div class="kpi" *ngFor="let i of [1, 2, 3, 4]"><span class="sk sk-a"></span><span class="sk sk-b"></span></div>
+      </div>
+      <div class="panel"><span class="sk sk-chart"></span></div>
+    </div>
   </ng-template>
 </div>
