@@ -77,8 +77,9 @@
     <section class="bloque">
       <div class="bloque-header">
         <h2>Totales por día</h2>
-        <input type="date" class="filtro-fecha" [(ngModel)]="filtroFecha" />
-        <button class="btn-limpiar" *ngIf="filtroFecha" (click)="filtroFecha = ''">✕</button>
+        <input type="date" class="filtro-fecha" [(ngModel)]="filtroFecha" aria-label="Fecha" />
+        <button class="btn-ver-todos" *ngIf="filtroFecha" (click)="filtroFecha = ''">Ver todos</button>
+        <button class="btn-ver-todos" *ngIf="filtroFecha !== hoy" (click)="filtroFecha = hoy">Hoy</button>
       </div>
 
       <div class="lista" *ngIf="porDia.length; else vacioHist">
@@ -118,7 +119,11 @@
       </div>
 
       <ng-template #vacioHist>
-        <p class="empty-msg">Todavía no has cerrado ningún cuadre.</p>
+        <p class="empty-msg" *ngIf="!historial.length">Todavía no has cerrado ningún cuadre.</p>
+        <p class="empty-msg" *ngIf="historial.length && filtroFecha === hoy">Todavía no has cerrado el cuadre de hoy.</p>
+        <p class="empty-msg" *ngIf="historial.length && filtroFecha && filtroFecha !== hoy">
+          No cerraste cuadres el {{ formatoFecha(filtroFecha) }}.
+        </p>
       </ng-template>
     </section>
   </ng-container>

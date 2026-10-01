@@ -1,11 +1,12 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { Cuadre, MetodoPago } from '../../shared/models/models';
 import { ImagenPreviewComponent } from '../../shared/imagen-preview/imagen-preview.component';
-import { formatoFechaCO } from '../../shared/fecha-colombia';
+import { formatoFechaCO, hoyColombiaISO } from '../../shared/fecha-colombia';
 
 type FiltroCuadre = 'todos' | 'pendiente' | 'confirmado';
 
@@ -31,7 +32,7 @@ interface Domiciliario {
   standalone: true,
   imports: [CommonModule, FormsModule, ImagenPreviewComponent],
   templateUrl: './cuadres.page.html',
-  styleUrls: ['./cuadres.page.scss'],
+  styleUrls: ['./cuadres.page.scss', '../../shared/filtro-fecha.scss'],
 })
 export class AdminCuadresPage implements OnInit, OnDestroy {
   loading = true;
@@ -39,7 +40,9 @@ export class AdminCuadresPage implements OnInit, OnDestroy {
   domiciliarios: Domiciliario[] = [];
   nombresPorId = new Map<string, string>();
   filtro: FiltroCuadre = 'pendiente';
-  fecha = '';
+  /** Fecha del filtro (YYYY-MM-DD). Por defecto hoy; vacía = todas las fechas. */
+  fecha = hoyColombiaISO();
+  readonly hoy = hoyColombiaISO();
   domiciliarioId = 'todos';
   confirmandoId: string | null = null;
 
@@ -49,7 +52,17 @@ export class AdminCuadresPage implements OnInit, OnDestroy {
 
   private canal: RealtimeChannel | null = null;
 
-  constructor(private supabase: SupabaseService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private supabase: SupabaseService,
+    private cdr: ChangeDetectorRef,
+    route: ActivatedRoute
+  ) {
+    // Permite abrir la página en una fecha concreta, ej. desde el dashboard:
+    // /admin/cuadres?fecha=2026-09-30  o  /admin/cuadres?fecha=todas
+    const param = route.snapshot.queryParamMap.get('fecha');
+    if (param === 'todas') this.fecha = '';
+    else if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) this.fecha = param;
+  }
 
   async ngOnInit(): Promise<void> {
     await this.cargarTodo();
@@ -72,7 +85,7 @@ export class AdminCuadresPage implements OnInit, OnDestroy {
   }
 
   async cargarTodo(): Promise<void> {
-    this.loading = true;
+    if (!this.cuadres.length) this.loading = true;
 
     const [cuadresRes, perfilesRes] = await Promise.all([
       this.supabase.client.from('cuadres').select('*').order('fecha', { ascending: false }),
@@ -105,6 +118,30 @@ export class AdminCuadresPage implements OnInit, OnDestroy {
 
   get pendientesCount(): number {
     return this.cuadres.filter((c) => c.estado === 'pendiente').length;
+  }
+
+  /** Cuadres pendientes que el filtro de fecha está ocultando. */
+  get pendientesOtrosDias(): number {
+    if (!this.fecha) return 0;
+    return this.cuadres.filter(
+      (c) =>
+        c.estado === 'pendiente' &&
+        c.fecha !== this.fecha &&
+        (this.domiciliarioId === 'todos' || c.domiciliario_id === this.domiciliarioId)
+    ).length;
+  }
+
+  irAHoy(): void {
+    this.fecha = this.hoy;
+  }
+
+  verTodasLasFechas(): void {
+    this.fecha = '';
+  }
+
+  verPendientesOtrosDias(): void {
+    this.fecha = '';
+    this.filtro = 'pendiente';
   }
 
   nombreDomiciliario(id: string): string {

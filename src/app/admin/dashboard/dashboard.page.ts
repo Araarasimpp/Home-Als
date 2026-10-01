@@ -47,6 +47,7 @@ interface Tarea {
   monto: number | null;
   accion: string;
   ruta: string;
+  query?: Record<string, string>;
 }
 
 interface DomiciliarioActivo {
@@ -277,6 +278,8 @@ export class DashboardPage implements OnInit, OnDestroy {
       monto: Number(c.total_a_entregar || 0),
       accion: 'Revisar',
       ruta: '/admin/cuadres',
+      // Abre Cuadres en el día de ese cuadre (por defecto la página muestra hoy)
+      query: { fecha: c.fecha },
     }));
 
     const sinAsignar = (sinAsignarRes.data ?? []) as { total: number; created_at: string }[];

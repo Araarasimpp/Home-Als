@@ -1,0 +1,71 @@
+// src/app/shared/filtro-fecha.scss
+// Controles que acompañan a los filtros por fecha (botones "Hoy" / "Todas las
+// fechas" y el aviso de pendientes de otros días). Se agrega en styleUrls.
+
+.filtro-fecha-grupo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.btn-fecha,
+.btn-ver-todos {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.btn-fecha:hover,
+.btn-ver-todos:hover {
+  border-color: var(--text-muted);
+  color: var(--text);
+}
+
+.aviso-otros-dias {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--st-ruta) 35%, transparent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--st-ruta) 8%, var(--surface));
+  color: var(--text);
+  font-size: 13px;
+}
+
+.aviso-otros-dias button {
+  height: 30px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--text);
+  color: var(--bg);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  .filtro-fecha-grupo {
+    width: 100%;
+  }
+
+  .filtro-fecha-grupo .filtro {
+    flex: 1;
+  }
+
+  .btn-fecha {
+    height: 40px;
+  }
+}

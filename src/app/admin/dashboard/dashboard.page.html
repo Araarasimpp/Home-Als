@@ -29,7 +29,7 @@
             {{ domiciliarios.length }} {{ domiciliarios.length === 1 ? 'domiciliario' : 'domiciliarios' }}
           </span>
         </div>
-        <a class="kpi kpi-link" role="listitem" routerLink="/admin/cuadres">
+        <a class="kpi kpi-link" role="listitem" routerLink="/admin/cuadres" [queryParams]="{ fecha: 'todas' }">
           <span class="kpi-label">Por recibir en cuadres</span>
           <span class="kpi-valor num">{{ formatoMoneda(porCobrarCuadres) }}</span>
           <span class="kpi-nota num">
@@ -99,7 +99,7 @@
                 <span class="tarea-detalle">{{ t.detalle }}</span>
               </div>
               <span class="num tarea-monto" *ngIf="t.monto !== null">{{ formatoMoneda(t.monto) }}</span>
-              <a class="btn btn-sm" [routerLink]="t.ruta">{{ t.accion }}</a>
+              <a class="btn btn-sm" [routerLink]="t.ruta" [queryParams]="t.query">{{ t.accion }}</a>
             </div>
           </div>
           <ng-template #todoAlDia>

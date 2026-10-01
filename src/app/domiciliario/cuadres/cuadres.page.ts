@@ -31,13 +31,15 @@ interface PedidoSinCuadrar {
   standalone: true,
   imports: [CommonModule, FormsModule, ImagenPreviewComponent],
   templateUrl: './cuadres.page.html',
-  styleUrls: ['./cuadres.page.scss'],
+  styleUrls: ['./cuadres.page.scss', '../../shared/filtro-fecha.scss'],
 })
 export class CuadresPage implements OnInit {
   loading = true;
   pedidosHoy: PedidoSinCuadrar[] = [];
   historial: Cuadre[] = [];
-  filtroFecha = '';
+  /** Fecha del historial (YYYY-MM-DD). Por defecto hoy; vacía = todos los días. */
+  filtroFecha = hoyColombiaISO();
+  readonly hoy = hoyColombiaISO();
   diasExpandidos = new Set<string>();
   cerrando = false;
   errorMsg = '';
