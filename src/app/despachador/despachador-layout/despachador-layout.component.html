@@ -1,21 +1,30 @@
 <div class="shell" [class.collapsed]="collapsed">
   <aside class="sidebar">
     <div class="brand">
-      <span class="brand-mark">V</span>
+      <span class="brand-mark" aria-hidden="true">JYB</span>
       <span class="brand-name" *ngIf="!collapsed">Variedades JYB</span>
+      <button
+        class="icon-btn"
+        (click)="toggleCollapse()"
+        [attr.aria-label]="collapsed ? 'Expandir menú' : 'Contraer menú'"
+      >
+        <ion-icon [name]="collapsed ? 'chevron-forward-outline' : 'chevron-back-outline'"></ion-icon>
+      </button>
     </div>
 
-    <button class="collapse-btn" (click)="toggleCollapse()" aria-label="Contraer menú">
-      <ion-icon [name]="collapsed ? 'chevron-forward-outline' : 'chevron-back-outline'"></ion-icon>
-    </button>
+    <a routerLink="/despachador/pedidos/nuevo" class="new-btn" [attr.aria-label]="collapsed ? 'Nuevo pedido' : null">
+      <ion-icon name="add"></ion-icon>
+      <span *ngIf="!collapsed">Nuevo pedido</span>
+    </a>
 
-    <nav class="menu">
+    <nav class="menu" aria-label="Secciones">
       <a
         *ngFor="let item of menuItems"
         [routerLink]="item.path"
         routerLinkActive="active"
         [routerLinkActiveOptions]="{ exact: item.path === '/despachador' }"
         class="menu-item"
+        [attr.aria-label]="collapsed ? item.label : null"
       >
         <ion-icon [name]="item.icon"></ion-icon>
         <span *ngIf="!collapsed">{{ item.label }}</span>
@@ -29,7 +38,7 @@
       </button>
       <button class="footer-btn" (click)="logout()">
         <ion-icon name="log-out-outline"></ion-icon>
-        <span *ngIf="!collapsed">Salir</span>
+        <span *ngIf="!collapsed">Cerrar sesión</span>
       </button>
     </div>
   </aside>
@@ -38,28 +47,29 @@
     <router-outlet></router-outlet>
   </main>
 
-  <nav class="pill-nav mobile-only">
+  <!-- Celular -->
+  <nav class="pill-nav mobile-only" aria-label="Secciones">
     <a routerLink="/despachador" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
       <ion-icon name="home-outline"></ion-icon>
-      <span class="dot"></span>
+      <span class="tab-label">Inicio</span>
     </a>
-    <a routerLink="/despachador/pedidos" routerLinkActive="active">
+    <a routerLink="/despachador/pedidos" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
       <ion-icon name="receipt-outline"></ion-icon>
-      <span class="dot"></span>
+      <span class="tab-label">Pedidos</span>
     </a>
-
     <div class="pill-center">
       <a routerLink="/despachador/pedidos/nuevo" class="pill-action">
         <ion-icon name="add"></ion-icon>
+        <span class="tab-label">Nuevo</span>
       </a>
     </div>
-
     <a routerLink="/despachador/cuadres" routerLinkActive="active">
       <ion-icon name="wallet-outline"></ion-icon>
-      <span class="dot"></span>
+      <span class="tab-label">Cuadres</span>
     </a>
     <button class="pill-action" (click)="logout()">
       <ion-icon name="log-out-outline"></ion-icon>
+      <span class="tab-label">Salir</span>
     </button>
   </nav>
 </div>

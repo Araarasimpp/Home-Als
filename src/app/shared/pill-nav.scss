@@ -1,77 +1,143 @@
 // src/app/shared/pill-nav.scss
-// Barra de navegación flotante compartida. Se importa junto al scss propio
-// de cada layout vía styleUrls, igual que auth-shell.scss.
+// Barra de navegación inferior para celular, compartida por todos los layouts.
+// Conserva el nombre de archivo y la clase .pill-nav para no tocar los styleUrls,
+// pero ahora es una barra estándar de pestañas con ícono y etiqueta.
 
 .pill-nav {
   position: fixed;
-  left: 16px;
-  right: 16px;
-  bottom: max(14px, env(safe-area-inset-bottom));
-  height: 62px;
-  background: var(--k-ink);
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  box-shadow: 0 10px 30px rgba(18, 21, 28, 0.35);
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 100;
+  display: flex;
+  align-items: stretch;
+  height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
 }
 
 .pill-nav a,
-.pill-nav .pill-action {
+.pill-nav .pill-action,
+.pill-nav .tab {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  color: rgba(247, 247, 245, 0.5);
-  text-decoration: none;
+  gap: 3px;
+  padding: 0;
   border: none;
   background: none;
+  color: var(--text-soft);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  text-decoration: none;
   cursor: pointer;
-  flex: 1;
-  height: 100%;
+  -webkit-tap-highlight-color: transparent;
+  transition: color var(--dur) var(--ease);
 }
 
-.pill-nav a ion-icon {
-  font-size: 22px;
+.pill-nav ion-icon {
+  font-size: 21px;
 }
 
-.pill-nav a.active {
-  color: var(--k-amber);
+.pill-nav a.active,
+.pill-nav .tab.active {
+  color: var(--accent);
 }
 
-.pill-nav a .dot {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--k-amber);
-  opacity: 0;
+.pill-nav .tab-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
-.pill-nav a.active .dot {
-  opacity: 1;
+// El punto de la versión anterior ya no se usa
+.pill-nav .dot {
+  display: none;
 }
 
-// Botón central elevado (acción principal, ej. "+ Nuevo pedido")
+// Acción principal (ej. "Nuevo pedido"): misma pestaña, ícono sobre un fondo azul
 .pill-center {
+  flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
 }
 
 .pill-center .pill-action {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: var(--k-amber);
-  color: var(--k-ink);
-  box-shadow: 0 0 0 6px rgba(232, 163, 61, 0.15);
-  margin-top: -22px;
-  flex: none;
+  color: var(--text);
 }
 
 .pill-center .pill-action ion-icon {
-  font-size: 24px;
+  width: 40px;
+  height: 28px;
+  padding: 3px 0;
+  box-sizing: border-box;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 22px;
+}
+
+// Hoja "Más" (solo admin): se abre sobre la barra
+.more-sheet {
+  position: fixed;
+  left: 8px;
+  right: 8px;
+  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 8px);
+  z-index: 101;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-pop);
+  display: flex;
+  flex-direction: column;
+}
+
+.more-sheet a,
+.more-sheet button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 46px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 15px;
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.more-sheet a.active {
+  background: var(--selected);
+  font-weight: 500;
+}
+
+.more-sheet ion-icon {
+  font-size: 19px;
+  color: var(--text-soft);
+}
+
+.more-sheet hr {
+  width: 100%;
+  margin: 4px 0;
+  border: none;
+  border-top: 1px solid var(--border-soft);
+}
+
+.more-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  background: rgba(15, 16, 19, 0.24);
+  border: none;
+  padding: 0;
 }

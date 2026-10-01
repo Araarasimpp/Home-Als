@@ -1,26 +1,26 @@
 <div class="layout">
-  <button class="theme-toggle" (click)="toggleTheme()">
-    <ion-icon [name]="theme.isDark() ? 'sunny-outline' : 'moon-outline'"></ion-icon>
-  </button>
-
   <main class="content">
     <router-outlet></router-outlet>
   </main>
 
-  <nav class="pill-nav">
+  <nav class="pill-nav" aria-label="Secciones">
     <a routerLink="/vendedor" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
       <ion-icon name="home-outline"></ion-icon>
-      <span class="dot"></span>
+      <span class="tab-label">Inicio</span>
     </a>
-
     <div class="pill-center">
       <a routerLink="/vendedor/nuevo-pedido" class="pill-action">
         <ion-icon name="add"></ion-icon>
+        <span class="tab-label">Nuevo pedido</span>
       </a>
     </div>
-
+    <button class="pill-action" (click)="toggleTheme()">
+      <ion-icon [name]="theme.isDark() ? 'sunny-outline' : 'moon-outline'"></ion-icon>
+      <span class="tab-label">{{ theme.isDark() ? 'Claro' : 'Oscuro' }}</span>
+    </button>
     <button class="pill-action" (click)="logout()">
       <ion-icon name="log-out-outline"></ion-icon>
+      <span class="tab-label">Salir</span>
     </button>
   </nav>
 </div>

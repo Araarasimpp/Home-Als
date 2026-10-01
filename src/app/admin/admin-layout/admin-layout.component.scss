@@ -1,138 +1,185 @@
+// Layout de escritorio con sidebar. El de despachador usa una copia idéntica.
+
 .shell {
   display: flex;
   height: 100vh;
   height: 100dvh;
-  background: var(--k-bg);
+  background: var(--bg);
   overflow: hidden;
 }
 
+// ---------- Sidebar ----------
 .sidebar {
-  position: relative;
-  width: 240px;
+  width: 232px;
   flex-shrink: 0;
-  background: var(--k-sidebar-bg);
-  color: var(--k-sidebar-text);
   display: flex;
   flex-direction: column;
-  padding: 24px 16px;
-  transition: width 0.2s ease;
+  gap: 2px;
+  padding: 12px 10px;
+  box-sizing: border-box;
+  background: var(--sidebar);
+  border-right: 1px solid var(--border);
+  color: var(--text);
+  transition: width var(--dur) var(--ease);
 }
 
 .shell.collapsed .sidebar {
-  width: 76px;
-  padding: 24px 12px;
+  width: 60px;
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 4px 24px;
+  height: 36px;
+  padding: 0 4px 0 6px;
+  margin-bottom: 8px;
 }
 
 .brand-mark {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: var(--k-amber);
-  color: var(--k-ink);
-  font-weight: 700;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--text);
+  color: var(--bg);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
 }
 
 .brand-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
   font-weight: 600;
-  font-size: 17px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.collapse-btn {
-  position: absolute;
-  top: 28px;
-  right: -14px;
+.icon-btn {
   width: 28px;
   height: 28px;
-  border-radius: 50%;
-  border: none;
-  background: var(--k-amber);
-  color: var(--k-ink);
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-soft);
+  font-size: 16px;
   cursor: pointer;
-  font-size: 14px;
+}
+
+.icon-btn:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.shell.collapsed .brand {
+  flex-direction: column;
+  height: auto;
+  gap: 6px;
+  padding: 0;
+}
+
+.new-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 10px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.new-btn ion-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.new-btn:hover {
+  border-color: var(--text-muted);
+}
+
+.shell.collapsed .new-btn {
+  justify-content: center;
+  padding: 0;
 }
 
 .menu {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  margin-top: 8px;
+  gap: 1px;
 }
 
-.menu-item {
+.menu-item,
+.footer-btn {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 11px 12px;
-  border-radius: 10px;
-  color: var(--k-sidebar-text-soft);
+  gap: 10px;
+  height: 32px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-2);
+  font-family: inherit;
+  font-size: 13px;
   text-decoration: none;
-  font-size: 14px;
-  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
+  cursor: pointer;
+  transition: background var(--dur) var(--ease);
 }
 
-.menu-item ion-icon {
-  font-size: 19px;
+.menu-item ion-icon,
+.footer-btn ion-icon {
+  font-size: 17px;
   flex-shrink: 0;
 }
 
-.menu-item:hover {
-  background: var(--k-sidebar-bg-alt);
-  color: var(--k-sidebar-text);
+.menu-item:hover,
+.footer-btn:hover {
+  background: var(--hover);
+  color: var(--text);
 }
 
 .menu-item.active {
-  background: var(--k-sidebar-bg-alt);
-  color: var(--k-sidebar-text);
-  box-shadow: inset 3px 0 0 var(--k-amber);
+  background: var(--selected);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.shell.collapsed .menu-item,
+.shell.collapsed .footer-btn {
+  justify-content: center;
+  padding: 0;
 }
 
 .sidebar-footer {
   margin-top: auto;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(247, 247, 245, 0.1);
+  gap: 1px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
 }
 
-.footer-btn {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: none;
-  background: transparent;
-  color: var(--k-sidebar-text-soft);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.footer-btn:hover {
-  background: var(--k-sidebar-bg-alt);
-  color: var(--k-sidebar-text);
-}
-
+// ---------- Contenido ----------
 .content {
   flex: 1;
   min-width: 0;
@@ -140,8 +187,8 @@
   height: 100dvh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  background: var(--k-bg);
-  color: var(--k-text);
+  background: var(--surface);
+  color: var(--text);
 }
 
 .pill-nav.mobile-only {
@@ -158,7 +205,9 @@
   }
 
   .content {
-    padding-top: max(14px, env(safe-area-inset-top));
-    padding-bottom: calc(62px + max(14px, env(safe-area-inset-bottom)) + 24px);
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+    // Las páginas lo usan para que sus barras fijas queden encima de la pestaña
+    --tabbar-offset: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
   }
 }

@@ -17,6 +17,7 @@ import {
   chevronBackOutline,
   chevronForwardOutline,
   logOutOutline,
+  ellipsisHorizontal,
 } from 'ionicons/icons';
 import { ThemeService } from '../../core/services/theme.service';
 import { SupabaseService } from '../../core/services/supabase.service';
@@ -35,15 +36,16 @@ interface MenuItem {
   styleUrls: ['../../shared/pill-nav.scss', './admin-layout.component.scss'],
 })
 export class AdminLayoutComponent {
-  collapsed = false;
+  collapsed = localStorage.getItem('sidebar-colapsado') === '1';
+  masAbierto = false;
 
   menuItems: MenuItem[] = [
     { label: 'Inicio', path: '/admin', icon: 'home-outline' },
     { label: 'Pedidos', path: '/admin/pedidos', icon: 'receipt-outline' },
     { label: 'Cuadres', path: '/admin/cuadres', icon: 'wallet-outline' },
-    { label: 'Reportes', path: '/admin/reportes', icon: 'bar-chart-outline' },
     { label: 'Productos', path: '/admin/productos', icon: 'cube-outline' },
     { label: 'Usuarios', path: '/admin/usuarios', icon: 'people-outline' },
+    { label: 'Reportes', path: '/admin/reportes', icon: 'bar-chart-outline' },
     { label: 'Configuración', path: '/admin/configuracion', icon: 'settings-outline' },
   ];
 
@@ -66,11 +68,13 @@ export class AdminLayoutComponent {
       chevronBackOutline,
       chevronForwardOutline,
       logOutOutline,
+      ellipsisHorizontal,
     });
   }
 
   toggleCollapse(): void {
     this.collapsed = !this.collapsed;
+    localStorage.setItem('sidebar-colapsado', this.collapsed ? '1' : '0');
   }
 
   toggleTheme(): void {
@@ -78,6 +82,7 @@ export class AdminLayoutComponent {
   }
 
   async logout(): Promise<void> {
+    this.masAbierto = false;
     await this.supabase.logout();
     this.router.navigateByUrl('/auth/login');
   }

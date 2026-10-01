@@ -18,6 +18,7 @@ export class RegistroPage {
   password = '';
   errorMsg = '';
   loading = false;
+  verClave = false;
 
   constructor(
     private supabase: SupabaseService,
@@ -26,33 +27,34 @@ export class RegistroPage {
   ) {}
 
   async onRegistrar() {
+    if (this.loading) return;
     this.errorMsg = '';
 
     if (!this.nombre || !this.email || !this.password) {
-      this.errorMsg = 'Completa todos los campos obligatorios.';
+      this.errorMsg = 'Escribe tu nombre, tu correo y una contraseña.';
       return;
     }
 
     if (this.password.length < 6) {
-      this.errorMsg = 'La contraseña debe tener al menos 6 caracteres.';
+      this.errorMsg = 'La contraseña necesita al menos 6 caracteres.';
       return;
     }
 
     this.loading = true;
+    this.cdr.detectChanges();
     const { error } = await this.supabase.register(
       this.email,
       this.password,
       this.nombre,
       this.telefono || undefined
     );
-
     this.loading = false;
 
     if (error) {
       this.errorMsg =
         error.message === 'User already registered'
-          ? 'Ya existe una cuenta con ese correo.'
-          : 'No se pudo crear la cuenta. Intenta de nuevo.';
+          ? 'Ya existe una cuenta con ese correo. Inicia sesión o usa otro correo.'
+          : 'No se pudo crear la cuenta. Intenta de nuevo en un momento.';
       this.cdr.detectChanges();
       return;
     }

@@ -1,21 +1,30 @@
 <div class="shell" [class.collapsed]="collapsed">
   <aside class="sidebar">
     <div class="brand">
-      <span class="brand-mark">V</span>
+      <span class="brand-mark" aria-hidden="true">JYB</span>
       <span class="brand-name" *ngIf="!collapsed">Variedades JYB</span>
+      <button
+        class="icon-btn"
+        (click)="toggleCollapse()"
+        [attr.aria-label]="collapsed ? 'Expandir menú' : 'Contraer menú'"
+      >
+        <ion-icon [name]="collapsed ? 'chevron-forward-outline' : 'chevron-back-outline'"></ion-icon>
+      </button>
     </div>
 
-    <button class="collapse-btn" (click)="toggleCollapse()" aria-label="Contraer menú">
-      <ion-icon [name]="collapsed ? 'chevron-forward-outline' : 'chevron-back-outline'"></ion-icon>
-    </button>
+    <a routerLink="/admin/pedidos/nuevo" class="new-btn" [attr.aria-label]="collapsed ? 'Nuevo pedido' : null">
+      <ion-icon name="add"></ion-icon>
+      <span *ngIf="!collapsed">Nuevo pedido</span>
+    </a>
 
-    <nav class="menu">
+    <nav class="menu" aria-label="Secciones">
       <a
         *ngFor="let item of menuItems"
         [routerLink]="item.path"
         routerLinkActive="active"
         [routerLinkActiveOptions]="{ exact: item.path === '/admin' }"
         class="menu-item"
+        [attr.aria-label]="collapsed ? item.label : null"
       >
         <ion-icon [name]="item.icon"></ion-icon>
         <span *ngIf="!collapsed">{{ item.label }}</span>
@@ -29,7 +38,7 @@
       </button>
       <button class="footer-btn" (click)="logout()">
         <ion-icon name="log-out-outline"></ion-icon>
-        <span *ngIf="!collapsed">Salir</span>
+        <span *ngIf="!collapsed">Cerrar sesión</span>
       </button>
     </div>
   </aside>
@@ -38,43 +47,55 @@
     <router-outlet></router-outlet>
   </main>
 
-  <nav class="pill-nav mobile-only">
-    <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+  <!-- Celular -->
+  <nav class="pill-nav mobile-only" aria-label="Secciones">
+    <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="masAbierto = false">
       <ion-icon name="home-outline"></ion-icon>
-      <span class="dot"></span>
+      <span class="tab-label">Inicio</span>
     </a>
-    <a routerLink="/admin/pedidos" routerLinkActive="active">
+    <a routerLink="/admin/pedidos" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="masAbierto = false">
       <ion-icon name="receipt-outline"></ion-icon>
-      <span class="dot"></span>
+      <span class="tab-label">Pedidos</span>
     </a>
-    <a routerLink="/admin/cuadres" routerLinkActive="active" class="pill-action">
-      <ion-icon name="wallet-outline"></ion-icon>
-    </a>
-
     <div class="pill-center">
-      <a routerLink="/admin/pedidos/nuevo" class="pill-action">
+      <a routerLink="/admin/pedidos/nuevo" class="pill-action" (click)="masAbierto = false">
         <ion-icon name="add"></ion-icon>
+        <span class="tab-label">Nuevo</span>
       </a>
     </div>
-
-    <a routerLink="/admin/productos" routerLinkActive="active">
-      <ion-icon name="cube-outline"></ion-icon>
-      <span class="dot"></span>
+    <a routerLink="/admin/cuadres" routerLinkActive="active" (click)="masAbierto = false">
+      <ion-icon name="wallet-outline"></ion-icon>
+      <span class="tab-label">Cuadres</span>
     </a>
-    <a routerLink="/admin/usuarios" routerLinkActive="active">
-      <ion-icon name="people-outline"></ion-icon>
-      <span class="dot"></span>
-    </a>
-    <a routerLink="/admin/reportes" routerLinkActive="active">
-      <ion-icon name="bar-chart-outline"></ion-icon>
-      <span class="dot"></span>
-    </a>
-    <a routerLink="/admin/configuracion" routerLinkActive="active">
-      <ion-icon name="settings-outline"></ion-icon>
-      <span class="dot"></span>
-    </a>
-    <button class="pill-action" (click)="logout()">
-      <ion-icon name="log-out-outline"></ion-icon>
+    <button class="tab" [class.active]="masAbierto" (click)="masAbierto = !masAbierto" [attr.aria-expanded]="masAbierto">
+      <ion-icon name="ellipsis-horizontal"></ion-icon>
+      <span class="tab-label">Más</span>
     </button>
   </nav>
+
+  <ng-container *ngIf="masAbierto">
+    <button class="more-backdrop" aria-label="Cerrar menú" (click)="masAbierto = false"></button>
+    <div class="more-sheet">
+      <a routerLink="/admin/productos" routerLinkActive="active" (click)="masAbierto = false">
+        <ion-icon name="cube-outline"></ion-icon>Productos
+      </a>
+      <a routerLink="/admin/usuarios" routerLinkActive="active" (click)="masAbierto = false">
+        <ion-icon name="people-outline"></ion-icon>Usuarios
+      </a>
+      <a routerLink="/admin/reportes" routerLinkActive="active" (click)="masAbierto = false">
+        <ion-icon name="bar-chart-outline"></ion-icon>Reportes
+      </a>
+      <a routerLink="/admin/configuracion" routerLinkActive="active" (click)="masAbierto = false">
+        <ion-icon name="settings-outline"></ion-icon>Configuración
+      </a>
+      <hr />
+      <button (click)="toggleTheme()">
+        <ion-icon [name]="theme.isDark() ? 'sunny-outline' : 'moon-outline'"></ion-icon>
+        {{ theme.isDark() ? 'Modo claro' : 'Modo oscuro' }}
+      </button>
+      <button (click)="logout()">
+        <ion-icon name="log-out-outline"></ion-icon>Cerrar sesión
+      </button>
+    </div>
+  </ng-container>
 </div>

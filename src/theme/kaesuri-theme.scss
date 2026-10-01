@@ -1,45 +1,133 @@
 // src/theme/kaesuri-theme.scss
-// Importar una sola vez desde src/global.scss:  @import './theme/kaesuri-theme.scss';
+// Sistema visual de Home-Als (Variedades JYB).
+// Neutros + un solo azul para acciones. El color de estado solo se usa para estados.
+// Las variables --k-* del tema anterior quedan como alias al final, para que las
+// pantallas que aún no se rediseñan tomen la paleta nueva sin tocarlas.
 
 :root {
-  // Paleta base
-  --k-ink: #12151c;
-  --k-ink-soft: #232838;
-  --k-paper: #f7f7f5;
-  --k-paper-alt: #ecebe7;
-  --k-amber: #e8a33d;
-  --k-teal: #2f8f82;
-  --k-coral: #d65f5f;
-
   // Tipografía
-  --k-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --ui-font: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  // Tema claro (por defecto)
-  --k-bg: var(--k-paper);
-  --k-bg-alt: var(--k-paper-alt);
-  --k-text: var(--k-ink);
-  --k-text-soft: rgba(18, 21, 28, 0.6);
-  --k-card-bg: #ffffff;
-  --k-border: rgba(18, 21, 28, 0.1);
+  // Superficies
+  --bg: #fbfbfc;
+  --surface: #ffffff;
+  --surface-2: #f7f8fa; // cabeceras de grupo, campos de solo lectura
+  --sidebar: #f4f5f7;
+  --hover: #eceef1;
+  --selected: #e6e9ee;
 
-  // El sidebar siempre es oscuro, sin importar el tema del contenido
-  --k-sidebar-bg: var(--k-ink);
-  --k-sidebar-bg-alt: var(--k-ink-soft);
-  --k-sidebar-text: var(--k-paper);
-  --k-sidebar-text-soft: rgba(247, 247, 245, 0.6);
+  // Texto
+  --text: #16181d;
+  --text-2: #3f4550;
+  --text-soft: #5c6370;
+  --text-muted: #6b7280;
+
+  // Bordes
+  --border: #e6e8ec;
+  --border-soft: #f0f1f4;
+  --border-strong: #d5d8de;
+
+  // Acento (acciones, selección, foco)
+  --accent: #3e5bd9;
+  --accent-hover: #2d47b8;
+  --accent-soft: #dce2fb;
+  --accent-wash: #f1f4fe;
+  --on-accent: #ffffff;
+
+  // Estados de pedido
+  --st-pendiente: #7a818c;
+  --st-ruta: #c2720a;
+  --st-ruta-text: #a35a06;
+  --st-entregado: #1f7a4d;
+  --st-cancelado: #8a909a;
+  --danger: #b42318;
+  --danger-wash: #fdecea;
+
+  // Forma y profundidad
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 10px;
+  --shadow-pop: 0 8px 24px rgba(22, 24, 29, 0.14), 0 2px 6px rgba(22, 24, 29, 0.08);
+  --dur: 160ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  // Barra inferior en celular (los layouts la usan para dejar espacio)
+  --tabbar-h: 58px;
 }
 
 body.dark {
-  --k-bg: var(--k-ink);
-  --k-bg-alt: var(--k-ink-soft);
-  --k-text: var(--k-paper);
-  --k-text-soft: rgba(247, 247, 245, 0.65);
-  --k-card-bg: var(--k-ink-soft);
-  --k-border: rgba(247, 247, 245, 0.12);
+  --bg: #0f1013;
+  --surface: #16181d;
+  --surface-2: #1c1e24;
+  --sidebar: #121317;
+  --hover: #23262d;
+  --selected: #2a2d35;
+
+  --text: #edeef0;
+  --text-2: #c9ccd2;
+  --text-soft: #a2a7b0;
+  --text-muted: #8f959f;
+
+  --border: #2a2d35;
+  --border-soft: #22252b;
+  --border-strong: #3a3e47;
+
+  --accent: #6e86f0;
+  --accent-hover: #8a9df4;
+  --accent-soft: #26305a;
+  --accent-wash: #1b2140;
+  --on-accent: #0f1013;
+
+  --st-pendiente: #8f959f;
+  --st-ruta: #e09a3a;
+  --st-ruta-text: #e8a64d;
+  --st-entregado: #3faf76;
+  --st-cancelado: #6b7079;
+  --danger: #f0645a;
+  --danger-wash: #3a1d1b;
+
+  --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+// Ionic toma la misma paleta
+:root,
+body.dark {
+  --ion-font-family: var(--ui-font);
+  --ion-background-color: var(--bg);
+  --ion-text-color: var(--text);
+  --ion-color-primary: var(--accent);
+  --ion-color-primary-contrast: var(--on-accent);
+}
+
+// ---------------------------------------------------------------------------
+// Alias del tema anterior. Borra cada uno cuando ninguna pantalla lo use.
+// ---------------------------------------------------------------------------
+:root,
+body.dark {
+  --k-font: var(--ui-font);
+  --k-ink: var(--text);
+  --k-ink-soft: var(--text-2);
+  --k-paper: var(--surface);
+  --k-paper-alt: var(--surface-2);
+  --k-amber: var(--accent);
+  --k-teal: var(--st-entregado);
+  --k-coral: var(--danger);
+
+  --k-bg: var(--bg);
+  --k-bg-alt: var(--surface-2);
+  --k-text: var(--text);
+  --k-text-soft: var(--text-soft);
+  --k-card-bg: var(--surface);
+  --k-border: var(--border);
+
+  --k-sidebar-bg: var(--sidebar);
+  --k-sidebar-bg-alt: var(--selected);
+  --k-sidebar-text: var(--text);
+  --k-sidebar-text-soft: var(--text-2);
 }
 
 body {
-  font-family: var(--k-font);
-  background: var(--k-bg);
-  color: var(--k-text);
+  font-family: var(--ui-font);
+  background: var(--bg);
+  color: var(--text);
 }

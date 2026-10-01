@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
 
 @Component({
@@ -16,27 +16,36 @@ export class LoginPage {
   password = '';
   errorMsg = '';
   loading = false;
+  verClave = false;
+  // Viene de registro con ?registrado=1
+  recienRegistrado = false;
 
   constructor(
     private supabase: SupabaseService,
     private router: Router,
+    private route: ActivatedRoute,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) {
+    this.recienRegistrado = this.route.snapshot.queryParamMap.get('registrado') === '1';
+  }
 
   async onLogin() {
+    if (this.loading) return;
     this.errorMsg = '';
+    this.recienRegistrado = false;
 
     if (!this.email || !this.password) {
-      this.errorMsg = 'Ingresa tu correo y contraseña.';
+      this.errorMsg = 'Escribe tu correo y tu contraseña.';
       return;
     }
 
     this.loading = true;
+    this.cdr.detectChanges();
     const { error } = await this.supabase.login(this.email, this.password);
 
     if (error) {
       this.loading = false;
-      this.errorMsg = 'Correo o contraseña incorrectos.';
+      this.errorMsg = 'El correo o la contraseña no coinciden. Revísalos e intenta de nuevo.';
       this.cdr.detectChanges();
       return;
     }
@@ -45,14 +54,14 @@ export class LoginPage {
     this.loading = false;
 
     if (!profile) {
-      this.errorMsg = 'No se pudo cargar tu perfil. Intenta de nuevo.';
+      this.errorMsg = 'No se pudo cargar tu perfil. Intenta de nuevo en un momento.';
       this.cdr.detectChanges();
       return;
     }
 
     if (!profile.activo) {
       await this.supabase.logout();
-      this.errorMsg = 'Tu cuenta está desactivada. Contacta al administrador.';
+      this.errorMsg = 'Tu cuenta está desactivada. Pídele al administrador que la active.';
       this.cdr.detectChanges();
       return;
     }

@@ -1,27 +1,24 @@
 <div class="layout">
-  <button class="theme-toggle" (click)="toggleTheme()">
-    <ion-icon [name]="theme.isDark() ? 'sunny-outline' : 'moon-outline'"></ion-icon>
-  </button>
-
   <main class="content">
     <router-outlet></router-outlet>
   </main>
 
-  <nav class="pill-nav">
-    <a
-      routerLink="/domiciliario"
-      routerLinkActive="active"
-      [routerLinkActiveOptions]="{ exact: true }"
-    >
+  <nav class="pill-nav" aria-label="Secciones">
+    <a routerLink="/domiciliario" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
       <ion-icon name="home-outline"></ion-icon>
-      <span class="dot"></span>
+      <span class="tab-label">Mi ruta</span>
     </a>
     <a routerLink="/domiciliario/cuadres" routerLinkActive="active">
       <ion-icon name="wallet-outline"></ion-icon>
-      <span class="dot"></span>
+      <span class="tab-label">Cuadre</span>
     </a>
+    <button class="pill-action" (click)="toggleTheme()">
+      <ion-icon [name]="theme.isDark() ? 'sunny-outline' : 'moon-outline'"></ion-icon>
+      <span class="tab-label">{{ theme.isDark() ? 'Claro' : 'Oscuro' }}</span>
+    </button>
     <button class="pill-action" (click)="logout()">
       <ion-icon name="log-out-outline"></ion-icon>
+      <span class="tab-label">Salir</span>
     </button>
   </nav>
 </div>
