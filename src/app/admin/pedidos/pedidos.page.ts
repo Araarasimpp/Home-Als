@@ -10,6 +10,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { EstadoPedido } from '../../shared/models/models';
 import { EstadoIconComponent } from '../../shared/estado-icon/estado-icon.component';
 import { AvatarComponent } from '../../shared/avatar/avatar.component';
+import { ImagenPreviewComponent } from '../../shared/imagen-preview/imagen-preview.component';
 import { cargarDatosNegocio, documentoRotulos, rotuloHtml } from '../../shared/rotulo/rotulo';
 
 interface PedidoFila {
@@ -27,6 +28,13 @@ interface PedidoFila {
   rotulo_impreso_at: string | null;
   created_at: string;
   productos: string;
+  items: ItemPedido[];
+}
+
+interface ItemPedido {
+  nombre: string;
+  cantidad: number;
+  imagen_url: string | null;
 }
 
 interface Domiciliario {
@@ -51,7 +59,7 @@ const ORDEN_ESTADOS: EstadoPedido[] = ['pendiente', 'en_ruta', 'entregado', 'can
 @Component({
   selector: 'app-pedidos',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IonIcon, EstadoIconComponent, AvatarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IonIcon, EstadoIconComponent, AvatarComponent, ImagenPreviewComponent],
   templateUrl: './pedidos.page.html',
   styleUrls: ['./pedidos.page.scss'],
 })
@@ -62,7 +70,10 @@ export class PedidosPage implements OnInit, OnDestroy {
   nombresPorId = new Map<string, string>();
 
   busqueda = '';
-  filtroEstado: FiltroEstado = 'todos';
+  // Se abre en Pendientes: es lo que hay que atender primero
+  filtroEstado: FiltroEstado = 'pendiente';
+  /** Imagen de producto abierta en grande. */
+  imagenAmpliada: string | null = null;
   filtroRotulo: FiltroRotulo = 'todos';
   guardandoId: string | null = null;
   asignandoLote = false;
@@ -86,15 +97,15 @@ export class PedidosPage implements OnInit, OnDestroy {
   private temporizadorRealtime: ReturnType<typeof setTimeout> | null = null;
 
   readonly estados: { valor: FiltroEstado; etiqueta: string }[] = [
-    { valor: 'todos', etiqueta: 'Todos' },
-    { valor: 'pendiente', etiqueta: 'Por asignar' },
+    { valor: 'pendiente', etiqueta: 'Pendientes' },
     { valor: 'en_ruta', etiqueta: 'En ruta' },
     { valor: 'entregado', etiqueta: 'Entregados' },
     { valor: 'cancelado', etiqueta: 'Cancelados' },
+    { valor: 'todos', etiqueta: 'Todos' },
   ];
 
   private readonly etiquetasGrupo: Record<EstadoPedido, string> = {
-    pendiente: 'Por asignar',
+    pendiente: 'Pendientes',
     en_ruta: 'En ruta',
     entregado: 'Entregados',
     cancelado: 'Cancelados',
@@ -183,23 +194,28 @@ export class PedidosPage implements OnInit, OnDestroy {
     if (!error && pedidos.length) {
       const { data: items } = await this.supabase.client
         .from('pedido_items')
-        .select('pedido_id, cantidad, producto:productos(nombre)')
+        .select('pedido_id, cantidad, producto:productos(nombre, imagen_url)')
         .in(
           'pedido_id',
           pedidos.map((p) => p.id)
         );
 
-      pedidos = pedidos.map((p) => ({
-        ...p,
-        productos: (items ?? [])
+      pedidos = pedidos.map((p) => {
+        const propios: ItemPedido[] = (items ?? [])
           .filter((i: any) => i.pedido_id === p.id)
-          .map((i: any) =>
-            i.cantidad > 1
-              ? `${i.producto?.nombre ?? 'Producto'} ×${i.cantidad}`
-              : `${i.producto?.nombre ?? 'Producto'}`
-          )
-          .join(', '),
-      }));
+          .map((i: any) => ({
+            nombre: i.producto?.nombre ?? 'Producto',
+            cantidad: Number(i.cantidad) || 1,
+            imagen_url: i.producto?.imagen_url ?? null,
+          }));
+        return {
+          ...p,
+          items: propios,
+          productos: propios
+            .map((i) => (i.cantidad > 1 ? `${i.nombre} ×${i.cantidad}` : i.nombre))
+            .join(', '),
+        };
+      });
     }
 
     this.pedidos = pedidos as PedidoFila[];
@@ -247,6 +263,7 @@ export class PedidosPage implements OnInit, OnDestroy {
         (p) =>
           p.cliente_nombre.toLowerCase().includes(q) ||
           (p.barrio ?? '').toLowerCase().includes(q) ||
+          (p.productos ?? '').toLowerCase().includes(q) ||
           String(p.numero).includes(q)
       );
     }
@@ -274,6 +291,18 @@ export class PedidosPage implements OnInit, OnDestroy {
         subtotal: pedidos.reduce((s, p) => s + Number(p.total || 0), 0),
       };
     }).filter((g) => g.pedidos.length);
+  }
+
+  /** Productos que se muestran con foto; el resto se resume como "+N más". */
+  readonly maxProductosVisibles = 3;
+
+  verImagen(url: string | null, evento: Event): void {
+    evento.stopPropagation();
+    if (url) this.imagenAmpliada = url;
+  }
+
+  inicial(nombre: string): string {
+    return (nombre.trim()[0] ?? '?').toUpperCase();
   }
 
   trackPedido(_: number, p: PedidoFila): string {

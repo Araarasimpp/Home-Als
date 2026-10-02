@@ -17,7 +17,7 @@ import { EstadoPedido } from '../models/models';
   template: `
     @switch (estado) {
       @case ('pendiente') {
-        <svg viewBox="0 0 16 16" [attr.width]="size" [attr.height]="size" role="img" aria-label="Por asignar">
+        <svg viewBox="0 0 16 16" [attr.width]="size" [attr.height]="size" role="img" aria-label="Pendiente">
           <circle cx="8" cy="8" r="6" fill="none" stroke="var(--st-pendiente)" stroke-width="1.6" stroke-dasharray="2.4 2" />
         </svg>
       }

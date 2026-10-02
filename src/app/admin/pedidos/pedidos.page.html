@@ -51,7 +51,7 @@
         />
         <span class="c-num">#</span>
         <span class="c-st"></span>
-        <span class="c-main">Cliente</span>
+        <span class="c-main">Cliente y productos</span>
         <span class="c-barrio">Barrio</span>
         <span class="c-dom">Domiciliario</span>
         <span class="c-rot">Rótulo</span>
@@ -92,9 +92,33 @@
           <span class="c-st"><app-estado-icon [estado]="p.estado"></app-estado-icon></span>
 
           <div class="c-main">
-            <span class="cliente">{{ p.cliente_nombre }}</span>
-            <span class="productos" [title]="p.productos">{{ p.productos || 'Sin productos' }}</span>
-            <span class="meta-mobile num">#{{ p.numero }}<ng-container *ngIf="p.barrio">, {{ p.barrio }}</ng-container></span>
+            <div class="cliente-linea">
+              <span class="cliente">{{ p.cliente_nombre }}</span>
+              <span class="meta-mobile num">#{{ p.numero }}<ng-container *ngIf="p.barrio">, {{ p.barrio }}</ng-container></span>
+            </div>
+          </div>
+
+          <div class="c-prods">
+            <ul class="prods" *ngIf="p.items?.length; else sinProductos" [attr.aria-label]="'Productos: ' + p.productos">
+              <li class="prod" *ngFor="let it of p.items | slice: 0 : maxProductosVisibles">
+                <button
+                  type="button"
+                  class="prod-foto"
+                  [disabled]="!it.imagen_url"
+                  (click)="verImagen(it.imagen_url, $event)"
+                  [attr.aria-label]="it.imagen_url ? 'Ver foto de ' + it.nombre : it.nombre + ', sin foto'"
+                >
+                  <img *ngIf="it.imagen_url; else sinFoto" [src]="it.imagen_url" alt="" loading="lazy" decoding="async" />
+                  <ng-template #sinFoto><span class="prod-inicial" aria-hidden="true">{{ inicial(it.nombre) }}</span></ng-template>
+                  <span class="prod-cant num" *ngIf="it.cantidad > 1" aria-hidden="true">×{{ it.cantidad }}</span>
+                </button>
+                <span class="prod-nombre">{{ it.nombre }}</span>
+              </li>
+              <li class="prod-mas num" *ngIf="p.items.length > maxProductosVisibles" [title]="p.productos">
+                +{{ p.items.length - maxProductosVisibles }} más
+              </li>
+            </ul>
+            <ng-template #sinProductos><span class="productos">Sin productos</span></ng-template>
           </div>
 
           <span class="c-barrio">{{ p.barrio || '—' }}</span>
@@ -214,4 +238,5 @@
       </div>
     </div>
   </ng-template>
+  <app-imagen-preview [url]="imagenAmpliada" *ngIf="imagenAmpliada" (cerrar)="imagenAmpliada = null"></app-imagen-preview>
 </div>

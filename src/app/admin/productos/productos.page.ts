@@ -14,7 +14,7 @@ type TabFiltro = 'activos' | 'todos';
   standalone: true,
   imports: [CommonModule, FormsModule, ProductoFormComponent],
   templateUrl: './productos.page.html',
-  styleUrls: ['./productos.page.scss'],
+  styleUrls: ['./productos.page.scss', './productos-eliminar.scss'],
 })
 export class ProductosPage implements OnInit, OnDestroy {
   loading = true;
@@ -32,6 +32,14 @@ export class ProductosPage implements OnInit, OnDestroy {
 
   cargandoExcel = false;
   resumenCarga: { creados: number; errores: string[] } | null = null;
+
+  /**
+   * Productos que ya están en algún pedido. Esos no se pueden eliminar (solo
+   * archivar), porque borrarlos dañaría el historial, los cuadres y los reportes.
+   * Mientras no se sepa (null), no se muestra "Eliminar" en ninguno.
+   */
+  enUso: Set<string> | null = null;
+  eliminandoId: string | null = null;
 
   private canal: RealtimeChannel | null = null;
 
@@ -71,19 +79,39 @@ export class ProductosPage implements OnInit, OnDestroy {
   }
 
   async cargarProductos(): Promise<void> {
-    this.loading = true;
-    const { data, error } = await this.supabase.client
-      .from('productos')
-      .select(
-        'id, nombre, sku, descripcion, categoria, precio_base, precio_sugerido, costo, stock, imagen_url, activo'
-      )
-      .order('nombre');
+    if (!this.productos.length) this.loading = true;
+    const [{ data, error }] = await Promise.all([
+      this.supabase.client
+        .from('productos')
+        .select(
+          'id, nombre, sku, descripcion, categoria, precio_base, precio_sugerido, costo, stock, imagen_url, activo'
+        )
+        .order('nombre'),
+      this.cargarEnUso(),
+    ]);
 
     if (!error && data) {
       this.productos = data as Producto[];
     }
     this.loading = false;
     this.cdr.detectChanges();
+  }
+
+  /** Ids de productos que aparecen en algún pedido. */
+  private async cargarEnUso(): Promise<void> {
+    const { data, error } = await this.supabase.client.rpc('productos_en_uso');
+    if (!error && data) {
+      // La función devuelve una lista de ids (o filas con un solo valor)
+      this.enUso = new Set((data as any[]).map((d) => (typeof d === 'string' ? d : Object.values(d)[0] as string)));
+      return;
+    }
+    // Si todavía no se ejecutó supabase/eliminar-productos.sql: no se ofrece
+    // eliminar a nadie (nunca se arriesga a mostrarlo en un producto usado).
+    this.enUso = null;
+  }
+
+  puedeEliminar(p: Producto): boolean {
+    return this.enUso !== null && !this.enUso.has(p.id);
   }
 
   get filtrados(): Producto[] {
@@ -156,11 +184,12 @@ export class ProductosPage implements OnInit, OnDestroy {
     await this.cargarProductos();
   }
 
-  async eliminarProducto(producto: Producto): Promise<void> {
+  /** Oculta el producto del catálogo; sigue existiendo para pedidos anteriores. */
+  async archivarProducto(producto: Producto): Promise<void> {
     this.menuAbiertoId = null;
 
     const confirmado = confirm(
-      `¿Eliminar "${producto.nombre}"? No aparecerá más en el catálogo, pero se conserva en pedidos anteriores.`
+      `¿Archivar "${producto.nombre}"? No aparecerá más en el catálogo, pero se conserva en pedidos anteriores. Puedes reactivarlo cuando quieras.`
     );
     if (!confirmado) return;
 
@@ -172,8 +201,67 @@ export class ProductosPage implements OnInit, OnDestroy {
     if (!error) {
       await this.cargarProductos();
     } else {
+      alert('No se pudo archivar el producto. ' + error.message);
       this.cdr.detectChanges();
     }
+  }
+
+  /**
+   * Borra el producto para siempre (y su foto). Solo para productos que nunca
+   * se usaron en un pedido, por ejemplo uno que se subió mal.
+   */
+  async eliminarProducto(producto: Producto): Promise<void> {
+    this.menuAbiertoId = null;
+    if (!this.puedeEliminar(producto) || this.eliminandoId) return;
+
+    const confirmado = confirm(
+      `¿Eliminar "${producto.nombre}" (${producto.sku}) para siempre?\n\nSe borra el producto y su foto. Esta acción no se puede deshacer.`
+    );
+    if (!confirmado) return;
+
+    this.eliminandoId = producto.id;
+    this.cdr.detectChanges();
+
+    // .select() devuelve lo que se borró: si viene vacío, no se borró nada
+    // (por ejemplo, falta el permiso en Supabase).
+    const { data, error } = await this.supabase.client
+      .from('productos')
+      .delete()
+      .eq('id', producto.id)
+      .select('id');
+
+    this.eliminandoId = null;
+
+    if (error) {
+      // P0001 = el seguro de la base de datos: el producto ya está en un pedido
+      alert(
+        error.code === 'P0001' || error.code === '23503'
+          ? `"${producto.nombre}" ya está en algún pedido, así que no se puede eliminar. Puedes archivarlo.`
+          : 'No se pudo eliminar el producto. ' + error.message
+      );
+      await this.cargarProductos();
+      return;
+    }
+
+    if (!data?.length) {
+      alert('No se pudo eliminar: falta ejecutar supabase/eliminar-productos.sql en Supabase (permiso de borrado).');
+      return;
+    }
+
+    await this.borrarFoto(producto.imagen_url);
+    this.seleccionados.delete(producto.id);
+    this.productos = this.productos.filter((p) => p.id !== producto.id);
+    if (this.paginaActual > this.totalPaginas) this.paginaActual = this.totalPaginas;
+    this.cdr.detectChanges();
+  }
+
+  /** Borra la foto del bucket "productos" si es una imagen subida desde la app. */
+  private async borrarFoto(url: string | null): Promise<void> {
+    const marca = '/storage/v1/object/public/productos/';
+    if (!url || !url.includes(marca)) return; // imágenes externas (ej. desde Excel) no se tocan
+    const ruta = decodeURIComponent(url.split(marca)[1].split('?')[0]);
+    // Si falla, solo queda un archivo huérfano en Storage; el producto ya se borró
+    await this.supabase.client.storage.from('productos').remove([ruta]);
   }
 
   async reactivarProducto(producto: Producto): Promise<void> {

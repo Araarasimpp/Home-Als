@@ -44,7 +44,7 @@ type Metrica = 'ventas' | 'comision';
 type Filtro = 'activos' | 'entregado' | 'todos';
 
 const ETIQUETAS: Record<EstadoPedido, string> = {
-  pendiente: 'Por asignar',
+  pendiente: 'Pendiente',
   en_ruta: 'En ruta',
   entregado: 'Entregado',
   cancelado: 'Cancelado',

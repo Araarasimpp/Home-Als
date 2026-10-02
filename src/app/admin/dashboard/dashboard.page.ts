@@ -69,7 +69,7 @@ interface Bucket {
 const ESTADOS_VENTA = ['en_ruta', 'entregado'];
 const ORDEN_ESTADOS: EstadoPedido[] = ['entregado', 'en_ruta', 'pendiente', 'cancelado'];
 const ETIQUETAS: Record<EstadoPedido, string> = {
-  pendiente: 'Por asignar',
+  pendiente: 'Pendientes',
   en_ruta: 'En ruta',
   entregado: 'Entregados',
   cancelado: 'Cancelados',

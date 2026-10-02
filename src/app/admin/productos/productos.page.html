@@ -30,7 +30,7 @@
       {{ resumenCarga.creados }} producto(s) cargado(s)/actualizado(s) correctamente.
     </p>
     <p class="resumen-error" *ngFor="let e of resumenCarga.errores">{{ e }}</p>
-    <button class="cerrar-resumen" (click)="resumenCarga = null">✕</button>
+    <button class="cerrar-resumen" (click)="resumenCarga = null" aria-label="Cerrar resumen">✕</button>
   </div>
 
   <div class="tabs">
@@ -59,12 +59,13 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let p of paginados">
+          <tr *ngFor="let p of paginados" [class.eliminando]="eliminandoId === p.id">
             <td class="col-check">
               <input
                 type="checkbox"
                 [checked]="seleccionados.has(p.id)"
                 (change)="toggleSeleccion(p.id)"
+                [attr.aria-label]="'Seleccionar ' + p.nombre"
               />
             </td>
             <td>
@@ -88,11 +89,22 @@
               <span class="badge estado-archivado" *ngIf="!p.activo">Archivado</span>
             </td>
             <td class="col-check menu-cell">
-              <button class="menu-btn" (click)="toggleMenu(p.id)">⋯</button>
-              <div class="menu-popover" *ngIf="menuAbiertoId === p.id">
-                <button (click)="abrirEditar(p)">Editar</button>
-                <button *ngIf="p.activo" class="danger" (click)="eliminarProducto(p)">Eliminar</button>
-                <button *ngIf="!p.activo" (click)="reactivarProducto(p)">Reactivar</button>
+              <button
+                class="menu-btn"
+                (click)="toggleMenu(p.id)"
+                [attr.aria-expanded]="menuAbiertoId === p.id"
+                [attr.aria-label]="'Acciones de ' + p.nombre"
+              >
+                ⋯
+              </button>
+              <div class="menu-popover" *ngIf="menuAbiertoId === p.id" role="menu">
+                <button role="menuitem" (click)="abrirEditar(p)">Editar</button>
+                <button role="menuitem" *ngIf="p.activo" (click)="archivarProducto(p)">Archivar</button>
+                <button role="menuitem" *ngIf="!p.activo" (click)="reactivarProducto(p)">Reactivar</button>
+                <!-- Solo para productos que nunca se usaron en un pedido -->
+                <button role="menuitem" *ngIf="puedeEliminar(p)" class="danger" (click)="eliminarProducto(p)">
+                  Eliminar definitivamente
+                </button>
               </div>
             </td>
           </tr>
@@ -113,9 +125,9 @@
         Mostrando {{ paginados.length }} de {{ filtrados.length }} productos
       </span>
       <div class="pager">
-        <button (click)="irAPagina(-1)" [disabled]="paginaActual === 1">←</button>
+        <button (click)="irAPagina(-1)" [disabled]="paginaActual === 1" aria-label="Página anterior">←</button>
         <span>{{ paginaActual }} / {{ totalPaginas }}</span>
-        <button (click)="irAPagina(1)" [disabled]="paginaActual === totalPaginas">→</button>
+        <button (click)="irAPagina(1)" [disabled]="paginaActual === totalPaginas" aria-label="Página siguiente">→</button>
       </div>
     </footer>
   </div>
