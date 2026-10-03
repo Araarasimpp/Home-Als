@@ -3,6 +3,11 @@ import { Router } from '@angular/router';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { SupabaseService } from './supabase.service';
 
+/** Estado de los avisos con la app cerrada (push) en este dispositivo. */
+export type EstadoPush = 'activo' | 'inactivo' | 'no-soportado' | 'instalar-ios' | 'error';
+
+const SW_URL = '/assets/sw-push.js';
+
 export interface Aviso {
   id: string;
   tipo: string;
@@ -17,6 +22,8 @@ export interface Aviso {
  * Avisos de la app (pedido asignado, pedido nuevo, cuadre cerrado…).
  * Los crea la base de datos con triggers y llegan al instante por Realtime.
  * Con permiso del navegador, además se muestra un aviso del sistema y suena.
+ * Con "push" activo, los avisos llegan aunque la app esté cerrada: los envía
+ * la Edge Function enviar-push y los muestra el service worker sw-push.js.
  */
 @Injectable({ providedIn: 'root' })
 export class NotificacionesService {
@@ -26,6 +33,8 @@ export class NotificacionesService {
   readonly permiso = signal<NotificationPermission | 'no-soportado'>(
     typeof Notification === 'undefined' ? 'no-soportado' : Notification.permission
   );
+
+  readonly push = signal<EstadoPush>(this.estadoPushInicial());
 
   private canal: RealtimeChannel | null = null;
   private usuarioId: string | null = null;
@@ -54,6 +63,12 @@ export class NotificacionesService {
         (payload) => this.recibir(payload.new as Aviso)
       )
       .subscribe();
+
+    // Si en este dispositivo ya se dio permiso, se renueva la suscripción en
+    // silencio (por ejemplo, si ahora entró otra persona en el mismo celular)
+    if (this.permiso() === 'granted' && this.push() !== 'no-soportado' && this.push() !== 'instalar-ios') {
+      this.activarPush().catch(() => {});
+    }
   }
 
   detener(): void {
@@ -96,12 +111,102 @@ export class NotificacionesService {
     await this.supabase.client.from('notificaciones').update({ leida: true }).in('id', ids);
   }
 
-  /** Pide permiso para mostrar avisos del sistema en este dispositivo. */
+  /** Pide permiso para mostrar avisos del sistema y los activa con la app cerrada. */
   async pedirPermiso(): Promise<void> {
     if (typeof Notification === 'undefined') return;
     const r = await Notification.requestPermission();
     this.permiso.set(r);
-    if (r === 'granted') this.sonar();
+    if (r === 'granted') {
+      this.sonar();
+      await this.activarPush().catch(() => this.push.set('error'));
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // Avisos con la app cerrada (Web Push)
+  // ---------------------------------------------------------------------
+
+  private estadoPushInicial(): EstadoPush {
+    if (typeof window === 'undefined') return 'no-soportado';
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const instalada =
+      window.matchMedia?.('(display-mode: standalone)').matches || (navigator as any).standalone === true;
+    // En iPhone solo funciona si la app está agregada a la pantalla de inicio
+    if (ios && !instalada) return 'instalar-ios';
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || typeof Notification === 'undefined') {
+      return 'no-soportado';
+    }
+    return 'inactivo';
+  }
+
+  /** Registra el service worker y suscribe este dispositivo a los avisos. */
+  async activarPush(): Promise<void> {
+    if (this.push() === 'no-soportado' || this.push() === 'instalar-ios') return;
+    if (Notification.permission !== 'granted') return;
+
+    const registro = await this.registrarServiceWorker();
+    const clave = await this.clavePublica();
+    if (!clave) {
+      this.push.set('error');
+      return;
+    }
+
+    let sub = await registro.pushManager.getSubscription();
+    if (!sub) {
+      sub = await registro.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: this.base64UrlABytes(clave),
+      });
+    }
+
+    const json = sub.toJSON();
+    const { error } = await this.supabase.client.rpc('registrar_push', {
+      p_endpoint: json.endpoint,
+      p_p256dh: json.keys?.['p256dh'],
+      p_auth: json.keys?.['auth'],
+      p_dispositivo: navigator.userAgent.slice(0, 200),
+    });
+    this.push.set(error ? 'error' : 'activo');
+  }
+
+  /** El service worker controla toda la app si el servidor lo permite; si no (ej. en desarrollo), solo /assets/. */
+  private async registrarServiceWorker(): Promise<ServiceWorkerRegistration> {
+    let reg: ServiceWorkerRegistration;
+    try {
+      reg = await navigator.serviceWorker.register(SW_URL, { scope: '/' });
+    } catch {
+      reg = await navigator.serviceWorker.register(SW_URL);
+    }
+    // pushManager.subscribe necesita un service worker activo
+    if (!reg.active) {
+      const sw = reg.installing || reg.waiting;
+      if (sw) {
+        await new Promise<void>((ok) => {
+          if (sw.state === 'activated') return ok();
+          sw.addEventListener('statechange', () => sw.state === 'activated' && ok());
+          setTimeout(ok, 8000);
+        });
+      }
+    }
+    return reg;
+  }
+
+  private clavePublicaCache: string | null = null;
+
+  /** La clave pública VAPID la entrega la Edge Function (así no hay que ponerla en el código). */
+  private async clavePublica(): Promise<string | null> {
+    if (this.clavePublicaCache) return this.clavePublicaCache;
+    const { data, error } = await this.supabase.client.functions.invoke('enviar-push', { method: 'GET' });
+    const clave = !error ? (data as any)?.publicKey : null;
+    this.clavePublicaCache = clave || null;
+    return this.clavePublicaCache;
+  }
+
+  private base64UrlABytes(base64Url: string): ArrayBuffer {
+    const relleno = '='.repeat((4 - (base64Url.length % 4)) % 4);
+    const base64 = (base64Url + relleno).replace(/-/g, '+').replace(/_/g, '/');
+    const crudo = atob(base64);
+    return Uint8Array.from(crudo, (c) => c.charCodeAt(0)).buffer as ArrayBuffer;
   }
 
   private avisoDelSistema(aviso: Aviso): void {

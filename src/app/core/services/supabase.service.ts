@@ -71,8 +71,28 @@ export class SupabaseService {
   }
 
   async logout() {
+    // Antes de salir, este dispositivo deja de recibir los avisos de esta cuenta
+    // (si no, en un celular compartido le llegarían a la siguiente persona)
+    await this.quitarPushDeEsteDispositivo();
     this.currentProfile = null;
     return this.client.auth.signOut();
+  }
+
+  private async quitarPushDeEsteDispositivo(): Promise<void> {
+    try {
+      if (!('serviceWorker' in navigator)) return;
+      const regs = await navigator.serviceWorker.getRegistrations();
+      const reg = regs.find((r) => (r.active || r.installing || r.waiting)?.scriptURL.includes('sw-push.js'));
+      const sub = await reg?.pushManager.getSubscription();
+      if (!sub) return;
+      await Promise.race([
+        this.client.rpc('quitar_push', { p_endpoint: sub.endpoint }),
+        new Promise((ok) => setTimeout(ok, 3000)),
+      ]);
+      await sub.unsubscribe();
+    } catch {
+      /* si falla, la suscripción vieja se limpia sola cuando el navegador la rechace */
+    }
   }
 
   async getCurrentUser(): Promise<User | null> {

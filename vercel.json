@@ -1,4 +1,13 @@
 {
+  "headers": [
+    {
+      "source": "/assets/sw-push.js",
+      "headers": [
+        { "key": "Service-Worker-Allowed", "value": "/" },
+        { "key": "Cache-Control", "value": "no-cache" }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",

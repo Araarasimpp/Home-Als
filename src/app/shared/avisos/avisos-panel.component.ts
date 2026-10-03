@@ -20,15 +20,28 @@ import { NotificacionesService, Aviso } from '../../core/services/notificaciones
           }
         </header>
 
-        @if (avisos.permiso() === 'default') {
+        @if (avisos.push() === 'instalar-ios') {
+          <p class="permiso">
+            En iPhone, para recibir avisos con la app cerrada, agrégala a la pantalla de inicio:
+            toca <strong>Compartir</strong> y luego <strong>Agregar a inicio</strong>. Después ábrela desde ese ícono.
+          </p>
+        } @else if (avisos.permiso() === 'default') {
           <div class="permiso">
-            <p>Activa los avisos para enterarte aunque estés en otra pestaña.</p>
+            <p>Activa los avisos para enterarte de pedidos y cuadres aunque la app esté cerrada.</p>
             <button (click)="avisos.pedirPermiso()">Activar avisos</button>
           </div>
         } @else if (avisos.permiso() === 'denied') {
           <p class="permiso permiso-off">
-            Los avisos del sistema están bloqueados en este navegador. Puedes activarlos desde el candado junto a la dirección.
+            Los avisos están bloqueados en este navegador. Actívalos desde el candado junto a la dirección
+            (o en Ajustes → Notificaciones del celular) y vuelve a abrir la app.
           </p>
+        } @else if (avisos.push() === 'error') {
+          <div class="permiso permiso-off">
+            <p>No se pudieron activar los avisos con la app cerrada en este dispositivo.</p>
+            <button (click)="avisos.pedirPermiso()">Intentar de nuevo</button>
+          </div>
+        } @else if (avisos.push() === 'activo') {
+          <p class="permiso-ok">Avisos activos en este dispositivo, también con la app cerrada.</p>
         }
 
         <div class="lista">
@@ -75,6 +88,7 @@ import { NotificacionesService, Aviso } from '../../core/services/notificaciones
       @keyframes subir { from { opacity: 0; transform: translateY(6px); } }
       header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--border-soft); }
       h2 { margin: 0; font-size: 15px; font-weight: 600; }
+      .permiso-ok { margin: 10px 14px 0; font-size: 12px; color: var(--st-entregado); }
       .link { border: none; background: none; padding: 4px 0; color: var(--accent); font-size: 12px; font-weight: 500; cursor: pointer; }
       .permiso { margin: 10px 12px 0; padding: 10px 12px; border-radius: var(--radius); background: var(--accent-wash); font-size: 13px; line-height: 1.45; }
       .permiso p { margin: 0 0 8px; }
