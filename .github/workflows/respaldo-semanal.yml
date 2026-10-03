@@ -50,8 +50,32 @@ jobs:
 
       - name: Exportar base de datos
         env:
-          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          DB_URL_CRUDA: ${{ secrets.SUPABASE_DB_URL }}
         run: |
+          # Arregla los errores típicos al pegar el secreto: espacios o saltos de
+          # línea sobrantes, corchetes de [YOUR-PASSWORD] que quedaron, y
+          # caracteres especiales en la contraseña (@ # / ? % : etc.), que
+          # dentro de una URI deben ir codificados.
+          DB_URL=$(python3 - <<'PY'
+          import os, re, sys
+          from urllib.parse import quote, unquote
+          url = os.environ["DB_URL_CRUDA"].strip().strip('"').strip("'")
+          m = re.match(r'^(postgres(?:ql)?://)([^:/@]+):(.*)@([^@]+)$', url, re.S)
+          if not m:
+              sys.exit("La URI no tiene la forma postgresql://usuario:clave@servidor:puerto/postgres")
+          esquema, usuario, clave, resto = m.groups()
+          clave = clave.strip()
+          if clave.startswith('[') and clave.endswith(']'):
+              clave = clave[1:-1]
+          if clave in ('', 'YOUR-PASSWORD'):
+              sys.exit("Falta reemplazar [YOUR-PASSWORD] por la contraseña real de la base de datos")
+          # Si ya venía codificada (ej. %40), primero se decodifica para no codificar dos veces
+          clave = quote(unquote(clave), safe='')
+          print(f"{esquema}{usuario}:{clave}@{resto.strip()}")
+          PY
+          )
+          echo "::add-mask::$DB_URL"
+
           mkdir respaldo
           supabase db dump --db-url "$DB_URL" -f respaldo/roles.sql --role-only
           supabase db dump --db-url "$DB_URL" -f respaldo/esquema.sql
