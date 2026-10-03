@@ -32,6 +32,13 @@
     </nav>
 
     <div class="sidebar-footer">
+      <button class="footer-btn" (click)="toggleAvisos()" [class.active]="avisos.abierto()" [attr.aria-expanded]="avisos.abierto()">
+        <span class="icono-badge">
+          <ion-icon name="notifications-outline"></ion-icon>
+          <span class="badge-num num" *ngIf="avisos.noLeidas()">{{ avisos.noLeidas() > 9 ? '9+' : avisos.noLeidas() }}</span>
+        </span>
+        <span *ngIf="!collapsed">Avisos</span>
+      </button>
       <button class="footer-btn" (click)="toggleTheme()">
         <ion-icon [name]="theme.isDark() ? 'sunny-outline' : 'moon-outline'"></ion-icon>
         <span *ngIf="!collapsed">{{ theme.isDark() ? 'Modo claro' : 'Modo oscuro' }}</span>
@@ -49,27 +56,50 @@
 
   <!-- Celular -->
   <nav class="pill-nav mobile-only" aria-label="Secciones">
-    <a routerLink="/despachador" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+    <a routerLink="/despachador" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="masAbierto = false; avisos.cerrar()">
       <ion-icon name="home-outline"></ion-icon>
       <span class="tab-label">Inicio</span>
     </a>
-    <a routerLink="/despachador/pedidos" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+    <a routerLink="/despachador/pedidos" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="masAbierto = false; avisos.cerrar()">
       <ion-icon name="receipt-outline"></ion-icon>
       <span class="tab-label">Pedidos</span>
     </a>
     <div class="pill-center">
-      <a routerLink="/despachador/pedidos/nuevo" class="pill-action">
+      <a routerLink="/despachador/pedidos/nuevo" class="pill-action" (click)="masAbierto = false; avisos.cerrar()">
         <ion-icon name="add"></ion-icon>
         <span class="tab-label">Nuevo</span>
       </a>
     </div>
-    <a routerLink="/despachador/cuadres" routerLinkActive="active">
-      <ion-icon name="wallet-outline"></ion-icon>
-      <span class="tab-label">Cuadres</span>
-    </a>
-    <button class="pill-action" (click)="logout()">
-      <ion-icon name="log-out-outline"></ion-icon>
-      <span class="tab-label">Salir</span>
+    <button class="tab" [class.active]="avisos.abierto()" (click)="toggleAvisos()" [attr.aria-expanded]="avisos.abierto()">
+      <span class="icono-badge">
+        <ion-icon name="notifications-outline"></ion-icon>
+        <span class="badge-num num" *ngIf="avisos.noLeidas()">{{ avisos.noLeidas() > 9 ? '9+' : avisos.noLeidas() }}</span>
+      </span>
+      <span class="tab-label">Avisos</span>
+    </button>
+    <button class="tab" [class.active]="masAbierto" (click)="masAbierto = !masAbierto; avisos.cerrar()" [attr.aria-expanded]="masAbierto">
+      <ion-icon name="ellipsis-horizontal"></ion-icon>
+      <span class="tab-label">Más</span>
     </button>
   </nav>
+
+  <ng-container *ngIf="masAbierto">
+    <button class="more-backdrop" aria-label="Cerrar menú" (click)="masAbierto = false"></button>
+    <div class="more-sheet">
+      <a *ngFor="let item of menuItems.slice(2)" [routerLink]="item.path" routerLinkActive="active" (click)="masAbierto = false">
+        <ion-icon [name]="item.icon"></ion-icon>{{ item.label }}
+      </a>
+      <hr />
+      <button (click)="toggleTheme()">
+        <ion-icon [name]="theme.isDark() ? 'sunny-outline' : 'moon-outline'"></ion-icon>
+        {{ theme.isDark() ? 'Modo claro' : 'Modo oscuro' }}
+      </button>
+      <button (click)="logout()">
+        <ion-icon name="log-out-outline"></ion-icon>Cerrar sesión
+      </button>
+    </div>
+  </ng-container>
+
+  <app-avisos-panel posicion="sidebar"></app-avisos-panel>
+  <app-aviso-inactividad></app-aviso-inactividad>
 </div>

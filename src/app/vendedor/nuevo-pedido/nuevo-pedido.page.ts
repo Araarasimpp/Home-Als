@@ -53,6 +53,12 @@ export class NuevoPedidoPage implements OnInit {
 
   mostrarSugerenciasBarrio = false;
 
+  /** Cliente que ya compró antes con este teléfono (base de clientes). */
+  clienteEncontrado: { nombre: string; direccion: string | null; barrio: string | null; pedidos: number; ultima_compra: string | null } | null = null;
+  datosClienteUsados = false;
+  private temporizadorTelefono: ReturnType<typeof setTimeout> | null = null;
+  private ultimoTelefonoBuscado = '';
+
   /**
    * Porcentaje de la ganancia si quien crea el pedido es "vendedor por
    * porcentaje"; null si cobra por margen (lo que venda sobre el precio base).
@@ -91,6 +97,52 @@ export class NuevoPedidoPage implements OnInit {
       this.zonas = data;
     }
     this.cdr.detectChanges();
+  }
+
+  /** Al escribir el teléfono, busca si el cliente ya existe. */
+  onTelefono(valor: string): void {
+    this.clienteTelefono = valor;
+    if (this.temporizadorTelefono) clearTimeout(this.temporizadorTelefono);
+    const digitos = valor.replace(/\D/g, '');
+    if (digitos.length < 7) {
+      this.clienteEncontrado = null;
+      return;
+    }
+    this.temporizadorTelefono = setTimeout(() => this.buscarCliente(digitos), 400);
+  }
+
+  private async buscarCliente(digitos: string): Promise<void> {
+    if (digitos === this.ultimoTelefonoBuscado) return;
+    this.ultimoTelefonoBuscado = digitos;
+    const { data, error } = await this.supabase.client.rpc('buscar_cliente', { p_telefono: digitos });
+    // Si el SQL de clientes aún no se ejecutó, simplemente no se sugiere nada
+    const c = !error && Array.isArray(data) && data.length ? data[0] : null;
+    this.clienteEncontrado = c ? { ...c, pedidos: Number(c.pedidos || 0) } : null;
+    this.datosClienteUsados = false;
+    // Si los campos están vacíos, se llenan solos
+    if (this.clienteEncontrado && !this.clienteNombre.trim() && !this.direccion.trim()) {
+      this.usarDatosCliente();
+    }
+    this.cdr.detectChanges();
+  }
+
+  usarDatosCliente(): void {
+    const c = this.clienteEncontrado;
+    if (!c) return;
+    this.clienteNombre = c.nombre;
+    this.direccion = c.direccion ?? this.direccion;
+    if (c.barrio) {
+      this.barrio = c.barrio;
+      const zona = this.zonas.find((z) => z.nombre.trim().toLowerCase() === c.barrio!.trim().toLowerCase());
+      if (zona) this.valorDomicilio = zona.valor;
+    }
+    this.datosClienteUsados = true;
+  }
+
+  fechaCorta(iso: string | null): string {
+    return iso
+      ? new Date(iso).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', timeZone: 'America/Bogota' })
+      : '';
   }
 
   get sugerenciasBarrio(): Zona[] {
@@ -282,6 +334,9 @@ export class NuevoPedidoPage implements OnInit {
     this.intentoEnviar = false;
     this.errorMsg = '';
     this.creado = null;
+    this.clienteEncontrado = null;
+    this.datosClienteUsados = false;
+    this.ultimoTelefonoBuscado = '';
     await this.cargarProductos();
   }
 

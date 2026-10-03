@@ -7,6 +7,7 @@ import { addIcons } from 'ionicons';
 import { add, trashOutline, downloadOutline, checkmark } from 'ionicons/icons';
 import * as XLSX from 'xlsx';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { MfaConfigComponent } from '../../shared/seguridad/mfa-config.component';
 import {
   documentoRotulos,
   PedidoRotulo,
@@ -44,7 +45,7 @@ const PEDIDO_EJEMPLO: PedidoRotulo = {
 @Component({
   selector: 'app-configuracion',
   standalone: true,
-  imports: [CommonModule, FormsModule, IonIcon],
+  imports: [CommonModule, FormsModule, IonIcon, MfaConfigComponent],
   templateUrl: './configuracion.page.html',
   styleUrls: ['./configuracion.page.scss'],
 })
@@ -73,6 +74,18 @@ export class ConfiguracionPage implements OnInit {
 
   exportando = false;
 
+  // Seguridad
+  inactividadMinutos = 30;
+  inactividadDisponible = true; // false si falta ejecutar actividad-y-seguridad.sql
+  guardandoInactividad = false;
+  readonly opcionesInactividad = [
+    { valor: 15, etiqueta: '15 minutos' },
+    { valor: 30, etiqueta: '30 minutos' },
+    { valor: 60, etiqueta: '1 hora' },
+    { valor: 240, etiqueta: '4 horas' },
+    { valor: 0, etiqueta: 'Nunca' },
+  ];
+
   constructor(
     private supabase: SupabaseService,
     private cdr: ChangeDetectorRef,
@@ -82,7 +95,28 @@ export class ConfiguracionPage implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    await Promise.all([this.cargar(), this.cargarZonas()]);
+    await Promise.all([this.cargar(), this.cargarZonas(), this.cargarInactividad()]);
+  }
+
+  private async cargarInactividad(): Promise<void> {
+    const { data } = await this.supabase.client.from('configuracion').select('*').eq('id', true).single();
+    const v = (data as any)?.inactividad_minutos;
+    this.inactividadDisponible = v !== undefined;
+    this.inactividadMinutos = Number(v ?? 30);
+    this.cdr.detectChanges();
+  }
+
+  async guardarInactividad(valor: number): Promise<void> {
+    this.guardandoInactividad = true;
+    this.cdr.detectChanges();
+    const { error } = await this.supabase.client
+      .from('configuracion')
+      .update({ inactividad_minutos: Number(valor) })
+      .eq('id', true);
+    this.guardandoInactividad = false;
+    if (error) alert('No se pudo guardar. ' + error.message);
+    else this.inactividadMinutos = Number(valor);
+    this.cdr.detectChanges();
   }
 
   get hayCambios(): boolean {

@@ -482,3 +482,15 @@ textarea:focus {
     height: 42px;
   }
 }
+
+.select-inact {
+  width: 140px;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  text-align: left;
+}

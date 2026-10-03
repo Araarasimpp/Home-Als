@@ -1,0 +1,51 @@
+<div class="admin-page">
+  <header class="admin-head">
+    <div>
+      <h1>Actividad</h1>
+      <p class="sub">Quién hizo qué en la app. Lo registra la base de datos y nadie lo puede borrar desde la app.</p>
+    </div>
+  </header>
+
+  <div class="barra">
+    <div class="filtro-fecha-grupo">
+      <input type="date" class="fecha-input" [ngModel]="fecha" (ngModelChange)="cambiarFecha($event)" aria-label="Fecha" />
+      <button class="btn-fecha" *ngIf="fecha !== hoy" (click)="cambiarFecha(hoy)">Hoy</button>
+      <button class="btn-fecha" *ngIf="fecha" (click)="cambiarFecha('')">Todas las fechas</button>
+    </div>
+    <select class="select" [(ngModel)]="entidad" aria-label="Tipo">
+      <option *ngFor="let e of entidades" [value]="e.valor">{{ e.etiqueta }}</option>
+    </select>
+    <select class="select" [(ngModel)]="usuario" aria-label="Persona">
+      <option value="todos">Todas las personas</option>
+      <option *ngFor="let u of usuarios" [value]="u.id">{{ u.nombre }}</option>
+    </select>
+    <label class="buscar">
+      <input type="search" [(ngModel)]="busqueda" placeholder="Buscar (ej. #128, termo, Jhon)" aria-label="Buscar en la actividad" />
+    </label>
+  </div>
+
+  <p class="error-box" role="alert" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+  <ng-container *ngIf="!loading && !errorMsg">
+    <div class="tabla" *ngIf="filtrados.length; else vacio">
+      <div class="reg" *ngFor="let r of filtrados">
+        <span class="reg-hora num">{{ hora(r.created_at) }}</span>
+        <span class="reg-avatar" aria-hidden="true">{{ iniciales(r.usuario_nombre) }}</span>
+        <div class="reg-texto">
+          <span class="reg-quien">{{ r.usuario_nombre || 'Sistema' }} <span class="reg-rol">{{ rol(r.usuario_rol) }}</span></span>
+          <span class="reg-desc">{{ r.descripcion }}</span>
+        </div>
+        <span class="reg-tipo" [attr.data-accion]="r.accion">{{ r.entidad }}</span>
+      </div>
+    </div>
+    <p class="muted" *ngIf="registros.length >= LIMITE">Se muestran los {{ LIMITE }} movimientos más recientes. Elige una fecha para ver un día completo.</p>
+    <ng-template #vacio>
+      <div class="vacio">
+        <p class="vacio-titulo">Sin movimientos</p>
+        <p>{{ fecha === hoy ? 'Hoy todavía no hay actividad registrada.' : 'No hay actividad con estos filtros.' }}</p>
+      </div>
+    </ng-template>
+  </ng-container>
+
+  <p class="muted" *ngIf="loading">Cargando actividad…</p>
+</div>

@@ -7,6 +7,7 @@ import { callOutline, logoWhatsapp, navigateOutline, alertCircleOutline } from '
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { inicioDiaColombia } from '../../shared/fecha-colombia';
+import { efectivoDePedido } from '../../shared/models/models';
 import { EstadoIconComponent } from '../../shared/estado-icon/estado-icon.component';
 import { EntregarPedidoComponent } from '../entregar-pedido/entregar-pedido.component';
 
@@ -90,7 +91,8 @@ export class InicioDomiciliarioPage implements OnInit, OnDestroy {
         .order('created_at', { ascending: true }),
       this.supabase.client
         .from('pedidos')
-        .select('total, metodo_pago, cuadre_id')
+        // '*' incluye monto_efectivo (pago mixto)
+        .select('*')
         .eq('domiciliario_id', user.id)
         .eq('estado', 'entregado')
         .gte('entregado_at', inicioDiaColombia().toISOString()),
@@ -119,13 +121,11 @@ export class InicioDomiciliarioPage implements OnInit, OnDestroy {
       }));
     }
 
-    const hoy = (hoyRes.data ?? []) as { total: number; metodo_pago: string | null; cuadre_id: string | null }[];
+    const hoy = (hoyRes.data ?? []) as any[];
     this.entregadosHoy = hoy.length;
     const sinCuadre = hoy.filter((p) => !p.cuadre_id);
     this.porCuadrar = sinCuadre.length;
-    this.efectivoEnMano = sinCuadre
-      .filter((p) => p.metodo_pago === 'efectivo')
-      .reduce((s, p) => s + Number(p.total || 0), 0);
+    this.efectivoEnMano = sinCuadre.reduce((s, p) => s + efectivoDePedido(p), 0);
 
     this.pedidos = pedidos as PedidoRuta[];
     this.loading = false;

@@ -134,6 +134,11 @@ section {
   color: var(--accent);
 }
 
+.metodo.mixto {
+  background: color-mix(in srgb, var(--st-ruta) 14%, transparent);
+  color: var(--st-ruta-text);
+}
+
 .pedido-total {
   margin-left: auto;
   font-size: 14px;

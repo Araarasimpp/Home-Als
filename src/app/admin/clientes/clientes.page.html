@@ -1,0 +1,89 @@
+<div class="admin-page">
+  <header class="admin-head">
+    <div>
+      <h1>Clientes</h1>
+      <p class="sub num" *ngIf="!loading && !errorMsg">
+        {{ clientes.length }} clientes, {{ recurrentes }} han comprado más de una vez
+      </p>
+    </div>
+  </header>
+
+  <p class="error-box" role="alert" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+  <ng-container *ngIf="!loading && !errorMsg">
+    <div class="barra">
+      <label class="buscar">
+        <ion-icon name="search-outline" aria-hidden="true"></ion-icon>
+        <input type="search" [(ngModel)]="busqueda" placeholder="Nombre, teléfono o barrio" aria-label="Buscar clientes" />
+      </label>
+      <div class="segmented" role="group" aria-label="Ordenar">
+        <button [class.on]="orden === 'recientes'" [attr.aria-pressed]="orden === 'recientes'" (click)="orden = 'recientes'">Recientes</button>
+        <button [class.on]="orden === 'compras'" [attr.aria-pressed]="orden === 'compras'" (click)="orden = 'compras'">Más compras</button>
+        <button [class.on]="orden === 'nombre'" [attr.aria-pressed]="orden === 'nombre'" (click)="orden = 'nombre'">A–Z</button>
+      </div>
+    </div>
+
+    <div class="tabla" *ngIf="filtrados.length; else vacio">
+      <div class="fila fila-head">
+        <span>Cliente</span>
+        <span class="col-barrio">Barrio</span>
+        <span class="col-num">Pedidos</span>
+        <span class="col-num">Total comprado</span>
+        <span class="col-fecha">Última compra</span>
+        <span></span>
+      </div>
+
+      <div class="cliente" *ngFor="let c of filtrados" [class.abierto]="abiertoId === c.id">
+        <button class="fila" (click)="toggle(c)" [attr.aria-expanded]="abiertoId === c.id">
+          <span class="col-nombre">
+            <span class="nombre">{{ c.nombre }}</span>
+            <span class="tel num">{{ telefonoBonito(c.telefono) }}</span>
+          </span>
+          <span class="col-barrio">{{ c.barrio || '—' }}</span>
+          <span class="col-num num">{{ c.pedidos }}</span>
+          <span class="col-num num fuerte">{{ formatoMoneda(c.total_comprado) }}</span>
+          <span class="col-fecha num">{{ fecha(c.ultima_compra) }}</span>
+          <ion-icon name="chevron-down-outline" class="chevron" aria-hidden="true"></ion-icon>
+        </button>
+
+        <div class="detalle" *ngIf="abiertoId === c.id">
+          <div class="detalle-info">
+            <p><span class="etq">Dirección</span>{{ c.direccion || '—' }}<ng-container *ngIf="c.barrio">, {{ c.barrio }}</ng-container></p>
+            <p><span class="etq">Cliente desde</span>{{ fecha(c.created_at) }}</p>
+            <a class="btn btn-wa" [href]="whatsapp(c)" target="_blank" rel="noopener">
+              <ion-icon name="logo-whatsapp" aria-hidden="true"></ion-icon> Escribir por WhatsApp
+            </a>
+            <label class="notas">
+              <span class="etq">Notas internas</span>
+              <textarea
+                rows="2"
+                [value]="c.notas ?? ''"
+                (blur)="guardarNotas(c, $event)"
+                placeholder="Ej. prefiere entregas en la tarde, portería 2"
+              ></textarea>
+            </label>
+          </div>
+          <div class="detalle-pedidos">
+            <span class="etq">Últimos pedidos</span>
+            <div class="ped" *ngFor="let p of pedidosDe.get(c.id) ?? []">
+              <app-estado-icon [estado]="p.estado"></app-estado-icon>
+              <span class="num">#{{ p.numero }}</span>
+              <span class="ped-fecha num">{{ fecha(p.created_at) }}</span>
+              <span class="num ped-total">{{ formatoMoneda(p.total) }}</span>
+            </div>
+            <p class="muted" *ngIf="!(pedidosDe.get(c.id) ?? []).length">Cargando…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #vacio>
+      <div class="vacio">
+        <p class="vacio-titulo">{{ clientes.length ? 'Ningún cliente coincide' : 'Todavía no hay clientes' }}</p>
+        <p>Cada pedido con teléfono crea o actualiza su cliente automáticamente.</p>
+      </div>
+    </ng-template>
+  </ng-container>
+
+  <p class="muted" *ngIf="loading">Cargando clientes…</p>
+</div>
