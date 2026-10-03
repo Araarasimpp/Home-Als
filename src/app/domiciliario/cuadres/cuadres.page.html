@@ -32,8 +32,8 @@
             <div class="pedido-top">
               <span class="num pedido-num">#{{ p.numero }}</span>
               <span class="pedido-hora num">{{ formatoHora(p.entregado_at) }}</span>
-              <span class="metodo" [class.transferencia]="p.metodo_pago === 'transferencia'">
-                {{ p.metodo_pago === 'transferencia' ? 'Transferencia' : 'Efectivo' }}
+              <span class="metodo" [class.transferencia]="p.metodo_pago === 'transferencia'" [class.mixto]="p.metodo_pago === 'mixto'">
+                {{ p.metodo_pago === 'transferencia' ? 'Transferencia' : p.metodo_pago === 'mixto' ? 'Mixto' : 'Efectivo' }}
               </span>
               <span class="num pedido-total">{{ formatoMoneda(p.total) }}</span>
             </div>
@@ -44,7 +44,10 @@
               <span class="num pedido-cuadre" [class.a-favor]="cuadreDe(p) < 0">
                 {{ cuadreDe(p) >= 0 ? 'Entregas ' + formatoMoneda(cuadreDe(p)) : 'Te deben ' + formatoMoneda(-cuadreDe(p)) }}
               </span>
-              <button class="link" *ngIf="p.metodo_pago === 'transferencia'" (click)="verComprobante(p)">Ver comprobante</button>
+              <span class="num" *ngIf="p.metodo_pago === 'mixto'">
+                Efectivo {{ formatoMoneda(efectivoDe(p)) }}, transferencia {{ formatoMoneda(transferenciaDe(p)) }}
+              </span>
+              <button class="link" *ngIf="p.metodo_pago === 'transferencia' || p.metodo_pago === 'mixto'" (click)="verComprobante(p)">Ver comprobante</button>
             </div>
           </div>
         </div>

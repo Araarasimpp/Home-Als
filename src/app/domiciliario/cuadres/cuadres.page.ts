@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../core/services/supabase.service';
-import { Cuadre, MetodoPago } from '../../shared/models/models';
+import { Cuadre, MetodoPago, efectivoDePedido, transferenciaDePedido } from '../../shared/models/models';
 import { ImagenPreviewComponent } from '../../shared/imagen-preview/imagen-preview.component';
 import {
   hoyColombiaISO,
@@ -21,6 +21,8 @@ interface PedidoSinCuadrar {
   total: number;
   valor_domicilio: number;
   metodo_pago: MetodoPago | null;
+  monto_efectivo?: number | null;
+  monto_transferencia?: number | null;
   comprobante_url: string | null;
   entregado_at: string;
   productos: string;
@@ -66,9 +68,8 @@ export class CuadresPage implements OnInit {
     const [pedidosRes, cuadresRes] = await Promise.all([
       this.supabase.client
         .from('pedidos')
-        .select(
-          'id, numero, cliente_nombre, direccion, barrio, total, valor_domicilio, metodo_pago, comprobante_url, entregado_at'
-        )
+        // '*' incluye monto_efectivo / monto_transferencia (pago mixto)
+        .select('*')
         .eq('domiciliario_id', user.id)
         .eq('estado', 'entregado')
         .is('cuadre_id', null)
@@ -115,11 +116,11 @@ export class CuadresPage implements OnInit {
 
   // Lo que aportó ESTE pedido en efectivo (0 si fue por transferencia)
   efectivoDe(p: PedidoSinCuadrar): number {
-    return p.metodo_pago === 'efectivo' ? p.total : 0;
+    return efectivoDePedido(p);
   }
 
   transferenciaDe(p: PedidoSinCuadrar): number {
-    return p.metodo_pago === 'transferencia' ? p.total : 0;
+    return transferenciaDePedido(p);
   }
 
   // Cuadre de este pedido en particular: lo que aportó en efectivo menos el

@@ -10,7 +10,7 @@
 
     <p class="ok-msg" role="status" *ngIf="avisoOk">{{ avisoOk }}</p>
 
-    <form class="auth-form" (ngSubmit)="onLogin()">
+    <form class="auth-form" *ngIf="paso === 'clave'; else pasoCodigo" (ngSubmit)="onLogin()">
       <div class="field">
         <label for="email">Correo</label>
         <input
@@ -68,7 +68,33 @@
       </button>
     </form>
 
-    <p class="switch-link">
+    <ng-template #pasoCodigo>
+      <form class="auth-form" (ngSubmit)="onVerificarCodigo()">
+        <div class="field">
+          <label for="codigo">Código de verificación</label>
+          <input
+            id="codigo"
+            name="codigo"
+            type="text"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="7"
+            class="codigo-input num"
+            [(ngModel)]="codigo"
+            placeholder="000000"
+            [attr.aria-invalid]="!!errorMsg"
+          />
+          <p class="hint">Abre tu app de autenticación (Google Authenticator, Authy…) y escribe el código de 6 números de Home ALS.</p>
+        </div>
+        <p class="error-msg" role="alert" *ngIf="errorMsg">{{ errorMsg }}</p>
+        <button type="submit" class="submit-btn" [disabled]="loading">
+          {{ loading ? 'Verificando…' : 'Verificar' }}
+        </button>
+        <button type="button" class="submit-btn submit-secundario" (click)="usarOtraCuenta()">Usar otra cuenta</button>
+      </form>
+    </ng-template>
+
+    <p class="switch-link" *ngIf="paso === 'clave'">
       ¿Todavía no tienes cuenta? <a routerLink="/auth/registro">Crear cuenta</a>.
       Las cuentas nuevas entran como vendedor y el administrador asigna los demás roles.
     </p>

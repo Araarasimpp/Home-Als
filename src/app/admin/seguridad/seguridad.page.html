@@ -1,0 +1,24 @@
+<div class="admin-page seg">
+  <header class="admin-head">
+    <h1>Mi seguridad</h1>
+    <p class="sub">Sesiones y respaldos de la app.</p>
+  </header>
+
+  <section class="tarjeta" aria-labelledby="t-sesion">
+    <h2 id="t-sesion">Sesiones</h2>
+    <p class="texto">
+      En computadores, la sesión de admin y despachador se cierra sola tras 30 minutos sin uso, con un aviso un minuto antes.
+    </p>
+    <button class="btn btn-peligro" (click)="cerrarTodas()">Cerrar sesión en todos los dispositivos</button>
+    <p class="muted nota">Úsalo si dejaste la sesión abierta en un equipo ajeno o crees que alguien conoce tu contraseña.</p>
+  </section>
+
+  <section class="tarjeta" aria-labelledby="t-resp">
+    <h2 id="t-resp">Respaldos</h2>
+    <p class="texto">
+      Cada domingo se guarda una copia cifrada de toda la base de datos en GitHub (Actions → "Respaldo semanal").
+      La clave para abrirla solo la tienes tú.
+    </p>
+    <p class="muted nota">Además, en Configuración puedes descargar un Excel con pedidos, productos y cuadres cuando quieras.</p>
+  </section>
+</div>

@@ -1,0 +1,79 @@
+# Respaldo semanal de la base de datos de Home ALS (Supabase).
+#
+# Cada domingo a las 3:00 a. m. (hora Colombia) hace una copia completa de la
+# base de datos (estructura + datos), la CIFRA con tu clave y la guarda como
+# "artifact" de GitHub durante 90 días. Como el repositorio es público, el
+# archivo va cifrado: sin tu clave nadie puede abrirlo.
+#
+# Configuración (una sola vez), en GitHub → Settings → Secrets and variables
+# → Actions → New repository secret:
+#   SUPABASE_DB_URL     Supabase → Connect → "Session pooler" → URI
+#                       (con tu contraseña de base de datos en lugar de [YOUR-PASSWORD])
+#   BACKUP_PASSPHRASE   Una clave larga que inventes y guardes en un lugar seguro.
+#                       Sin ella no se puede abrir ningún respaldo.
+#
+# Para correrlo a mano: GitHub → Actions → "Respaldo semanal" → Run workflow.
+# Para descargar: abre la ejecución → sección Artifacts.
+# Para abrirlo:   gpg --decrypt respaldo-AAAA-MM-DD.tar.gz.gpg > respaldo.tar.gz
+#                 tar -xzf respaldo.tar.gz
+# (No incluye las fotos de Storage; esas se respaldan aparte si hace falta.)
+
+name: Respaldo semanal
+
+on:
+  schedule:
+    - cron: '0 8 * * 0' # domingo 08:00 UTC = 03:00 Colombia
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  respaldo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Revisar que existan los secretos
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          CLAVE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$DB_URL" ] || [ -z "$CLAVE" ]; then
+            echo "::error::Faltan los secretos SUPABASE_DB_URL y/o BACKUP_PASSPHRASE (Settings → Secrets → Actions)."
+            exit 1
+          fi
+
+      - name: Instalar Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Exportar base de datos
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          mkdir respaldo
+          supabase db dump --db-url "$DB_URL" -f respaldo/roles.sql --role-only
+          supabase db dump --db-url "$DB_URL" -f respaldo/esquema.sql
+          supabase db dump --db-url "$DB_URL" -f respaldo/datos.sql --use-copy --data-only
+          ls -lh respaldo
+
+      - name: Comprimir y cifrar
+        env:
+          CLAVE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          FECHA=$(TZ=America/Bogota date +%F)
+          tar -czf "respaldo-$FECHA.tar.gz" respaldo
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$CLAVE" \
+              --symmetric --cipher-algo AES256 -o "respaldo-$FECHA.tar.gz.gpg" "respaldo-$FECHA.tar.gz"
+          # Borrar las copias sin cifrar del servidor de GitHub
+          rm -rf respaldo "respaldo-$FECHA.tar.gz"
+          echo "FECHA=$FECHA" >> "$GITHUB_ENV"
+
+      - name: Guardar respaldo cifrado
+        uses: actions/upload-artifact@v4
+        with:
+          name: respaldo-${{ env.FECHA }}
+          path: respaldo-*.tar.gz.gpg
+          retention-days: 90
+          if-no-files-found: error

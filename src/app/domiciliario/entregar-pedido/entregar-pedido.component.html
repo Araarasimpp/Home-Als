@@ -44,9 +44,38 @@
         <ion-icon name="phone-portrait-outline" aria-hidden="true"></ion-icon>
         Transferencia
       </button>
+      <button
+        type="button"
+        class="metodo"
+        [class.on]="metodoPago === 'mixto'"
+        [attr.aria-pressed]="metodoPago === 'mixto'"
+        (click)="elegirMetodo('mixto')"
+      >
+        <ion-icon name="swap-horizontal-outline" aria-hidden="true"></ion-icon>
+        Mixto
+      </button>
     </fieldset>
 
-    <label class="comprobante" *ngIf="metodoPago === 'transferencia'" [class.con-foto]="previewComprobante">
+    <div class="mixto" *ngIf="metodoPago === 'mixto'">
+      <label for="efectivo">¿Cuánto te dieron en efectivo?</label>
+      <div class="mixto-input">
+        <span aria-hidden="true">$</span>
+        <input
+          id="efectivo"
+          type="number"
+          inputmode="numeric"
+          min="0"
+          [max]="pedido.total"
+          [(ngModel)]="montoEfectivo"
+          placeholder="0"
+        />
+      </div>
+      <p class="mixto-resto num">
+        Por transferencia: <strong>{{ formatoMoneda(montoTransferencia) }}</strong>
+      </p>
+    </div>
+
+    <label class="comprobante" *ngIf="pideComprobante" [class.con-foto]="previewComprobante">
       <img *ngIf="previewComprobante" [src]="previewComprobante" alt="Comprobante de la transferencia" />
       <span class="comprobante-vacio" *ngIf="!previewComprobante">
         <ion-icon name="camera-outline" aria-hidden="true"></ion-icon>

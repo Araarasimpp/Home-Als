@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -17,7 +17,7 @@ import {
   templateUrl: './login.page.html',
   styleUrls: ['../auth-shell.scss', './login.page.scss'],
 })
-export class LoginPage implements OnDestroy {
+export class LoginPage implements OnInit, OnDestroy {
   email = '';
   password = '';
   errorMsg = '';
@@ -28,6 +28,11 @@ export class LoginPage implements OnDestroy {
   avisoOk = '';
   /** Segundos de bloqueo restantes por demasiados intentos (0 = libre). */
   segundosBloqueo = 0;
+
+  /** Paso del login: contraseña, o código de la app de autenticación (admin con 2 pasos). */
+  paso: 'clave' | 'codigo' = 'clave';
+  codigo = '';
+  private factorId: string | null = null;
 
   private reloj: ReturnType<typeof setInterval> | null = null;
 
@@ -42,7 +47,61 @@ export class LoginPage implements OnDestroy {
       this.avisoOk = 'Cuenta creada. Si te llegó un correo de confirmación, ábrelo antes de iniciar sesión.';
     } else if (q.get('clave') === '1') {
       this.avisoOk = 'Contraseña actualizada. Ya puedes iniciar sesión con la nueva.';
+    } else if (q.get('inactividad') === '1') {
+      this.avisoOk = 'Cerramos tu sesión por inactividad. Vuelve a entrar para continuar.';
     }
+  }
+
+  /** Si ya hay sesión pero falta el código (ej. se recargó la página), pide el código. */
+  async ngOnInit(): Promise<void> {
+    const { data } = await this.supabase.client.auth.getSession();
+    if (data.session && (await this.supabase.necesitaCodigoMfa())) {
+      await this.irAPasoCodigo();
+    }
+  }
+
+  private async irAPasoCodigo(): Promise<void> {
+    const factor = await this.supabase.factorMfaActivo();
+    this.factorId = factor?.id ?? null;
+    this.paso = 'codigo';
+    this.codigo = '';
+    this.errorMsg = '';
+    this.cdr.detectChanges();
+    setTimeout(() => document.getElementById('codigo')?.focus(), 50);
+  }
+
+  async onVerificarCodigo(): Promise<void> {
+    if (this.loading || !this.factorId) return;
+    const codigo = this.codigo.replace(/\s/g, '');
+    if (!/^\d{6}$/.test(codigo)) {
+      this.errorMsg = 'Escribe los 6 números que muestra tu app de autenticación.';
+      return;
+    }
+    this.loading = true;
+    this.errorMsg = '';
+    this.cdr.detectChanges();
+
+    const { error } = await this.supabase.verificarCodigoMfa(this.factorId, codigo);
+    if (error) {
+      this.loading = false;
+      this.codigo = '';
+      this.errorMsg =
+        error.status === 429
+          ? 'Demasiados intentos. Espera un momento antes de volver a probar.'
+          : 'Ese código no es válido o ya venció. Usa el que aparece ahora en tu app.';
+      this.cdr.detectChanges();
+      return;
+    }
+    await this.entrarSegunRol();
+  }
+
+  async usarOtraCuenta(): Promise<void> {
+    await this.supabase.logout();
+    this.paso = 'clave';
+    this.password = '';
+    this.codigo = '';
+    this.errorMsg = '';
+    this.cdr.detectChanges();
   }
 
   ngOnDestroy(): void {
@@ -130,6 +189,17 @@ export class LoginPage implements OnDestroy {
     }
 
     limpiarFallos(email);
+
+    // Admin con verificación en dos pasos: falta el código
+    if (await this.supabase.necesitaCodigoMfa()) {
+      this.loading = false;
+      await this.irAPasoCodigo();
+      return;
+    }
+    await this.entrarSegunRol();
+  }
+
+  private async entrarSegunRol(): Promise<void> {
     const profile = await this.supabase.getCurrentProfile();
     this.loading = false;
 

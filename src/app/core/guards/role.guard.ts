@@ -46,26 +46,3 @@ export class RoleGuard implements CanActivate {
     return true;
   }
 }
-
-/*
- * Uso en app-routing.module.ts:
- *
- * {
- *   path: 'admin',
- *   loadChildren: () => import('./admin/admin.module').then(m => m.AdminModule),
- *   canActivate: [RoleGuard],
- *   data: { roles: ['admin'] }
- * },
- * {
- *   path: 'vendedor',
- *   loadChildren: () => import('./vendedor/vendedor.module').then(m => m.VendedorModule),
- *   canActivate: [RoleGuard],
- *   data: { roles: ['vendedor', 'admin'] }
- * },
- * {
- *   path: 'domiciliario',
- *   loadChildren: () => import('./domiciliario/domiciliario.module').then(m => m.DomiciliarioModule),
- *   canActivate: [RoleGuard],
- *   data: { roles: ['domiciliario', 'admin'] }
- * },
- */

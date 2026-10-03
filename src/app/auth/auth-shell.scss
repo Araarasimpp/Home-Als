@@ -247,3 +247,18 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+.codigo-input {
+  height: 52px !important;
+  font-size: 24px !important;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-align: center;
+}
+
+.hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}

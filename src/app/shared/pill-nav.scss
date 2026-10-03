@@ -141,3 +141,33 @@
   border: none;
   padding: 0;
 }
+
+// Ícono con contador (campana de avisos)
+.icono-badge {
+  position: relative;
+  display: inline-flex;
+}
+
+.badge-num {
+  position: absolute;
+  top: -5px;
+  right: -9px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+// La hoja "Más" puede tener muchas opciones: que se desplace si no caben
+.more-sheet {
+  max-height: calc(100dvh - var(--tabbar-h) - 40px);
+  overflow-y: auto;
+}

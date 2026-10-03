@@ -450,6 +450,24 @@ input[aria-invalid='true'] {
   border-color: var(--danger) !important;
 }
 
+.cliente-conocido {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--accent-wash);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.cliente-conocido .btn-sm {
+  height: 32px;
+  font-size: 13px;
+}
+
 .combo {
   position: relative;
 }

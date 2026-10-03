@@ -104,7 +104,7 @@
 
 .metodos {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 10px;
   margin: 0;
   padding: 0;
@@ -125,12 +125,12 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 84px;
+  height: 78px;
   border: 1.5px solid var(--border-strong);
   border-radius: var(--radius-lg);
   background: var(--surface);
   color: var(--text-2);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -145,6 +145,62 @@
   border-color: var(--accent);
   background: var(--accent-wash);
   color: var(--accent);
+}
+
+.mixto {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.mixto label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.mixto-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.mixto-input span {
+  position: absolute;
+  left: 12px;
+  font-size: 16px;
+  color: var(--text-muted);
+}
+
+.mixto-input input {
+  width: 100%;
+  height: 48px;
+  padding: 0 12px 0 26px;
+  box-sizing: border-box;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mixto-input input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.mixto-resto {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.mixto-resto strong {
+  color: var(--text);
 }
 
 .comprobante {

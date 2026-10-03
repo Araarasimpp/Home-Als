@@ -4,16 +4,23 @@
   </main>
 
   <nav class="pill-nav" aria-label="Secciones">
-    <a routerLink="/vendedor" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+    <a routerLink="/vendedor" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="avisos.cerrar()">
       <ion-icon name="home-outline"></ion-icon>
       <span class="tab-label">Inicio</span>
     </a>
     <div class="pill-center">
-      <a routerLink="/vendedor/nuevo-pedido" class="pill-action">
+      <a routerLink="/vendedor/nuevo-pedido" class="pill-action" (click)="avisos.cerrar()">
         <ion-icon name="add"></ion-icon>
         <span class="tab-label">Nuevo pedido</span>
       </a>
     </div>
+    <button class="tab" [class.active]="avisos.abierto()" (click)="avisos.toggle()" [attr.aria-expanded]="avisos.abierto()">
+      <span class="icono-badge">
+        <ion-icon name="notifications-outline"></ion-icon>
+        <span class="badge-num num" *ngIf="avisos.noLeidas()">{{ avisos.noLeidas() > 9 ? '9+' : avisos.noLeidas() }}</span>
+      </span>
+      <span class="tab-label">Avisos</span>
+    </button>
     <button class="pill-action" (click)="toggleTheme()">
       <ion-icon [name]="theme.isDark() ? 'sunny-outline' : 'moon-outline'"></ion-icon>
       <span class="tab-label">{{ theme.isDark() ? 'Claro' : 'Oscuro' }}</span>
@@ -23,4 +30,6 @@
       <span class="tab-label">Salir</span>
     </button>
   </nav>
+
+  <app-avisos-panel posicion="barra"></app-avisos-panel>
 </div>

@@ -133,6 +133,7 @@ async function cargarGrupos(db: SupabaseClient, o: OpcionesExcel): Promise<Grupo
     if (p.domiciliario_id) {
       mensajero = (nombre.get(p.domiciliario_id) ?? 'DOMICILIARIO').toUpperCase();
       if (p.metodo_pago === 'transferencia') mensajero += ' TRANSFERENCIA';
+      else if (p.metodo_pago === 'mixto') mensajero += ` MIXTO (EF ${Math.round(Number(p.monto_efectivo || 0) / 1000)} MIL)`;
     } else {
       mensajero = domicilio > 0 ? 'SIN ASIGNAR' : 'LOCAL';
     }

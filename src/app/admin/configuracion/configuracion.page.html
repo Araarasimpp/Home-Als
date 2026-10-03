@@ -180,6 +180,36 @@
           <p class="inline-error" role="alert" *ngIf="errorZona">{{ errorZona }}</p>
         </section>
 
+        <!-- Seguridad -->
+        <section class="section" aria-labelledby="sec-seguridad">
+          <div class="section-head">
+            <h2 id="sec-seguridad">Seguridad</h2>
+            <p>Protege el acceso de administrador y los computadores compartidos de la tienda.</p>
+          </div>
+          <div class="card">
+            <app-mfa-config></app-mfa-config>
+          </div>
+          <div class="card field-inline" style="margin-top: 12px">
+            <div>
+              <label for="inactividad">Cerrar sesión por inactividad</label>
+              <p class="hint">
+                Aplica al admin y al despachador. Si nadie toca la app durante ese tiempo, se cierra la sesión.
+                Vendedores y domiciliarios no se ven afectados.
+              </p>
+              <p class="hint" *ngIf="!inactividadDisponible">Falta ejecutar <code>supabase/actividad-y-seguridad.sql</code>.</p>
+            </div>
+            <select
+              id="inactividad"
+              class="input-corto select-inact"
+              [ngModel]="inactividadMinutos"
+              (ngModelChange)="guardarInactividad($event)"
+              [disabled]="!inactividadDisponible || guardandoInactividad"
+            >
+              <option *ngFor="let o of opcionesInactividad" [ngValue]="o.valor">{{ o.etiqueta }}</option>
+            </select>
+          </div>
+        </section>
+
         <!-- Respaldo -->
         <section class="section" aria-labelledby="sec-respaldo">
           <div class="section-head">

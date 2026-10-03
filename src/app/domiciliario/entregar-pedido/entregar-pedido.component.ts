@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonIcon } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { cashOutline, phonePortraitOutline, cameraOutline, close } from 'ionicons/icons';
+import { cashOutline, phonePortraitOutline, cameraOutline, close, swapHorizontalOutline } from 'ionicons/icons';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { MetodoPago } from '../../shared/models/models';
 import { comprimirImagen, extensionDe } from '../../shared/imagenes/comprimir';
@@ -28,6 +28,8 @@ export class EntregarPedidoComponent implements OnDestroy {
   @Output() entregado = new EventEmitter<void>();
 
   metodoPago: MetodoPago | null = null;
+  /** En pago mixto: cuánto recibió en efectivo (el resto fue transferencia). */
+  montoEfectivo: number | null = null;
   archivoComprobante: File | null = null;
   previewComprobante: string | null = null;
 
@@ -35,7 +37,7 @@ export class EntregarPedidoComponent implements OnDestroy {
   errorMsg = '';
 
   constructor(private supabase: SupabaseService, private cdr: ChangeDetectorRef) {
-    addIcons({ cashOutline, phonePortraitOutline, cameraOutline, close });
+    addIcons({ cashOutline, phonePortraitOutline, cameraOutline, close, swapHorizontalOutline });
   }
 
   ngOnDestroy(): void {
@@ -45,6 +47,15 @@ export class EntregarPedidoComponent implements OnDestroy {
   elegirMetodo(m: MetodoPago): void {
     this.metodoPago = m;
     this.errorMsg = '';
+  }
+
+  get pideComprobante(): boolean {
+    return this.metodoPago === 'transferencia' || this.metodoPago === 'mixto';
+  }
+
+  /** Lo que falta por transferencia en un pago mixto. */
+  get montoTransferencia(): number {
+    return Math.max(0, Number(this.pedido.total) - (Number(this.montoEfectivo) || 0));
   }
 
   onArchivoSeleccionado(event: Event): void {
@@ -67,7 +78,15 @@ export class EntregarPedidoComponent implements OnDestroy {
       return;
     }
 
-    if (this.metodoPago === 'transferencia' && !this.archivoComprobante) {
+    if (this.metodoPago === 'mixto') {
+      const efectivo = Number(this.montoEfectivo);
+      if (!(efectivo > 0) || efectivo >= Number(this.pedido.total)) {
+        this.errorMsg = 'Escribe cuánto te dieron en efectivo: más de $0 y menos que el total.';
+        return;
+      }
+    }
+
+    if (this.pideComprobante && !this.archivoComprobante) {
       this.errorMsg = 'Toma o sube la foto del comprobante de la transferencia.';
       return;
     }
@@ -78,7 +97,7 @@ export class EntregarPedidoComponent implements OnDestroy {
     try {
       let comprobanteUrl: string | null = null;
 
-      if (this.metodoPago === 'transferencia' && this.archivoComprobante) {
+      if (this.pideComprobante && this.archivoComprobante) {
         comprobanteUrl = await this.subirComprobante(this.archivoComprobante);
       }
 
@@ -88,6 +107,8 @@ export class EntregarPedidoComponent implements OnDestroy {
           estado: 'entregado',
           entregado_at: new Date().toISOString(),
           metodo_pago: this.metodoPago,
+          // La base de datos calcula la parte por transferencia (total − efectivo)
+          ...(this.metodoPago === 'mixto' ? { monto_efectivo: Math.round(Number(this.montoEfectivo)) } : {}),
           comprobante_url: comprobanteUrl,
         })
         .eq('id', this.pedido.id);
@@ -95,7 +116,9 @@ export class EntregarPedidoComponent implements OnDestroy {
       this.guardando = false;
 
       if (error) {
-        this.errorMsg = 'No se pudo confirmar la entrega. Intenta de nuevo.';
+        this.errorMsg = /monto_efectivo|mixto/.test(error.message)
+          ? 'El pago mixto todavía no está activado en el sistema. Avísale al administrador.'
+          : 'No se pudo confirmar la entrega. Intenta de nuevo.';
         this.cdr.detectChanges();
         return;
       }

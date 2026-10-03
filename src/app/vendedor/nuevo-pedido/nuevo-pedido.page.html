@@ -126,6 +126,18 @@
           <h2>Cliente y entrega</h2>
           <div class="campos">
             <div class="campo">
+              <label for="telefono">Teléfono</label>
+              <input
+                id="telefono"
+                type="tel"
+                inputmode="tel"
+                autocomplete="off"
+                [ngModel]="clienteTelefono"
+                (ngModelChange)="onTelefono($event)"
+                placeholder="300 123 4567"
+              />
+            </div>
+            <div class="campo">
               <label for="cliente">Nombre <span class="req" aria-hidden="true">*</span></label>
               <input
                 id="cliente"
@@ -135,9 +147,13 @@
                 [attr.aria-invalid]="intentoEnviar && !clienteNombre.trim()"
               />
             </div>
-            <div class="campo">
-              <label for="telefono">Teléfono</label>
-              <input id="telefono" type="tel" inputmode="tel" autocomplete="off" [(ngModel)]="clienteTelefono" />
+            <div class="cliente-conocido campo-ancho" *ngIf="clienteEncontrado" role="status">
+              <div>
+                <strong>{{ clienteEncontrado.nombre }}</strong> ya compró
+                {{ clienteEncontrado.pedidos === 1 ? '1 vez' : clienteEncontrado.pedidos + ' veces' }}<ng-container *ngIf="clienteEncontrado.ultima_compra">, la última el {{ fechaCorta(clienteEncontrado.ultima_compra) }}</ng-container>.
+                <span class="muted" *ngIf="datosClienteUsados"> Llenamos sus datos; revísalos.</span>
+              </div>
+              <button type="button" class="btn btn-sm" *ngIf="!datosClienteUsados" (click)="usarDatosCliente()">Usar sus datos</button>
             </div>
             <div class="campo campo-ancho">
               <label for="direccion">Dirección <span class="req" aria-hidden="true">*</span></label>

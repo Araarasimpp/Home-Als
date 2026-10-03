@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { SupabaseService } from '../../core/services/supabase.service';
-import { Cuadre, MetodoPago } from '../../shared/models/models';
+import { Cuadre, MetodoPago, efectivoDePedido, transferenciaDePedido } from '../../shared/models/models';
 import { ImagenPreviewComponent } from '../../shared/imagen-preview/imagen-preview.component';
 import { formatoFechaCO, hoyColombiaISO } from '../../shared/fecha-colombia';
 
@@ -19,6 +19,8 @@ interface PedidoDelCuadre {
   total: number;
   valor_domicilio: number;
   metodo_pago: MetodoPago | null;
+  monto_efectivo?: number | null;
+  monto_transferencia?: number | null;
   comprobante_url: string | null;
 }
 
@@ -162,9 +164,8 @@ export class AdminCuadresPage implements OnInit, OnDestroy {
 
       const { data, error } = await this.supabase.client
         .from('pedidos')
-        .select(
-          'id, numero, cliente_nombre, cliente_telefono, direccion, total, valor_domicilio, metodo_pago, comprobante_url'
-        )
+        // '*' incluye monto_efectivo / monto_transferencia (pago mixto)
+        .select('*')
         .eq('cuadre_id', cuadre.id)
         .order('numero');
 
@@ -182,11 +183,11 @@ export class AdminCuadresPage implements OnInit, OnDestroy {
   }
 
   efectivoDe(p: PedidoDelCuadre): number {
-    return p.metodo_pago === 'efectivo' ? p.total : 0;
+    return efectivoDePedido(p);
   }
 
   transferenciaDe(p: PedidoDelCuadre): number {
-    return p.metodo_pago === 'transferencia' ? p.total : 0;
+    return transferenciaDePedido(p);
   }
 
   previewUrl: string | null = null;
