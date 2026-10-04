@@ -80,11 +80,16 @@ export function rotuloHtml(p: PedidoRotulo, n: DatosNegocio): string {
   const telefonos = lineasTelefono(n.telefonos)
     .map((t) => `<div>${esc(t)}</div>`)
     .join('');
-  const productos = p.productos.length
-    ? p.productos.map((x) => esc(x)).join('<br>')
-    : '—';
+  // En una etiqueta de 100 × 100 mm caben unas 3 líneas de productos
+  const MAX_PRODUCTOS = 3;
+  const lineasProd =
+    p.productos.length > MAX_PRODUCTOS
+      ? [...p.productos.slice(0, MAX_PRODUCTOS - 1).map((x) => esc(x)), `y ${p.productos.length - (MAX_PRODUCTOS - 1)} productos más`]
+      : p.productos.map((x) => esc(x));
+  const productos = lineasProd.length ? lineasProd.join('<br>') : '—';
+  // El valor va dentro de un div para poder recortarlo a 2 líneas si es muy largo
   const fila = (etiqueta: string, valor: string | null | undefined, clase = '') =>
-    `<tr${clase ? ` class="${clase}"` : ''}><th>${etiqueta}</th><td>${valor ? valor : '—'}</td></tr>`;
+    `<tr${clase ? ` class="${clase}"` : ''}><th>${etiqueta}</th><td><div class="v">${valor ? valor : '—'}</div></td></tr>`;
 
   const d = new Date(p.created_at);
   const dia = String(d.getDate()).padStart(2, '0');
@@ -112,36 +117,42 @@ export function rotuloHtml(p: PedidoRotulo, n: DatosNegocio): string {
       <strong class="cobro-valor">${moneda(p.total)}</strong>
     </div>
 
+    <div class="cuerpo">
     <table class="datos">
       ${fila('Pedido', '#' + esc(p.numero), 'pedido')}
       ${fila('Nombre', esc(p.cliente_nombre), 'destacado')}
       ${fila('Dirección', esc(p.direccion), 'destacado')}
       ${fila('Barrio', esc(p.barrio))}
       ${fila('Celular', esc(p.cliente_telefono))}
-      ${fila('Producto', productos)}
+      ${fila('Producto', productos, 'productos')}
       ${fila('Observación', esc(p.observaciones))}
     </table>
+    </div>
 
     ${n.texto_garantia ? `<p class="garantia">${esc(n.texto_garantia)}</p>` : ''}
   </section>`;
 }
 
+// Etiqueta adhesiva en rollo de 100 × 100 mm: una etiqueta por página, sin
+// márgenes (el tamaño lo define @page) y con medidas en mm/pt para que en el
+// papel salga igual sin importar la pantalla.
 export const ROTULO_CSS = `
+  @page { size: 100mm 100mm; margin: 0; }
   * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
   body {
-    margin: 0;
-    padding: 16px 0;
     font-family: Arial, Helvetica, sans-serif;
     color: #000;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
   .rotulo {
-    width: 400px;
-    margin: 0 auto 24px;
-    padding: 14px 18px 16px;
-    border: 2px solid #000;
-    border-radius: 14px;
+    width: 100mm;
+    height: 100mm;
+    padding: 3.5mm 4mm 3mm;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     page-break-after: always;
     break-after: page;
     page-break-inside: avoid;
@@ -149,91 +160,91 @@ export const ROTULO_CSS = `
   }
   .rotulo:last-child { page-break-after: auto; break-after: auto; }
 
-  /* Cabecera: el logo manda a la izquierda, contacto a la derecha */
+  /* Cabecera: logo a la izquierda, fecha y contacto a la derecha */
   .cabecera {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #000;
+    gap: 3mm;
+    padding-bottom: 1.5mm;
+    border-bottom: 0.3mm solid #000;
   }
-  .logo {
-    flex: 0 0 auto;
-    width: 172px;
-    height: 172px;
-    object-fit: contain;
-  }
+  .logo { flex: 0 0 auto; width: 23mm; height: 23mm; object-fit: contain; }
   .contacto {
     flex: 1;
     min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 8px;
+    gap: 0.9mm;
     text-align: right;
-    font-size: 12px;
-    line-height: 1.35;
+    font-size: 8.5pt;
+    line-height: 1.25;
   }
   .etiqueta {
     display: block;
-    margin-bottom: 3px;
-    font-size: 10px;
+    margin-bottom: 0.6mm;
+    font-size: 6.5pt;
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
-  .fecha-cajas { display: flex; gap: 4px; justify-content: flex-end; }
+  .fecha-cajas { display: flex; gap: 1mm; justify-content: flex-end; }
   .fecha-cajas span {
-    min-width: 30px;
-    padding: 3px 4px;
-    border: 1px solid #000;
-    border-radius: 3px;
-    font-size: 13px;
+    min-width: 7mm;
+    padding: 0.5mm 1mm;
+    border: 0.25mm solid #000;
+    border-radius: 0.6mm;
+    font-size: 9pt;
     font-weight: bold;
     text-align: center;
   }
-  .fecha-cajas .anio { min-width: 46px; }
-  .telefonos { font-weight: bold; font-size: 13px; }
-  .redes { font-size: 12px; }
+  .fecha-cajas .anio { min-width: 11mm; }
+  .telefonos { font-size: 9pt; font-weight: bold; }
+  .redes { font-size: 8.5pt; }
 
   .cobro {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 10px;
-    margin: 12px 0 10px;
+    gap: 2mm;
+    margin: 1.6mm 0 1.2mm;
   }
-  .cobro-label {
-    font-size: 15px;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-  }
+  .cobro-label { font-size: 10pt; font-weight: bold; text-transform: uppercase; }
   .cobro-valor {
-    padding: 6px 14px;
-    border: 2px solid #000;
-    border-radius: 6px;
-    font-size: 22px;
+    padding: 0.8mm 3mm;
+    border: 0.5mm solid #000;
+    border-radius: 1.2mm;
+    font-size: 14pt;
     white-space: nowrap;
   }
 
-  .datos { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .datos th, .datos td { padding: 3px 0; vertical-align: top; text-align: left; }
-  .datos th { width: 92px; font-weight: bold; }
-  .datos tr.pedido td { font-weight: bold; }
-  .datos tr.destacado td { font-size: 15px; font-weight: bold; }
+  /* Los datos ocupan el espacio libre; si algo no cabe se recorta aquí y la
+     garantía de abajo siempre se ve completa */
+  .cuerpo { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+  .datos { width: 100%; border-collapse: collapse; font-size: 8.5pt; line-height: 1.14; }
+  .datos th, .datos td { padding: 0.3mm 0; vertical-align: top; text-align: left; }
+  .datos th { width: 21mm; font-weight: bold; }
+  .datos td { overflow-wrap: anywhere; }
+  .datos tr.destacado td { font-size: 10pt; font-weight: bold; }
+  /* Textos largos: máximo 2 líneas (productos: 3) para no salirse de la etiqueta */
+  .datos .v { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .datos tr.productos .v { -webkit-line-clamp: 3; }
 
   .garantia {
-    margin: 12px 0 0;
-    padding-top: 8px;
-    border-top: 1px dashed #000;
-    font-size: 10px;
-    line-height: 1.4;
+    flex: 0 0 auto;
+    margin: 1mm 0 0;
+    padding-top: 1.2mm;
+    border-top: 0.25mm dashed #000;
+    font-size: 6.5pt;
+    line-height: 1.25;
     text-align: center;
   }
 
-  @media print {
-    body { padding: 0; }
+  /* Solo en pantalla (vista previa): fondo y borde de referencia del tamaño
+     real. Nada de esto se imprime. */
+  @media screen {
+    body { background: #f4f5f7; padding: 16px 0; }
+    .rotulo { margin: 0 auto 16px; background: #fff; outline: 1px solid #c9ccd2; }
   }
 `;
 
@@ -256,9 +267,11 @@ export function documentoRotulos(rotulos: string[], titulo = 'Rótulos', cssExtr
  * La impresión real no usa esto.
  */
 export const ROTULO_CSS_VISTA_PREVIA = `
-  body { padding: 12px 0; }
-  .rotulo { margin-bottom: 0; }
-  @media (max-width: 430px) { body { zoom: 0.9; } }
-  @media (max-width: 390px) { body { zoom: 0.82; } }
-  @media (max-width: 350px) { body { zoom: 0.74; } }
+  @media screen {
+    body { padding: 12px 0; }
+    .rotulo { margin-bottom: 0; }
+  }
+  @media (max-width: 400px) { body { zoom: 0.9; } }
+  @media (max-width: 360px) { body { zoom: 0.82; } }
+  @media (max-width: 330px) { body { zoom: 0.74; } }
 `;

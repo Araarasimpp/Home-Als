@@ -310,6 +310,7 @@ export class ProductosPage implements OnInit, OnDestroy {
 
       const errores: string[] = [];
       const productosValidos: any[] = [];
+      const filasDeProducto: number[] = [];
 
       filas.forEach((fila, i) => {
         const numFila = i + 2; // +2 porque la fila 1 es el encabezado
@@ -324,6 +325,7 @@ export class ProductosPage implements OnInit, OnDestroy {
           return;
         }
 
+        filasDeProducto.push(numFila);
         productosValidos.push({
           nombre,
           sku,
@@ -338,19 +340,44 @@ export class ProductosPage implements OnInit, OnDestroy {
         });
       });
 
-      if (productosValidos.length) {
+      // El mismo SKU en varias filas hace fallar TODA la carga en Postgres
+      // ("ON CONFLICT DO UPDATE command cannot affect row a second time").
+      // Se deja la última fila de cada SKU y se avisa cuáles se repetían.
+      const porSku = new Map<string, { fila: number; producto: any }>();
+      const repetidos = new Map<string, number[]>();
+      productosValidos.forEach((prod, i) => {
+        const fila = filasDeProducto[i];
+        const previo = porSku.get(prod.sku);
+        if (previo) {
+          repetidos.set(prod.sku, [...(repetidos.get(prod.sku) ?? [previo.fila]), fila]);
+        }
+        porSku.set(prod.sku, { fila, producto: prod });
+      });
+      repetidos.forEach((filas, sku) => {
+        errores.push(
+          `SKU "${sku}" repetido en las filas ${filas.join(', ')}: se usó la fila ${filas[filas.length - 1]}.`
+        );
+      });
+      const unicos = [...porSku.values()].map((v) => v.producto);
+
+      // Se envía en grupos: si uno falla, los demás igual se guardan
+      let guardados = 0;
+      const TAMANO_GRUPO = 200;
+      for (let i = 0; i < unicos.length; i += TAMANO_GRUPO) {
+        const grupo = unicos.slice(i, i + TAMANO_GRUPO);
         // upsert por sku: si el SKU ya existe, actualiza ese producto en vez
         // de crear uno duplicado — así se puede resubir el mismo Excel corregido.
-        const { error } = await this.supabase.client
-          .from('productos')
-          .upsert(productosValidos, { onConflict: 'sku' });
-
+        const { error } = await this.supabase.client.from('productos').upsert(grupo, { onConflict: 'sku' });
         if (error) {
-          errores.push(`Error al guardar: ${error.message}`);
+          errores.push(
+            `No se guardaron los productos de las filas ${porSku.get(grupo[0].sku)?.fila} a ${porSku.get(grupo[grupo.length - 1].sku)?.fila}: ${error.message}`
+          );
+        } else {
+          guardados += grupo.length;
         }
       }
 
-      this.resumenCarga = { creados: productosValidos.length, errores };
+      this.resumenCarga = { creados: guardados, errores };
 
       await this.cargarProductos();
     } catch (err) {
