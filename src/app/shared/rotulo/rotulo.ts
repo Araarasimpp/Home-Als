@@ -174,7 +174,7 @@ export const ROTULO_CSS = `
     padding-bottom: 1.5mm;
     border-bottom: 0.3mm solid #000;
   }
-  .logo { flex: 0 0 auto; width: 23mm; height: 23mm; object-fit: contain; }
+  .logo { flex: 0 0 auto; width: 34mm; height: 34mm; object-fit: contain; }
   .contacto {
     flex: 1;
     min-width: 0;
