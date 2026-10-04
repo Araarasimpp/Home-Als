@@ -230,8 +230,14 @@
       <!-- Vista previa del rótulo -->
       <aside class="col-preview" aria-labelledby="sec-preview">
         <div class="preview-head">
-          <h2 id="sec-preview">Vista previa del rótulo</h2>
-          <span class="hint">Pedido de ejemplo</span>
+          <div>
+            <h2 id="sec-preview">Vista previa del rótulo</h2>
+            <span class="hint">Pedido de ejemplo, etiqueta de 100 × 100 mm</span>
+          </div>
+          <button class="btn" type="button" (click)="imprimirPrueba()">
+            <ion-icon name="print-outline" aria-hidden="true"></ion-icon>
+            Imprimir prueba
+          </button>
         </div>
         <div class="preview-frame">
           <iframe [srcdoc]="vistaPrevia" title="Vista previa del rótulo" tabindex="-1"></iframe>

@@ -70,9 +70,9 @@
             </td>
             <td>
               <div class="nombre-cell">
-                <span class="avatar" [class.tiene-foto]="p.imagen_url">
-                  <img *ngIf="p.imagen_url" [src]="p.imagen_url" [alt]="p.nombre" />
-                  <ng-container *ngIf="!p.imagen_url">{{ inicial(p.nombre) }}</ng-container>
+                <span class="avatar" [class.tiene-foto]="foto(p)">
+                  <img *ngIf="foto(p) as src" [src]="src" alt="" loading="lazy" (error)="fotosRotas.add(p.id)" />
+                  <ng-container *ngIf="!foto(p)">{{ inicial(p.nombre) }}</ng-container>
                 </span>
                 <span>{{ p.nombre }}</span>
               </div>

@@ -6,6 +6,7 @@ import * as XLSX from 'xlsx';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { ProductoFormComponent } from './producto-form/producto-form.component';
 import { Producto } from '../../shared/models/models';
+import { urlImagen } from '../../shared/imagenes/url-imagen';
 
 type TabFiltro = 'activos' | 'todos';
 
@@ -335,7 +336,8 @@ export class ProductosPage implements OnInit, OnDestroy {
           precio_sugerido: precioSugerido,
           costo: fila.costo != null && fila.costo !== '' ? Number(fila.costo) : null,
           stock: fila.stock != null && fila.stock !== '' ? Number(fila.stock) : 0,
-          imagen_url: fila.imagen_url ? String(fila.imagen_url).trim() : null,
+          // Los links de Google Drive se guardan ya convertidos a imagen directa
+          imagen_url: urlImagen(fila.imagen_url ? String(fila.imagen_url) : null),
           activo: true,
         });
       });
@@ -387,6 +389,13 @@ export class ProductosPage implements OnInit, OnDestroy {
     this.cargandoExcel = false;
     input.value = '';
     this.cdr.detectChanges();
+  }
+
+  /** Productos cuya foto no cargó (link roto o sin permiso): se muestra la inicial. */
+  fotosRotas = new Set<string>();
+
+  foto(p: Producto): string | null {
+    return this.fotosRotas.has(p.id) ? null : urlImagen(p.imagen_url, 200);
   }
 
   inicial(nombre: string): string {

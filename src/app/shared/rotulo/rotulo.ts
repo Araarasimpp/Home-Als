@@ -133,12 +133,15 @@ export function rotuloHtml(p: PedidoRotulo, n: DatosNegocio): string {
   </section>`;
 }
 
-// Etiqueta adhesiva en rollo de 100 × 100 mm: una etiqueta por página, sin
-// márgenes (el tamaño lo define @page) y con medidas en mm/pt para que en el
-// papel salga igual sin importar la pantalla.
+// Etiqueta adhesiva en rollo de 100 × 100 mm: una etiqueta por página.
+// El código no define márgenes: los pone el navegador (diálogo de impresión).
+// El rótulo ocupa todo el espacio que quede dentro de esos márgenes, así nunca
+// se pasa a una segunda etiqueta. Medidas en mm/pt para que el papel salga igual
+// sin importar la pantalla.
 export const ROTULO_CSS = `
-  @page { size: 100mm 100mm; margin: 0; }
+  @page { size: 100mm 100mm; }
   * { box-sizing: border-box; }
+  /* Solo quita el espacio que el navegador pone por defecto dentro de la página */
   html, body { margin: 0; padding: 0; }
   body {
     font-family: Arial, Helvetica, sans-serif;
@@ -147,9 +150,12 @@ export const ROTULO_CSS = `
     print-color-adjust: exact;
   }
   .rotulo {
-    width: 100mm;
-    height: 100mm;
-    padding: 3.5mm 4mm 3mm;
+    width: 100%;
+    /* En impresión, 100vh es el alto disponible de la página (ya sin márgenes) */
+    height: 100vh;
+    padding: 2.5mm 3mm 2mm;
+    border: 0.3mm solid #000;
+    border-radius: 3mm;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -244,7 +250,7 @@ export const ROTULO_CSS = `
      real. Nada de esto se imprime. */
   @media screen {
     body { background: #f4f5f7; padding: 16px 0; }
-    .rotulo { margin: 0 auto 16px; background: #fff; outline: 1px solid #c9ccd2; }
+    .rotulo { width: 100mm; height: 100mm; margin: 0 auto 16px; background: #fff; }
   }
 `;
 
@@ -275,3 +281,45 @@ export const ROTULO_CSS_VISTA_PREVIA = `
   @media (max-width: 360px) { body { zoom: 0.82; } }
   @media (max-width: 330px) { body { zoom: 0.74; } }
 `;
+
+/**
+ * Escribe el documento en una ventana ya abierta, abre el diálogo de
+ * impresión y cierra la ventana sola cuando termina (al imprimir o cancelar).
+ *
+ * La ventana debe abrirse con window.open() en el mismo clic del usuario,
+ * antes de cualquier await: si se abre después, el navegador la bloquea.
+ */
+export function imprimirEnVentana(ventana: Window, html: string): void {
+  ventana.document.open();
+  ventana.document.write(html);
+  ventana.document.close();
+  ventana.focus();
+
+  // Los eventos se registran DESPUÉS de document.write: document.open() borra
+  // los que hubiera en la ventana.
+  let cerrada = false;
+  const cerrar = () => {
+    if (cerrada) return;
+    cerrada = true;
+    // Pequeña espera para que el navegador termine de mandar el trabajo a la impresora
+    setTimeout(() => {
+      try {
+        ventana.close();
+      } catch {
+        /* si el navegador no deja cerrarla, se queda abierta sin problema */
+      }
+    }, 300);
+  };
+  ventana.addEventListener('afterprint', cerrar);
+
+  // Imprime cuando cargue el logo; el temporizador es por si "load" ya pasó.
+  // La bandera evita abrir el diálogo dos veces.
+  let yaImpreso = false;
+  const imprimir = () => {
+    if (yaImpreso) return;
+    yaImpreso = true;
+    ventana.print();
+  };
+  ventana.addEventListener('load', imprimir);
+  setTimeout(imprimir, 800);
+}

@@ -11,7 +11,8 @@ import { EstadoPedido } from '../../shared/models/models';
 import { EstadoIconComponent } from '../../shared/estado-icon/estado-icon.component';
 import { AvatarComponent } from '../../shared/avatar/avatar.component';
 import { ImagenPreviewComponent } from '../../shared/imagen-preview/imagen-preview.component';
-import { cargarDatosNegocio, documentoRotulos, rotuloHtml } from '../../shared/rotulo/rotulo';
+import { urlImagen } from '../../shared/imagenes/url-imagen';
+import { cargarDatosNegocio, documentoRotulos, imprimirEnVentana, rotuloHtml } from '../../shared/rotulo/rotulo';
 
 interface PedidoFila {
   id: string;
@@ -206,7 +207,7 @@ export class PedidosPage implements OnInit, OnDestroy {
           .map((i: any) => ({
             nombre: i.producto?.nombre ?? 'Producto',
             cantidad: Number(i.cantidad) || 1,
-            imagen_url: i.producto?.imagen_url ?? null,
+            imagen_url: urlImagen(i.producto?.imagen_url),
           }));
         return {
           ...p,
@@ -531,20 +532,8 @@ export class PedidosPage implements OnInit, OnDestroy {
         )
       );
 
-    ventana.document.open();
-    ventana.document.write(documentoRotulos(rotulos));
-    ventana.document.close();
-    ventana.focus();
-    // Imprime cuando cargue el logo; el temporizador es por si el evento no llega.
-    // La bandera evita que el diálogo se abra dos veces.
-    let yaImpreso = false;
-    const imprimir = () => {
-      if (yaImpreso) return;
-      yaImpreso = true;
-      ventana.print();
-    };
-    ventana.onload = imprimir;
-    setTimeout(imprimir, 800);
+    // Imprime y cierra la ventana sola al terminar
+    imprimirEnVentana(ventana, documentoRotulos(rotulos));
 
     // Se marca como impreso apenas se abre la ventana de impresión
     // (no hay forma confiable de detectar si el usuario canceló el diálogo)

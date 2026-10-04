@@ -4,12 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { IonIcon } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, trashOutline, downloadOutline, checkmark } from 'ionicons/icons';
+import { add, trashOutline, downloadOutline, checkmark, printOutline } from 'ionicons/icons';
 import * as XLSX from 'xlsx';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { MfaConfigComponent } from '../../shared/seguridad/mfa-config.component';
 import {
   documentoRotulos,
+  imprimirEnVentana,
   PedidoRotulo,
   ROTULO_CSS_VISTA_PREVIA,
   rotuloHtml,
@@ -91,7 +92,7 @@ export class ConfiguracionPage implements OnInit {
     private cdr: ChangeDetectorRef,
     private sanitizer: DomSanitizer
   ) {
-    addIcons({ add, trashOutline, downloadOutline, checkmark });
+    addIcons({ add, trashOutline, downloadOutline, checkmark, printOutline });
   }
 
   async ngOnInit(): Promise<void> {
@@ -146,21 +147,35 @@ export class ConfiguracionPage implements OnInit {
     this.actualizarVistaPrevia();
   }
 
+  /** Datos del negocio tal como están escritos ahora en el formulario. */
+  private datosFormulario() {
+    return {
+      nombre_negocio: this.form.nombre_negocio || 'Home ALS',
+      telefonos: this.form.telefonos?.trim() || null,
+      redes: this.form.redes?.trim() || null,
+      texto_garantia: this.form.texto_garantia?.trim() || null,
+    };
+  }
+
   private actualizarVistaPrevia(): void {
-    const html = documentoRotulos(
-      [
-        rotuloHtml(PEDIDO_EJEMPLO, {
-          nombre_negocio: this.form.nombre_negocio || 'Home ALS',
-          telefonos: this.form.telefonos?.trim() || null,
-          redes: this.form.redes?.trim() || null,
-          texto_garantia: this.form.texto_garantia?.trim() || null,
-        }),
-      ],
-      'Vista previa',
-      ROTULO_CSS_VISTA_PREVIA
-    );
+    const html = documentoRotulos([rotuloHtml(PEDIDO_EJEMPLO, this.datosFormulario())], 'Vista previa', ROTULO_CSS_VISTA_PREVIA);
     // El HTML lo arma nuestro propio código y escapa cada dato que viene del formulario
     this.vistaPrevia = this.sanitizer.bypassSecurityTrustHtml(html);
+  }
+
+  /**
+   * Imprime el rótulo de ejemplo (con lo que esté escrito en el formulario,
+   * aunque no se haya guardado) para probar la impresora de etiquetas.
+   */
+  imprimirPrueba(): void {
+    // La ventana se abre en el mismo clic: si se abre después, el navegador la bloquea
+    const ventana = window.open('', '_blank');
+    if (!ventana) {
+      alert('El navegador bloqueó la ventana de impresión. Permite ventanas emergentes para este sitio.');
+      return;
+    }
+    // Imprime y cierra la ventana sola al terminar
+    imprimirEnVentana(ventana, documentoRotulos([rotuloHtml(PEDIDO_EJEMPLO, this.datosFormulario())], 'Rótulo de prueba'));
   }
 
   async guardar(): Promise<void> {

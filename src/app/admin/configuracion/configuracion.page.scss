@@ -368,9 +368,15 @@ textarea:focus {
 
 .preview-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
+  gap: 12px;
   margin-bottom: 12px;
+}
+
+.preview-head .hint {
+  display: block;
+  margin-top: 2px;
 }
 
 .preview-frame {
@@ -383,7 +389,7 @@ textarea:focus {
 .preview-frame iframe {
   display: block;
   width: 100%;
-  height: 560px;
+  height: 440px;
   border: none;
   background: #ffffff;
 }

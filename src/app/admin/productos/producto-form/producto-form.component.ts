@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { Producto } from '../../../shared/models/models';
 import { comprimirImagen, extensionDe } from '../../../shared/imagenes/comprimir';
+import { urlImagen } from '../../../shared/imagenes/url-imagen';
 
 // Para un producto nuevo aún no existe el id, así que lo hacemos opcional
 // solo dentro de este formulario (el resto de los campos usan el mismo
@@ -35,7 +36,7 @@ export class ProductoFormComponent implements OnChanges {
 
   ngOnChanges(): void {
     this.form = this.producto ? { ...this.producto } : this.formVacio();
-    this.previewUrl = this.producto?.imagen_url ?? null;
+    this.previewUrl = urlImagen(this.producto?.imagen_url);
     this.archivoImagen = null;
     this.errorMsg = '';
   }
