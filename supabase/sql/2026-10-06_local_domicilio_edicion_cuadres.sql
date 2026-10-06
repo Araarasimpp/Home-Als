@@ -28,25 +28,6 @@ alter table public.pedidos
 alter table public.cuadres
   add column if not exists cerrado_por uuid references public.profiles(id);
 
--- Hasta hoy al domiciliario se le pagaba lo mismo que se le cobraba al cliente:
--- los pedidos que ya existen conservan ese valor (sin tocar comisiones ni registro).
-alter table public.pedidos disable trigger trg_00_proteger_pedido_domiciliario;
-alter table public.pedidos disable trigger trg_actividad_pedidos;
-alter table public.pedidos disable trigger trg_pedido_recalcular_comision;
-update public.pedidos set pago_domiciliario = valor_domicilio where canal = 'domicilio';
-alter table public.pedidos enable trigger trg_00_proteger_pedido_domiciliario;
-alter table public.pedidos enable trigger trg_actividad_pedidos;
-alter table public.pedidos enable trigger trg_pedido_recalcular_comision;
-
--- Los cuadres que ya existen los cerró el propio domiciliario
-update public.cuadres set cerrado_por = domiciliario_id where cerrado_por is null;
-
-create index if not exists pedidos_canal_created_idx on public.pedidos (canal, created_at desc);
-create index if not exists pedidos_sin_cuadre_idx on public.pedidos (domiciliario_id, entregado_at)
-  where estado = 'entregado' and cuadre_id is null;
-create index if not exists pedidos_cuadre_idx on public.pedidos (cuadre_id) where cuadre_id is not null;
-create index if not exists pedido_items_pedido_idx on public.pedido_items (pedido_id);
-
 -- Pago al domiciliario según el barrio (si el barrio no está en la lista, el de Configuración)
 create or replace function public.pago_domiciliario_de(p_barrio text)
 returns numeric
@@ -61,6 +42,34 @@ as $$
     (select c.pago_domiciliario from public.configuracion c limit 1),
     10000);
 $$;
+
+-- Valor inicial del pago por barrio: 10.000, o lo que se cobra si el barrio es más caro
+-- (se ajusta después en Configuración → Barrios).
+update public.zonas_domicilio set pago_domiciliario = greatest(valor, 10000);
+
+-- Pedidos que ya existen (sin tocar comisiones ni el registro de actividad):
+--  - los que ya están en un cuadre conservan lo que se pagó (= domicilio cobrado);
+--  - los que aún no se cuadran toman el pago nuevo según su barrio.
+alter table public.pedidos disable trigger trg_00_proteger_pedido_domiciliario;
+alter table public.pedidos disable trigger trg_actividad_pedidos;
+alter table public.pedidos disable trigger trg_pedido_recalcular_comision;
+update public.pedidos
+   set pago_domiciliario = case when cuadre_id is null and estado <> 'cancelado'
+                                then public.pago_domiciliario_de(barrio)
+                                else valor_domicilio end
+ where canal = 'domicilio';
+alter table public.pedidos enable trigger trg_00_proteger_pedido_domiciliario;
+alter table public.pedidos enable trigger trg_actividad_pedidos;
+alter table public.pedidos enable trigger trg_pedido_recalcular_comision;
+
+-- Los cuadres que ya existen los cerró el propio domiciliario
+update public.cuadres set cerrado_por = domiciliario_id where cerrado_por is null;
+
+create index if not exists pedidos_canal_created_idx on public.pedidos (canal, created_at desc);
+create index if not exists pedidos_sin_cuadre_idx on public.pedidos (domiciliario_id, entregado_at)
+  where estado = 'entregado' and cuadre_id is null;
+create index if not exists pedidos_cuadre_idx on public.pedidos (cuadre_id) where cuadre_id is not null;
+create index if not exists pedido_items_pedido_idx on public.pedido_items (pedido_id);
 
 -- ───────────────────────── crear_pedido (domicilio o local) ─────────────────────────
 
