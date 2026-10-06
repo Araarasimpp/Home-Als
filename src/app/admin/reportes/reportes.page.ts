@@ -80,7 +80,7 @@ export class ReportesPage implements OnInit {
     const { data, error } = await this.supabase.client
       .from('profiles')
       .select('id, nombre')
-      .eq('role', 'vendedor')
+      .contains('roles', ['vendedor'])
       .order('nombre');
 
     if (!error && data) {

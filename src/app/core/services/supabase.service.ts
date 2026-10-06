@@ -11,7 +11,10 @@ export interface Profile {
   nombre: string;
   email?: string;
   telefono?: string;
+  /** Rol con el que la persona está trabajando ahora (su "modo"). */
   role: UserRole;
+  /** Todos los roles que el admin le dio. Puede cambiar de modo entre ellos. */
+  roles?: UserRole[];
   activo: boolean;
   /** Solo aplica a vendedores. 'margen' = lo que cobre sobre el precio base. */
   comision_tipo?: ComisionTipo;
@@ -123,7 +126,9 @@ export class SupabaseService {
     // Verificación en dos pasos: si el admin la tiene activa y esta sesión
     // aún no pasó el código, no se le entrega el perfil (los guards lo
     // devuelven al login, que pide el código).
-    if (perfil.role === 'admin' && (await this.necesitaCodigoMfa())) {
+    if (!perfil.roles?.length) perfil.roles = [perfil.role];
+    // Quien tenga el rol admin (aunque esté en otro modo) pasa por el código
+    if (perfil.roles.includes('admin') && (await this.necesitaCodigoMfa())) {
       this.mfaPendiente = true;
       return null;
     }
@@ -181,6 +186,13 @@ export class SupabaseService {
   }
 
   // El cierre de sesión por inactividad vive en core/services/inactividad.service.ts
+
+  /** Cambia el modo (rol activo) entre los roles que tiene la persona. */
+  async cambiarRol(rol: UserRole): Promise<void> {
+    const { error } = await this.client.rpc('cambiar_rol', { p_rol: rol });
+    if (error) throw error;
+    this.currentProfile = null;
+  }
 
   clearCachedProfile() {
     this.currentProfile = null;

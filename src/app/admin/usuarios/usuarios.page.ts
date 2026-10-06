@@ -11,16 +11,18 @@ interface UsuarioFila {
   nombre: string;
   email: string | null;
   telefono: string | null;
+  /** Modo actual (rol con el que está trabajando) */
   role: UserRole;
+  /** Todos los roles que tiene */
+  roles: UserRole[];
   activo: boolean;
   avatar_url: string | null;
   comision_tipo: ComisionTipo;
   comision_porcentaje: number;
 }
 
-/** Lo que se elige en el selector de rol. "Vendedor por porcentaje" es un
- * vendedor normal con comision_tipo = 'porcentaje' (mismos permisos). */
-type RolVista = UserRole | 'vendedor_porcentaje';
+/** Orden en que se muestran (y se guardan) los roles. */
+const ORDEN_ROLES: UserRole[] = ['admin', 'despachador', 'vendedor', 'domiciliario'];
 
 const BUCKET_AVATARS = 'avatars';
 const TAMANO_FOTO = 256; // px, cuadrada
@@ -42,11 +44,10 @@ export class UsuariosPage implements OnInit, OnDestroy {
 
   private canal: RealtimeChannel | null = null;
 
-  readonly roles: { valor: RolVista; etiqueta: string }[] = [
+  readonly roles: { valor: UserRole; etiqueta: string }[] = [
     { valor: 'admin', etiqueta: 'Admin' },
     { valor: 'despachador', etiqueta: 'Despachador' },
     { valor: 'vendedor', etiqueta: 'Vendedor' },
-    { valor: 'vendedor_porcentaje', etiqueta: 'Vendedor por porcentaje' },
     { valor: 'domiciliario', etiqueta: 'Domiciliario' },
   ];
 
@@ -93,6 +94,7 @@ export class UsuariosPage implements OnInit, OnDestroy {
         email: u.email ?? null,
         telefono: u.telefono ?? null,
         role: u.role,
+        roles: (u.roles?.length ? u.roles : [u.role]) as UserRole[],
         activo: u.activo,
         avatar_url: u.avatar_url ?? null,
         comision_tipo: u.comision_tipo === 'porcentaje' ? 'porcentaje' : 'margen',
@@ -113,34 +115,61 @@ export class UsuariosPage implements OnInit, OnDestroy {
     );
   }
 
-  /** Rol tal como se muestra en el selector. */
-  rolVista(u: UsuarioFila): RolVista {
-    return u.role === 'vendedor' && u.comision_tipo === 'porcentaje' ? 'vendedor_porcentaje' : u.role;
+  tieneRol(u: UsuarioFila, r: UserRole): boolean {
+    return u.roles.includes(r);
   }
 
-  async cambiarRol(usuario: UsuarioFila, valor: RolVista): Promise<void> {
-    if (usuario.id === this.miId || valor === this.rolVista(usuario)) return;
+  /** El admin no se puede quitar a sí mismo el rol de admin (para no quedarse por fuera). */
+  rolBloqueado(u: UsuarioFila, r: UserRole): boolean {
+    return u.id === this.miId && r === 'admin';
+  }
 
-    const cambios =
-      valor === 'vendedor_porcentaje'
-        ? { role: 'vendedor' as UserRole, comision_tipo: 'porcentaje' as ComisionTipo }
-        : { role: valor as UserRole, comision_tipo: 'margen' as ComisionTipo };
+  /** Activa o quita un rol. Siempre debe quedar al menos uno. */
+  async alternarRol(usuario: UsuarioFila, r: UserRole): Promise<void> {
+    if (this.guardandoId || this.rolBloqueado(usuario, r)) return;
+    const nuevos = this.tieneRol(usuario, r)
+      ? usuario.roles.filter((x) => x !== r)
+      : ORDEN_ROLES.filter((x) => x === r || usuario.roles.includes(x));
+    if (!nuevos.length) {
+      alert('Cada usuario necesita al menos un rol.');
+      return;
+    }
 
     this.guardandoId = usuario.id;
     this.cdr.detectChanges();
-    const { error } = await this.supabase.client.from('profiles').update(cambios).eq('id', usuario.id);
+    const { data, error } = await this.supabase.client
+      .from('profiles')
+      .update({ roles: nuevos })
+      .eq('id', usuario.id)
+      .select('role, roles')
+      .single();
     this.guardandoId = null;
 
     if (error) {
-      alert(
-        /comision_tipo/.test(error.message)
-          ? 'Falta ejecutar el archivo supabase/comision-porcentaje.sql en Supabase.'
-          : 'No se pudo cambiar el rol. ' + error.message
-      );
+      alert('No se pudo cambiar el rol. ' + error.message);
       await this.cargarUsuarios();
       return;
     }
-    Object.assign(usuario, cambios);
+    usuario.roles = (data as any).roles;
+    usuario.role = (data as any).role;
+    // Si me cambié mis propios roles, el selector de rol los toma al recargar
+    if (usuario.id === this.miId) this.supabase.clearCachedProfile();
+    this.cdr.detectChanges();
+  }
+
+  /** Comisión del vendedor: por margen (lo que venda sobre el precio base) o % de la ganancia. */
+  async cambiarComision(usuario: UsuarioFila, tipo: ComisionTipo): Promise<void> {
+    if (tipo === usuario.comision_tipo) return;
+    this.guardandoId = usuario.id;
+    this.cdr.detectChanges();
+    const { error } = await this.supabase.client.from('profiles').update({ comision_tipo: tipo }).eq('id', usuario.id);
+    this.guardandoId = null;
+    if (error) {
+      alert('No se pudo cambiar la comisión. ' + error.message);
+      await this.cargarUsuarios();
+      return;
+    }
+    usuario.comision_tipo = tipo;
     this.cdr.detectChanges();
   }
 
@@ -298,7 +327,7 @@ export class UsuariosPage implements OnInit, OnDestroy {
     });
   }
 
-  etiquetaRol(role: RolVista): string {
+  etiquetaRol(role: UserRole): string {
     return this.roles.find((r) => r.valor === role)?.etiqueta ?? role;
   }
 }

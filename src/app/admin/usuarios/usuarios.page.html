@@ -23,7 +23,7 @@
             <th>Nombre</th>
             <th>Correo</th>
             <th>Teléfono</th>
-            <th>Rol</th>
+            <th>Roles</th>
             <th>Estado</th>
             <th></th>
           </tr>
@@ -69,16 +69,33 @@
             <td class="text-soft">{{ u.telefono || '—' }}</td>
             <td>
               <div class="rol-cell">
+                <div class="roles-chips" role="group" [attr.aria-label]="'Roles de ' + u.nombre">
+                  <button
+                    type="button"
+                    *ngFor="let r of roles"
+                    class="rol-chip"
+                    [class.on]="tieneRol(u, r.valor)"
+                    [attr.aria-pressed]="tieneRol(u, r.valor)"
+                    [disabled]="guardandoId === u.id || rolBloqueado(u, r.valor)"
+                    [title]="rolBloqueado(u, r.valor) ? 'No puedes quitarte el rol de admin a ti mismo' : ''"
+                    (click)="alternarRol(u, r.valor)"
+                  >
+                    {{ r.etiqueta }}
+                  </button>
+                </div>
+                <span class="modo-actual" *ngIf="u.roles.length > 1">Ahora trabajando como {{ etiquetaRol(u.role) }}</span>
                 <select
-                  class="rol-select"
-                  [ngModel]="rolVista(u)"
-                  (ngModelChange)="cambiarRol(u, $event)"
-                  [disabled]="u.id === miId || guardandoId === u.id"
-                  [attr.aria-label]="'Rol de ' + u.nombre"
+                  class="rol-select comision-select"
+                  *ngIf="tieneRol(u, 'vendedor')"
+                  [ngModel]="u.comision_tipo"
+                  (ngModelChange)="cambiarComision(u, $event)"
+                  [disabled]="guardandoId === u.id"
+                  [attr.aria-label]="'Comisión de ' + u.nombre"
                 >
-                  <option *ngFor="let r of roles" [value]="r.valor">{{ r.etiqueta }}</option>
+                  <option value="margen">Comisión por margen</option>
+                  <option value="porcentaje">Comisión por % de la ganancia</option>
                 </select>
-                <label class="pct" *ngIf="rolVista(u) === 'vendedor_porcentaje'" [title]="'Porcentaje de la ganancia para ' + u.nombre">
+                <label class="pct" *ngIf="tieneRol(u, 'vendedor') && u.comision_tipo === 'porcentaje'" [title]="'Porcentaje de la ganancia para ' + u.nombre">
                   <input
                     type="number"
                     class="num"

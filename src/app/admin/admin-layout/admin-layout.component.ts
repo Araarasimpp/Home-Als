@@ -5,6 +5,7 @@ import { IonIcon } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
   homeOutline,
+  swapHorizontalOutline,
   receiptOutline,
   storefrontOutline,
   cubeOutline,
@@ -29,6 +30,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { NotificacionesService } from '../../core/services/notificaciones.service';
 import { InactividadService } from '../../core/services/inactividad.service';
 import { AvisosPanelComponent } from '../../shared/avisos/avisos-panel.component';
+import { CambioRolComponent } from '../../shared/cambio-rol/cambio-rol.component';
 import { AvisoInactividadComponent } from '../../shared/avisos/aviso-inactividad.component';
 
 interface MenuItem {
@@ -45,6 +47,7 @@ const MINUTOS_INACTIVIDAD = 30;
   selector: 'app-admin-layout',
   standalone: true,
   imports: [
+    CambioRolComponent,
     CommonModule,
     RouterLink,
     RouterLinkActive,
@@ -88,6 +91,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
   ) {
     addIcons({
       homeOutline,
+      swapHorizontalOutline,
       receiptOutline,
       storefrontOutline,
       cubeOutline,

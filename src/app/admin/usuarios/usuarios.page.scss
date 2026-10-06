@@ -275,3 +275,43 @@ tbody tr:last-child td {
     width: 100%;
   }
 }
+
+.roles-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.rol-chip {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.rol-chip.on {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+
+.rol-chip:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.modo-actual {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.comision-select {
+  padding: 5px 10px;
+  font-size: 12px;
+}

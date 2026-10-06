@@ -241,7 +241,7 @@ export class PedidosPage implements OnInit, OnDestroy {
     if (!error && data) {
       this.nombresPorId = new Map(data.map((p: any) => [p.id, p.nombre]));
       this.domiciliarios = (data as any[])
-        .filter((p) => p.role === 'domiciliario')
+        .filter((p) => (p.roles ?? [p.role]).includes('domiciliario'))
         .map((p) => ({ id: p.id, nombre: p.nombre, avatar_url: p.avatar_url ?? null }))
         .sort((a, b) => a.nombre.localeCompare(b.nombre));
     }

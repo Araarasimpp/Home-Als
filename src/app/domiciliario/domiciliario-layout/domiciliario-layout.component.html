@@ -19,6 +19,10 @@
       </span>
       <span class="tab-label">Avisos</span>
     </button>
+    <button class="pill-action" *ngIf="cr.disponible" (click)="avisos.cerrar(); cr.abrir()">
+      <ion-icon name="swap-horizontal-outline"></ion-icon>
+      <span class="tab-label">Rol</span>
+    </button>
     <button class="pill-action" (click)="toggleTheme()">
       <ion-icon [name]="theme.isDark() ? 'sunny-outline' : 'moon-outline'"></ion-icon>
       <span class="tab-label">{{ theme.isDark() ? 'Claro' : 'Oscuro' }}</span>
@@ -30,4 +34,5 @@
   </nav>
 
   <app-avisos-panel posicion="barra"></app-avisos-panel>
+  <app-cambio-rol #cr></app-cambio-rol>
 </div>
