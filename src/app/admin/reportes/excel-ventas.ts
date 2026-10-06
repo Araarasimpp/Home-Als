@@ -129,13 +129,18 @@ async function cargarGrupos(db: SupabaseClient, o: OpcionesExcel): Promise<Grupo
     }
 
     const domicilio = Number(p.valor_domicilio || 0);
+    const esLocal = p.canal === 'local' || (!p.domiciliario_id && domicilio === 0);
     let mensajero: string;
-    if (p.domiciliario_id) {
+    if (esLocal) {
+      mensajero = 'LOCAL';
+      if (p.metodo_pago === 'transferencia') mensajero += ' TRANSFERENCIA';
+      else if (p.metodo_pago === 'mixto') mensajero += ` MIXTO (EF ${Math.round(Number(p.monto_efectivo || 0) / 1000)} MIL)`;
+    } else if (p.domiciliario_id) {
       mensajero = (nombre.get(p.domiciliario_id) ?? 'DOMICILIARIO').toUpperCase();
       if (p.metodo_pago === 'transferencia') mensajero += ' TRANSFERENCIA';
       else if (p.metodo_pago === 'mixto') mensajero += ` MIXTO (EF ${Math.round(Number(p.monto_efectivo || 0) / 1000)} MIL)`;
     } else {
-      mensajero = domicilio > 0 ? 'SIN ASIGNAR' : 'LOCAL';
+      mensajero = 'SIN ASIGNAR';
     }
 
     const porcentaje = p.comision_tipo === 'porcentaje' ? Number(p.comision_porcentaje ?? 50) : null;
@@ -155,7 +160,7 @@ async function cargarGrupos(db: SupabaseClient, o: OpcionesExcel): Promise<Grupo
       domicilio,
       total: Number(p.total || 0),
       mensajero,
-      mensajeroId: p.domiciliario_id ?? (domicilio > 0 ? 'sin' : 'local'),
+      mensajeroId: esLocal ? 'local' : p.domiciliario_id ?? 'sin',
       vendedor,
       sinCosto,
     });

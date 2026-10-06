@@ -20,6 +20,8 @@ interface PedidoSinCuadrar {
   barrio: string | null;
   total: number;
   valor_domicilio: number;
+  /** Lo que se le paga al domiciliario por este pedido */
+  pago_domiciliario?: number | null;
   metodo_pago: MetodoPago | null;
   monto_efectivo?: number | null;
   monto_transferencia?: number | null;
@@ -127,7 +129,12 @@ export class CuadresPage implements OnInit {
   // domicilio que te queda a ti. Si fue por transferencia, sale negativo:
   // significa que el negocio te debe ese domicilio.
   cuadreDe(p: PedidoSinCuadrar): number {
-    return this.efectivoDe(p) - p.valor_domicilio;
+    return this.efectivoDe(p) - this.pagoDe(p);
+  }
+
+  /** Lo que te pagan por este domicilio. */
+  pagoDe(p: PedidoSinCuadrar): number {
+    return Number(p.pago_domiciliario ?? p.valor_domicilio) || 0;
   }
 
   get totalEfectivo(): number {
@@ -139,7 +146,7 @@ export class CuadresPage implements OnInit {
   }
 
   get totalDomicilios(): number {
-    return this.pedidosHoy.reduce((sum, p) => sum + p.valor_domicilio, 0);
+    return this.pedidosHoy.reduce((sum, p) => sum + this.pagoDe(p), 0);
   }
 
   get totalCuadre(): number {

@@ -52,6 +52,7 @@
             <th>Ganancia tienda</th>
             <th>Total pedido</th>
             <th>Domicilio</th>
+            <th>Pago domiciliario</th>
             <th>Ganancia vendedor</th>
           </tr>
         </thead>
@@ -70,7 +71,8 @@
             <td class="text-soft">{{ f.cantidad }}</td>
             <td class="ganancia">{{ formatoMoneda(f.gananciaItem) }}</td>
             <td>{{ formatoMoneda(f.total) }}</td>
-            <td class="text-soft">{{ formatoMoneda(f.valorDomicilio) }}</td>
+            <td class="text-soft">{{ f.canal === 'local' ? 'En local' : formatoMoneda(f.valorDomicilio) }}</td>
+            <td class="text-soft">{{ f.canal === 'local' ? '—' : formatoMoneda(f.pagoDomiciliario) }}</td>
             <td class="comision">{{ formatoMoneda(f.comision) }}</td>
           </tr>
         </tbody>
@@ -81,10 +83,17 @@
             <td class="ganancia">{{ formatoMoneda(totalGananciaTienda) }}</td>
             <td>{{ formatoMoneda(totalPedido) }}</td>
             <td>{{ formatoMoneda(totalDomicilio) }}</td>
+            <td>{{ formatoMoneda(totalPagoDomiciliario) }}</td>
             <td class="comision">{{ formatoMoneda(totalComision) }}</td>
           </tr>
         </tfoot>
       </table>
+      <p class="nota-envio" *ngIf="filas.length && totalEnvioAsumido !== 0">
+        Envíos que pone la tienda (pago al domiciliario − domicilio cobrado):
+        <strong>{{ formatoMoneda(totalEnvioAsumido) }}</strong>.
+        Ganancia de la tienda después de envíos:
+        <strong>{{ formatoMoneda(totalGananciaTienda - totalEnvioAsumido) }}</strong>.
+      </p>
 
       <ng-template #vacio>
         <p class="empty-msg">No hay pedidos que coincidan con estos filtros.</p>

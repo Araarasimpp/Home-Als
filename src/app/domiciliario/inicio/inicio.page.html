@@ -45,7 +45,7 @@
           <div class="cobro-valor">
             <span>Cobrar</span>
             <strong class="num">{{ formatoMoneda(p.total) }}</strong>
-            <small class="num">Tu domicilio {{ formatoMoneda(p.valor_domicilio) }}</small>
+            <small class="num">Tu domicilio {{ formatoMoneda(p.pago_domiciliario ?? p.valor_domicilio) }}</small>
           </div>
         </div>
 

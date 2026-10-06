@@ -238,3 +238,51 @@
     margin-top: 6px;
   }
 }
+// ---------- Sin cerrar (en vivo) ----------
+.sin-cerrar {
+  margin-bottom: 20px;
+  border: 1px solid var(--k-border);
+  border-left: 3px solid var(--accent, #3e5bd9);
+  border-radius: 14px;
+  background: var(--k-card-bg);
+  overflow: hidden;
+}
+
+.sin-cerrar-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 14px 18px 10px;
+}
+
+.sin-cerrar-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.sin-cerrar-head .text-soft {
+  font-size: 12px;
+}
+
+.sin-cerrar-fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--k-border);
+  font-size: 13px;
+}
+
+.error-cierre {
+  margin: 0;
+  padding: 8px 18px;
+  color: var(--danger, #c4321c);
+  font-size: 13px;
+}
+
+.cerrado-por {
+  font-size: 12px;
+}

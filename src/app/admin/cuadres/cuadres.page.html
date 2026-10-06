@@ -28,6 +28,29 @@
     <button (click)="verPendientesOtrosDias()">Ver pendientes</button>
   </div>
 
+  <!-- Lo que los domiciliarios llevan entregado y todavía no han cerrado -->
+  <section class="sin-cerrar" *ngIf="!loading && sinCerrarFiltrados.length" aria-labelledby="t-sin-cerrar">
+    <div class="sin-cerrar-head">
+      <h2 id="t-sin-cerrar">Sin cerrar</h2>
+      <span class="text-soft">En vivo: lo entregado que aún no está en un cuadre. Si no lo cierran, se cierra solo a las 11:50 p. m.</span>
+    </div>
+    <p class="error-cierre" role="alert" *ngIf="mensajeCierre">{{ mensajeCierre }}</p>
+    <div class="sin-cerrar-fila" *ngFor="let g of sinCerrarFiltrados">
+      <span class="col-dom">{{ nombreDomiciliario(g.domiciliarioId) }}</span>
+      <span class="col-fecha text-soft">{{ g.fecha === hoy ? 'Hoy' : formatoFecha(g.fecha) }}</span>
+      <span class="col-pedidos text-soft">
+        {{ g.pedidos }} {{ g.pedidos === 1 ? 'entregado' : 'entregados' }}<ng-container *ngIf="g.fecha === hoy && enRutaPorDom.get(g.domiciliarioId)">, {{ enRutaPorDom.get(g.domiciliarioId) }} en ruta</ng-container>
+      </span>
+      <span class="col-monto text-soft">Efectivo: {{ formatoMoneda(g.efectivo) }}</span>
+      <span class="col-monto text-soft">Transf: {{ formatoMoneda(g.transferencia) }}</span>
+      <span class="col-monto text-soft">Pago domiciliario: {{ formatoMoneda(g.pagoDomiciliario) }}</span>
+      <span class="col-entregar"><span class="text-soft">Debe entregar</span> <strong>{{ formatoMoneda(g.aEntregar) }}</strong></span>
+      <button class="btn-confirmar" (click)="cerrarPorDomiciliario(g)" [disabled]="cerrandoClave === claveDe(g)">
+        {{ cerrandoClave === claveDe(g) ? 'Cerrando…' : 'Cerrar cuadre' }}
+      </button>
+    </div>
+  </section>
+
   <div class="table-card">
     <ng-container *ngIf="!loading; else cargando">
       <div class="lista" *ngIf="filtrados.length; else vacio">
@@ -38,8 +61,9 @@
             <span class="col-pedidos text-soft">{{ c.cantidad_pedidos }} pedidos</span>
             <span class="col-monto text-soft">Efectivo: {{ formatoMoneda(c.total_efectivo) }}</span>
             <span class="col-monto text-soft">Transf: {{ formatoMoneda(c.total_transferencia) }}</span>
-            <span class="col-monto text-soft">Domicilios: {{ formatoMoneda(c.total_domicilios) }}</span>
+            <span class="col-monto text-soft">Pago domiciliario: {{ formatoMoneda(c.total_domicilios) }}</span>
             <span class="col-entregar"><strong>{{ formatoMoneda(c.total_a_entregar) }}</strong></span>
+            <span class="cerrado-por text-soft" *ngIf="cerradoPor(c) as quien">{{ quien }}</span>
             <span class="badge" [class.confirmado]="c.estado === 'confirmado'">
               {{ c.estado === 'confirmado' ? 'Confirmado' : 'Pendiente' }}
             </span>
@@ -77,8 +101,9 @@
                 <span *ngIf="p.cliente_telefono">· {{ p.cliente_telefono }}</span>
                 <span class="pd-montos">
                   Efectivo: {{ formatoMoneda(efectivoDe(p)) }} · Transferencia:
-                  {{ formatoMoneda(transferenciaDe(p)) }} · Domicilio:
-                  {{ formatoMoneda(p.valor_domicilio) }}
+                  {{ formatoMoneda(transferenciaDe(p)) }} · Domicilio cobrado:
+                  {{ formatoMoneda(p.valor_domicilio) }} · Pago domiciliario:
+                  {{ formatoMoneda(p.pago_domiciliario ?? p.valor_domicilio) }}
                 </span>
               </div>
             </div>

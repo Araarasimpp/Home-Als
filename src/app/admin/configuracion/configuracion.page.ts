@@ -28,6 +28,8 @@ interface Zona {
   id: string;
   nombre: string;
   valor: number;
+  /** Lo que se le paga al domiciliario por un pedido a este barrio */
+  pago_domiciliario: number;
 }
 
 // Pedido de ejemplo solo para la vista previa
@@ -70,6 +72,10 @@ export class ConfiguracionPage implements OnInit {
   zonas: Zona[] = [];
   nuevaZonaNombre = '';
   nuevaZonaValor: number | null = null;
+  nuevaZonaPago: number | null = 10000;
+  /** Pago al domiciliario cuando el barrio no está en la lista. */
+  pagoDomiciliarioDefecto = 10000;
+  guardandoPagoDefecto = false;
   guardandoZona = false;
   errorZona = '';
 
@@ -104,6 +110,7 @@ export class ConfiguracionPage implements OnInit {
     const v = (data as any)?.inactividad_minutos;
     this.inactividadDisponible = v !== undefined;
     this.inactividadMinutos = Number(v ?? 30);
+    this.pagoDomiciliarioDefecto = Number((data as any)?.pago_domiciliario ?? 10000);
     this.cdr.detectChanges();
   }
 
@@ -117,6 +124,19 @@ export class ConfiguracionPage implements OnInit {
     this.guardandoInactividad = false;
     if (error) alert('No se pudo guardar. ' + error.message);
     else this.inactividadMinutos = Number(valor);
+    this.cdr.detectChanges();
+  }
+
+  async guardarPagoDefecto(): Promise<void> {
+    const valor = Math.max(0, Number(this.pagoDomiciliarioDefecto) || 0);
+    this.guardandoPagoDefecto = true;
+    this.cdr.detectChanges();
+    const { error } = await this.supabase.client
+      .from('configuracion')
+      .update({ pago_domiciliario: valor })
+      .eq('id', true);
+    this.guardandoPagoDefecto = false;
+    if (error) this.errorZona = 'No se pudo guardar el pago por defecto. ' + error.message;
     this.cdr.detectChanges();
   }
 
@@ -220,7 +240,7 @@ export class ConfiguracionPage implements OnInit {
   async cargarZonas(): Promise<void> {
     const { data, error } = await this.supabase.client
       .from('zonas_domicilio')
-      .select('id, nombre, valor')
+      .select('id, nombre, valor, pago_domiciliario')
       .order('nombre');
 
     if (!error && data) {
@@ -244,12 +264,14 @@ export class ConfiguracionPage implements OnInit {
     const { error } = await this.supabase.client.from('zonas_domicilio').insert({
       nombre,
       valor: this.nuevaZonaValor,
+      pago_domiciliario: this.nuevaZonaPago ?? this.pagoDomiciliarioDefecto,
     });
     this.guardandoZona = false;
 
     if (!error) {
       this.nuevaZonaNombre = '';
       this.nuevaZonaValor = null;
+      this.nuevaZonaPago = this.pagoDomiciliarioDefecto;
       await this.cargarZonas();
     } else {
       this.errorZona = 'No se pudo agregar la zona. ' + error.message;
@@ -261,7 +283,7 @@ export class ConfiguracionPage implements OnInit {
     this.errorZona = '';
     const { error } = await this.supabase.client
       .from('zonas_domicilio')
-      .update({ nombre: zona.nombre, valor: zona.valor })
+      .update({ nombre: zona.nombre, valor: zona.valor, pago_domiciliario: zona.pago_domiciliario })
       .eq('id', zona.id);
     if (error) {
       this.errorZona = `No se pudo guardar "${zona.nombre}". ` + error.message;
@@ -304,7 +326,7 @@ export class ConfiguracionPage implements OnInit {
       this.supabase.client
         .from('pedidos')
         .select(
-          'numero, estado, cliente_nombre, cliente_telefono, direccion, barrio, total, valor_domicilio, comision, metodo_pago, created_at, entregado_at'
+          'numero, canal, estado, cliente_nombre, cliente_telefono, direccion, barrio, total, valor_domicilio, pago_domiciliario, comision, metodo_pago, created_at, entregado_at'
         )
         .order('created_at', { ascending: false }),
       this.supabase.client

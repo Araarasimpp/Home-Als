@@ -19,6 +19,7 @@ interface PedidoRuta {
   direccion: string;
   barrio: string | null;
   valor_domicilio: number;
+  pago_domiciliario?: number | null;
   total: number;
   observaciones: string | null;
   productos: string[];
@@ -84,7 +85,7 @@ export class InicioDomiciliarioPage implements OnInit, OnDestroy {
       this.supabase.client
         .from('pedidos')
         .select(
-          'id, numero, cliente_nombre, cliente_telefono, direccion, barrio, valor_domicilio, total, observaciones'
+          'id, numero, cliente_nombre, cliente_telefono, direccion, barrio, valor_domicilio, pago_domiciliario, total, observaciones'
         )
         .eq('domiciliario_id', user.id)
         .eq('estado', 'en_ruta')

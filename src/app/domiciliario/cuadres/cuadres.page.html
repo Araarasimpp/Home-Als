@@ -40,7 +40,7 @@
             <p class="pedido-dir">{{ p.direccion }}<ng-container *ngIf="p.barrio">, {{ p.barrio }}</ng-container></p>
             <p class="pedido-productos">{{ p.productos || 'Sin productos' }}</p>
             <div class="pedido-bottom">
-              <span class="num">Domicilio {{ formatoMoneda(p.valor_domicilio) }}</span>
+              <span class="num">Tu pago {{ formatoMoneda(pagoDe(p)) }}</span>
               <span class="num pedido-cuadre" [class.a-favor]="cuadreDe(p) < 0">
                 {{ cuadreDe(p) >= 0 ? 'Entregas ' + formatoMoneda(cuadreDe(p)) : 'Te deben ' + formatoMoneda(-cuadreDe(p)) }}
               </span>

@@ -16,6 +16,8 @@ interface FilaReporte {
   esquema: string;
   total: number;
   valorDomicilio: number;
+  pagoDomiciliario: number;
+  canal: 'domicilio' | 'local';
   comision: number;
   productoNombre: string;
   costo: number | null;
@@ -51,7 +53,7 @@ export class ReportesPage implements OnInit {
   filas: FilaReporte[] = [];
 
   // Totales a nivel de PEDIDO (no se duplican aunque el pedido tenga varias filas de producto)
-  private pedidosUnicos: { total: number; valorDomicilio: number; comision: number }[] = [];
+  private pedidosUnicos: { total: number; valorDomicilio: number; pagoDomiciliario: number; comision: number; cancelado: boolean }[] = [];
 
   readonly estados: { valor: FiltroEstado; etiqueta: string }[] = [
     { valor: 'todos', etiqueta: 'Todos' },
@@ -142,7 +144,9 @@ export class ReportesPage implements OnInit {
     this.pedidosUnicos = pedidos.map((p) => ({
       total: Number(p.total ?? 0),
       valorDomicilio: Number(p.valor_domicilio ?? 0),
+      pagoDomiciliario: Number(p.pago_domiciliario ?? p.valor_domicilio ?? 0),
       comision: Number(p.comision ?? 0),
+      cancelado: p.estado === 'cancelado',
     }));
 
     const filasNuevas: FilaReporte[] = [];
@@ -187,6 +191,8 @@ export class ReportesPage implements OnInit {
           esquema: porPorcentaje ? `${pct}% de la ganancia` : 'Margen',
           total: Number(p.total ?? 0),
           valorDomicilio: Number(p.valor_domicilio ?? 0),
+          pagoDomiciliario: Number(p.pago_domiciliario ?? p.valor_domicilio ?? 0),
+          canal: p.canal ?? 'domicilio',
           comision: Number(p.comision ?? 0),
           productoNombre: (item as any).producto?.nombre ?? 'Producto',
           costo,
@@ -208,6 +214,17 @@ export class ReportesPage implements OnInit {
 
   get totalDomicilio(): number {
     return this.pedidosUnicos.reduce((s, p) => s + p.valorDomicilio, 0);
+  }
+
+  get totalPagoDomiciliario(): number {
+    return this.pedidosUnicos.reduce((s, p) => s + p.pagoDomiciliario, 0);
+  }
+
+  /** Lo que la tienda pone de su bolsillo en envíos (pago al domiciliario − cobro al cliente), sin cancelados. */
+  get totalEnvioAsumido(): number {
+    return this.pedidosUnicos
+      .filter((p) => !p.cancelado)
+      .reduce((s, p) => s + (p.pagoDomiciliario - p.valorDomicilio), 0);
   }
 
   get totalComision(): number {

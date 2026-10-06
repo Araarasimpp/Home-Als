@@ -36,7 +36,11 @@ export interface Pedido {
   cliente_telefono?: string | null;
   direccion: string;
   barrio?: string | null;
+  /** Domicilio o venta en el punto físico */
+  canal?: 'domicilio' | 'local';
   valor_domicilio: number;
+  /** Lo que se le paga al domiciliario (puede ser distinto a lo cobrado) */
+  pago_domiciliario?: number;
   comision: number;
   observaciones?: string | null;
   estado: EstadoPedido;
@@ -70,6 +74,8 @@ export interface Cuadre {
   cerrado_at: string;
   confirmado_at?: string | null;
   confirmado_por?: string | null;
+  /** Quién cerró el cuadre (null = cierre automático de la noche) */
+  cerrado_por?: string | null;
 }
 
 export interface CrearPedidoPayload {

@@ -203,3 +203,10 @@ tfoot td {
     width: 100%;
   }
 }
+.nota-envio {
+  margin: 0;
+  padding: 12px 16px;
+  border-top: 1px solid var(--k-border, var(--border));
+  font-size: 13px;
+  color: var(--k-text-soft, var(--text-soft));
+}

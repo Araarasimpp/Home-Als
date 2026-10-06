@@ -108,13 +108,18 @@
         <section class="section" aria-labelledby="sec-zonas">
           <div class="section-head">
             <h2 id="sec-zonas">Zonas de domicilio</h2>
-            <p>Al crear un pedido, el vendedor elige el barrio y el valor del domicilio se llena solo. Los cambios se guardan al salir de cada campo.</p>
+            <p>
+              <strong>Cobro al cliente</strong> es lo que se suma al pedido; <strong>pago al domiciliario</strong> es lo que
+              se le descuenta en su cuadre. Si se le paga más de lo que se cobra, la diferencia la pone la tienda y se
+              resta de la ganancia. Los cambios se guardan al salir de cada campo.
+            </p>
           </div>
 
           <div class="card card-flush">
             <div class="zona-head">
               <span>Barrio o zona</span>
-              <span class="zona-valor-head">Valor</span>
+              <span class="zona-valor-head">Cobro al cliente</span>
+              <span class="zona-valor-head">Pago al domiciliario</span>
               <span></span>
             </div>
 
@@ -135,6 +140,18 @@
                   [(ngModel)]="z.valor"
                   (change)="actualizarZona(z)"
                   [attr.aria-label]="'Valor del domicilio a ' + z.nombre"
+                />
+              </div>
+              <div class="money">
+                <span aria-hidden="true">$</span>
+                <input
+                  type="number"
+                  class="num"
+                  min="0"
+                  inputmode="numeric"
+                  [(ngModel)]="z.pago_domiciliario"
+                  (change)="actualizarZona(z)"
+                  [attr.aria-label]="'Pago al domiciliario por ' + z.nombre"
                 />
               </div>
               <button class="icon-btn danger" (click)="eliminarZona(z)" [attr.aria-label]="'Eliminar ' + z.nombre">
@@ -163,8 +180,21 @@
                   min="0"
                   inputmode="numeric"
                   [(ngModel)]="nuevaZonaValor"
-                  placeholder="7000"
-                  aria-label="Valor del domicilio"
+                  placeholder="9000"
+                  aria-label="Cobro al cliente"
+                />
+              </div>
+              <div class="money">
+                <span aria-hidden="true">$</span>
+                <input
+                  type="number"
+                  class="num"
+                  name="nuevaZonaPago"
+                  min="0"
+                  inputmode="numeric"
+                  [(ngModel)]="nuevaZonaPago"
+                  placeholder="10000"
+                  aria-label="Pago al domiciliario"
                 />
               </div>
               <button
@@ -176,6 +206,25 @@
                 <ion-icon name="add"></ion-icon>
               </button>
             </form>
+          </div>
+          <div class="card field-inline" style="margin-top: 12px">
+            <div>
+              <label for="pago-defecto">Pago al domiciliario en otros barrios</label>
+              <p class="hint">Se usa cuando el barrio del pedido no está en la lista.</p>
+            </div>
+            <div class="money input-corto">
+              <span aria-hidden="true">$</span>
+              <input
+                id="pago-defecto"
+                type="number"
+                class="num"
+                min="0"
+                inputmode="numeric"
+                [(ngModel)]="pagoDomiciliarioDefecto"
+                (change)="guardarPagoDefecto()"
+                [disabled]="guardandoPagoDefecto"
+              />
+            </div>
           </div>
           <p class="inline-error" role="alert" *ngIf="errorZona">{{ errorZona }}</p>
         </section>
