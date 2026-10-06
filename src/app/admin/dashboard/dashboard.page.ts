@@ -66,7 +66,8 @@ interface Bucket {
   actual: boolean; // hoy o la semana en curso
 }
 
-const ESTADOS_VENTA = ['en_ruta', 'entregado'];
+// Una venta cuenta cuando se entrega (incluye las ventas en local, que nacen entregadas)
+const ESTADOS_VENTA = ['entregado'];
 const ORDEN_ESTADOS: EstadoPedido[] = ['entregado', 'en_ruta', 'pendiente', 'cancelado'];
 const ETIQUETAS: Record<EstadoPedido, string> = {
   pendiente: 'Pendientes',
@@ -197,9 +198,11 @@ export class DashboardPage implements OnInit, OnDestroy {
       .single();
     const umbral = config?.stock_bajo_umbral ?? 5;
 
-    const [hoyRes, gananciaRes, sinAsignarRes, cuadresRes, stockRes, enRutaRes, recientesRes, perfilesRes] =
+    const [hoyRes, entregadosHoyRes, gananciaRes, sinAsignarRes, cuadresRes, stockRes, enRutaRes, recientesRes, perfilesRes] =
       await Promise.all([
         db.from('pedidos').select('total, estado').gte('created_at', inicioHoy),
+        // Ventas de hoy = lo ENTREGADO hoy (aunque el pedido se haya creado otro día)
+        db.from('pedidos').select('total').eq('estado', 'entregado').gte('entregado_at', inicioHoy),
         // Ganancia real de hoy: ventas − costos − comisiones (los dos esquemas de vendedor)
         db.rpc('ganancia_tienda', { p_desde: inicioHoy, p_hasta: new Date().toISOString() }),
         db
@@ -233,9 +236,10 @@ export class DashboardPage implements OnInit, OnDestroy {
 
     // Hoy
     const hoy = (hoyRes.data ?? []) as { total: number; estado: EstadoPedido }[];
-    this.ventasHoy = hoy
-      .filter((p) => ESTADOS_VENTA.includes(p.estado))
-      .reduce((s, p) => s + Number(p.total || 0), 0);
+    this.ventasHoy = ((entregadosHoyRes.data ?? []) as { total: number }[]).reduce(
+      (s, p) => s + Number(p.total || 0),
+      0
+    );
     if (gananciaRes.error) {
       // Si todavía no se ejecutó supabase/comision-porcentaje.sql, se usa la función anterior
       const viejo = await db.rpc('ganancias_hoy');
@@ -343,14 +347,15 @@ export class DashboardPage implements OnInit, OnDestroy {
 
     const { data } = await this.supabase.client
       .from('pedidos')
-      .select('total, created_at')
-      .gte('created_at', inicio.toISOString())
+      .select('total, entregado_at')
+      .gte('entregado_at', inicio.toISOString())
       .in('estado', ESTADOS_VENTA);
 
     // Totales por día (en hora de Colombia)
     const porDia = new Map<string, { ventas: number; pedidos: number }>();
-    for (const f of (data ?? []) as { total: number; created_at: string }[]) {
-      const k = diaColombiaDe(f.created_at);
+    for (const f of (data ?? []) as { total: number; entregado_at: string }[]) {
+      if (!f.entregado_at) continue;
+      const k = diaColombiaDe(f.entregado_at);
       const d = porDia.get(k) ?? { ventas: 0, pedidos: 0 };
       d.ventas += Number(f.total || 0);
       d.pedidos++;
