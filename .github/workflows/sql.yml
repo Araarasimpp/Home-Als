@@ -78,16 +78,77 @@ jobs:
           )
           echo "::add-mask::$DB_URL"
           export PGCONNECT_TIMEOUT=20
+          set +e
           case "$MODO" in
             leer)
-              # Por si alguna función guarda una llave: se ocultan JWT y cadenas largas tipo secreto.
-              psql "$DB_URL" -X -v ON_ERROR_STOP=1 -P pager=off -f "$ARCHIVO" \
-                | sed -E 's/eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*/[OCULTO]/g; s/(sk|pk|whsec|sb_secret|sb_publishable)_[A-Za-z0-9_-]{8,}/[OCULTO]/g; s/[A-Za-z0-9+\/_-]{40,}/[OCULTO]/g' ;;
+              psql "$DB_URL" -X -v ON_ERROR_STOP=1 -P pager=off -f "$ARCHIVO" > /tmp/salida.txt 2>&1 ;;
             probar)
               { echo 'begin;'; cat "$ARCHIVO"; echo; echo 'rollback;'; } \
-                | psql "$DB_URL" -X -v ON_ERROR_STOP=1 -P pager=off
-              echo "Prueba sin errores. Nada quedó guardado (rollback)." ;;
+                | psql "$DB_URL" -X -v ON_ERROR_STOP=1 -P pager=off > /tmp/salida.txt 2>&1 ;;
             aplicar)
-              psql "$DB_URL" -X -v ON_ERROR_STOP=1 -P pager=off --single-transaction -f "$ARCHIVO"
-              echo "Aplicado y confirmado." ;;
+              psql "$DB_URL" -X -v ON_ERROR_STOP=1 -P pager=off --single-transaction -f "$ARCHIVO" > /tmp/salida.txt 2>&1 ;;
           esac
+          CODIGO=$?
+          set -e
+          # Por si alguna función guarda una llave: se ocultan JWT y cadenas largas tipo secreto.
+          sed -E 's/eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*/[OCULTO]/g; s/(sk|pk|whsec|sb_secret|sb_publishable)_[A-Za-z0-9_-]{8,}/[OCULTO]/g; s/[A-Za-z0-9+\/_-]{40,}/[OCULTO]/g' \
+            /tmp/salida.txt > /tmp/salida_limpia.txt
+          rm -f /tmp/salida.txt
+          cat /tmp/salida_limpia.txt
+          if [ "$CODIGO" != "0" ]; then
+            python3 -c "import sys; t=open('/tmp/salida_limpia.txt').read()[-6000:]; print('::error title=Falló ($MODO)::' + t.replace('%','%25').replace('\r','%0D').replace('\n','%0A'))"
+            exit "$CODIGO"
+          fi
+          case "$MODO" in
+            probar) echo "::notice title=Prueba sin errores::Nada quedó guardado (rollback)." ;;
+            aplicar) echo "::notice title=Aplicado::Cambios confirmados." ;;
+          esac
+
+      - name: Resultado como anotaciones (parte 1)
+        if: inputs.modo == 'leer'
+        run: |
+          python3 - <<'PY'
+          import os
+          t = open('/tmp/salida_limpia.txt').read()
+          tam = 40000
+          partes = [t[i:i+tam] for i in range(0, len(t), tam)]
+          for n in range(0, min(10, len(partes))):
+              msg = partes[n].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+              print(f"::notice title=parte {n+1} de {len(partes)}::{msg}")
+          PY
+      - name: Resultado como anotaciones (parte 2)
+        if: inputs.modo == 'leer'
+        run: |
+          python3 - <<'PY'
+          import os
+          t = open('/tmp/salida_limpia.txt').read()
+          tam = 40000
+          partes = [t[i:i+tam] for i in range(0, len(t), tam)]
+          for n in range(10, min(20, len(partes))):
+              msg = partes[n].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+              print(f"::notice title=parte {n+1} de {len(partes)}::{msg}")
+          PY
+      - name: Resultado como anotaciones (parte 3)
+        if: inputs.modo == 'leer'
+        run: |
+          python3 - <<'PY'
+          import os
+          t = open('/tmp/salida_limpia.txt').read()
+          tam = 40000
+          partes = [t[i:i+tam] for i in range(0, len(t), tam)]
+          for n in range(20, min(30, len(partes))):
+              msg = partes[n].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+              print(f"::notice title=parte {n+1} de {len(partes)}::{msg}")
+          PY
+      - name: Resultado como anotaciones (parte 4)
+        if: inputs.modo == 'leer'
+        run: |
+          python3 - <<'PY'
+          import os
+          t = open('/tmp/salida_limpia.txt').read()
+          tam = 40000
+          partes = [t[i:i+tam] for i in range(0, len(t), tam)]
+          for n in range(30, min(40, len(partes))):
+              msg = partes[n].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+              print(f"::notice title=parte {n+1} de {len(partes)}::{msg}")
+          PY
