@@ -28,9 +28,9 @@ begin
 
   -- Ni editar su lista de roles directamente
   v_ok := false;
-  begin
+  declare v_ctx text; begin
     update public.profiles set roles = array['admin']::public.user_role[] where id = v_dom;
-  exception when others then v_ok := true; raise notice 'bloqueado editar roles: %', sqlerrm; end;
+  exception when others then v_ok := true; get stacked diagnostics v_ctx = pg_exception_context; raise notice 'bloqueado editar roles: % | %', sqlerrm, v_ctx; end;
   assert v_ok, 'editar roles';
 
   -- Ni cambiar role a algo fuera de su lista
