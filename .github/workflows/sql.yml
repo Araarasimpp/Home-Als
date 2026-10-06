@@ -1,0 +1,91 @@
+# Ejecuta un archivo SQL de supabase/sql/ contra la base de datos de Home ALS.
+# Solo lo pueden lanzar personas con permiso de escritura en el repositorio
+# (GitHub → Actions → "SQL en Supabase" → Run workflow).
+#
+#   leer     ejecuta el archivo y muestra el resultado (solo para consultas de
+#            estructura: el registro de Actions es público, nunca consultar datos
+#            de clientes con este modo).
+#   probar   ejecuta el archivo dentro de una transacción y la deshace al final
+#            (rollback): sirve para comprobar que la migración no tiene errores.
+#   aplicar  ejecuta el archivo en una sola transacción y la confirma.
+#
+# Usa el mismo secreto SUPABASE_DB_URL del respaldo semanal.
+
+name: SQL en Supabase
+
+on:
+  workflow_dispatch:
+    inputs:
+      archivo:
+        description: 'Ruta del archivo (ej. supabase/sql/2026-10-06_canal_local.sql)'
+        required: true
+        type: string
+      modo:
+        description: 'leer, probar o aplicar'
+        required: true
+        default: probar
+        type: choice
+        options: [leer, probar, aplicar]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sql-supabase
+  cancel-in-progress: false
+
+jobs:
+  sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Revisar archivo
+        env:
+          ARCHIVO: ${{ inputs.archivo }}
+        run: |
+          case "$ARCHIVO" in
+            supabase/sql/*.sql) ;;
+            *) echo "::error::El archivo debe estar en supabase/sql/ y terminar en .sql"; exit 1 ;;
+          esac
+          case "$ARCHIVO" in *..*) echo "::error::Ruta no válida"; exit 1 ;; esac
+          test -f "$ARCHIVO" || { echo "::error::No existe $ARCHIVO"; exit 1; }
+
+      - name: Instalar cliente de Postgres
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client >/dev/null
+
+      - name: Ejecutar
+        env:
+          DB_URL_CRUDA: ${{ secrets.SUPABASE_DB_URL }}
+          ARCHIVO: ${{ inputs.archivo }}
+          MODO: ${{ inputs.modo }}
+        run: |
+          DB_URL=$(python3 - <<'PY'
+          import os, re, sys
+          from urllib.parse import quote, unquote
+          url = os.environ["DB_URL_CRUDA"].strip().strip('"').strip("'")
+          m = re.match(r'^(postgres(?:ql)?://)([^:/@]+):(.*)@([^@]+)$', url, re.S)
+          if not m:
+              sys.exit("La URI no tiene la forma postgresql://usuario:clave@servidor:puerto/postgres")
+          esquema, usuario, clave, resto = m.groups()
+          clave = clave.strip()
+          if clave.startswith('[') and clave.endswith(']'):
+              clave = clave[1:-1]
+          clave = quote(unquote(clave), safe='')
+          print(f"{esquema}{usuario}:{clave}@{resto.strip()}")
+          PY
+          )
+          echo "::add-mask::$DB_URL"
+          export PGCONNECT_TIMEOUT=20
+          case "$MODO" in
+            leer)
+              psql "$DB_URL" -X -v ON_ERROR_STOP=1 -P pager=off -f "$ARCHIVO" ;;
+            probar)
+              { echo 'begin;'; cat "$ARCHIVO"; echo; echo 'rollback;'; } \
+                | psql "$DB_URL" -X -v ON_ERROR_STOP=1 -P pager=off
+              echo "Prueba sin errores. Nada quedó guardado (rollback)." ;;
+            aplicar)
+              psql "$DB_URL" -X -v ON_ERROR_STOP=1 -P pager=off --single-transaction -f "$ARCHIVO"
+              echo "Aplicado y confirmado." ;;
+          esac

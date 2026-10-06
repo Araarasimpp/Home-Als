@@ -1,0 +1,25 @@
+# Compila la app (ng build) en ramas distintas de main para detectar errores
+# antes de que lleguen a Vercel. También se puede lanzar a mano.
+name: Compilar
+
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx ng build --configuration production
