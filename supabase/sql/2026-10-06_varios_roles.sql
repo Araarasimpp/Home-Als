@@ -8,6 +8,21 @@
 -- con cambiar_rol() y solo puede elegir entre los roles que el admin le dio.
 -- Sin begin/commit: el workflow "SQL en Supabase" lo envuelve en una transacción.
 
+-- tiene_rol tenía un parámetro llamado "roles"; con la columna nueva el nombre
+-- quedaría ambiguo, así que se referencia por posición ($1). Mismo comportamiento.
+create or replace function public.tiene_rol(roles text[])
+returns boolean
+language sql
+stable
+security definer
+set search_path to 'public'
+as $$
+  select exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid() and p.role::text = any ($1) and p.activo
+  );
+$$;
+
 alter table public.profiles
   add column if not exists roles public.user_role[] not null default array['vendedor']::public.user_role[];
 
