@@ -37,11 +37,24 @@ concurrency:
 jobs:
   sql:
     runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+      matrix:
+        # En modo leer se reparte el resultado en bloques (las anotaciones de
+        # GitHub tienen límite de tamaño). En los otros modos solo corre el bloque 0.
+        bloque: [0, 1, 2, 3, 4, 5]
     timeout-minutes: 10
     steps:
+      - name: Saltar bloques extra
+        id: salto
+        run: |
+          if [ "${{ inputs.modo }}" != "leer" ] && [ "${{ matrix.bloque }}" != "0" ]; then echo "saltar=1" >> "$GITHUB_OUTPUT"; fi
+
       - uses: actions/checkout@v4
+        if: steps.salto.outputs.saltar != '1'
 
       - name: Revisar archivo
+        if: steps.salto.outputs.saltar != '1'
         env:
           ARCHIVO: ${{ inputs.archivo }}
         run: |
@@ -53,9 +66,11 @@ jobs:
           test -f "$ARCHIVO" || { echo "::error::No existe $ARCHIVO"; exit 1; }
 
       - name: Instalar cliente de Postgres
+        if: steps.salto.outputs.saltar != '1'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client >/dev/null
 
       - name: Ejecutar
+        if: steps.salto.outputs.saltar != '1'
         env:
           DB_URL_CRUDA: ${{ secrets.SUPABASE_DB_URL }}
           ARCHIVO: ${{ inputs.archivo }}
@@ -104,51 +119,78 @@ jobs:
             aplicar) echo "::notice title=Aplicado::Cambios confirmados." ;;
           esac
 
-      - name: Resultado como anotaciones (parte 1)
-        if: inputs.modo == 'leer'
+      - name: Resultado (paso 1)
+        if: inputs.modo == 'leer' && steps.salto.outputs.saltar != '1'
+        env:
+          BLOQUE: ${{ matrix.bloque }}
         run: |
           python3 - <<'PY'
           import os
-          t = open('/tmp/salida_limpia.txt').read()
-          tam = 40000
+          t = open('/tmp/salida_limpia.txt', encoding='utf-8').read()
+          tam = 3800
           partes = [t[i:i+tam] for i in range(0, len(t), tam)]
-          for n in range(0, min(10, len(partes))):
+          ini = int(os.environ['BLOQUE']) * 50 + 0
+          for n in range(ini, min(ini + 10, len(partes))):
               msg = partes[n].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
               print(f"::notice title=parte {n+1} de {len(partes)}::{msg}")
           PY
-      - name: Resultado como anotaciones (parte 2)
-        if: inputs.modo == 'leer'
+      - name: Resultado (paso 2)
+        if: inputs.modo == 'leer' && steps.salto.outputs.saltar != '1'
+        env:
+          BLOQUE: ${{ matrix.bloque }}
         run: |
           python3 - <<'PY'
           import os
-          t = open('/tmp/salida_limpia.txt').read()
-          tam = 40000
+          t = open('/tmp/salida_limpia.txt', encoding='utf-8').read()
+          tam = 3800
           partes = [t[i:i+tam] for i in range(0, len(t), tam)]
-          for n in range(10, min(20, len(partes))):
+          ini = int(os.environ['BLOQUE']) * 50 + 10
+          for n in range(ini, min(ini + 10, len(partes))):
               msg = partes[n].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
               print(f"::notice title=parte {n+1} de {len(partes)}::{msg}")
           PY
-      - name: Resultado como anotaciones (parte 3)
-        if: inputs.modo == 'leer'
+      - name: Resultado (paso 3)
+        if: inputs.modo == 'leer' && steps.salto.outputs.saltar != '1'
+        env:
+          BLOQUE: ${{ matrix.bloque }}
         run: |
           python3 - <<'PY'
           import os
-          t = open('/tmp/salida_limpia.txt').read()
-          tam = 40000
+          t = open('/tmp/salida_limpia.txt', encoding='utf-8').read()
+          tam = 3800
           partes = [t[i:i+tam] for i in range(0, len(t), tam)]
-          for n in range(20, min(30, len(partes))):
+          ini = int(os.environ['BLOQUE']) * 50 + 20
+          for n in range(ini, min(ini + 10, len(partes))):
               msg = partes[n].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
               print(f"::notice title=parte {n+1} de {len(partes)}::{msg}")
           PY
-      - name: Resultado como anotaciones (parte 4)
-        if: inputs.modo == 'leer'
+      - name: Resultado (paso 4)
+        if: inputs.modo == 'leer' && steps.salto.outputs.saltar != '1'
+        env:
+          BLOQUE: ${{ matrix.bloque }}
         run: |
           python3 - <<'PY'
           import os
-          t = open('/tmp/salida_limpia.txt').read()
-          tam = 40000
+          t = open('/tmp/salida_limpia.txt', encoding='utf-8').read()
+          tam = 3800
           partes = [t[i:i+tam] for i in range(0, len(t), tam)]
-          for n in range(30, min(40, len(partes))):
+          ini = int(os.environ['BLOQUE']) * 50 + 30
+          for n in range(ini, min(ini + 10, len(partes))):
+              msg = partes[n].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+              print(f"::notice title=parte {n+1} de {len(partes)}::{msg}")
+          PY
+      - name: Resultado (paso 5)
+        if: inputs.modo == 'leer' && steps.salto.outputs.saltar != '1'
+        env:
+          BLOQUE: ${{ matrix.bloque }}
+        run: |
+          python3 - <<'PY'
+          import os
+          t = open('/tmp/salida_limpia.txt', encoding='utf-8').read()
+          tam = 3800
+          partes = [t[i:i+tam] for i in range(0, len(t), tam)]
+          ini = int(os.environ['BLOQUE']) * 50 + 40
+          for n in range(ini, min(ini + 10, len(partes))):
               msg = partes[n].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
               print(f"::notice title=parte {n+1} de {len(partes)}::{msg}")
           PY
