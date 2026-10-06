@@ -32,7 +32,12 @@
         <span class="num count">{{ conteo(e.valor) }}</span>
       </button>
     </nav>
-    <select class="select-ghost" [(ngModel)]="filtroRotulo" aria-label="Filtrar por rótulo">
+    <select class="select-ghost" [(ngModel)]="filtroCanal" (change)="onCambioCanal()" aria-label="Filtrar por canal de venta">
+      <option value="domicilio">Domicilios</option>
+      <option value="local">Ventas en local</option>
+      <option value="todos">Domicilios y local</option>
+    </select>
+    <select class="select-ghost" *ngIf="filtroCanal !== 'local'" [(ngModel)]="filtroRotulo" aria-label="Filtrar por rótulo">
       <option value="todos">Rótulo: todos</option>
       <option value="pendiente">Rótulo: pendiente</option>
       <option value="impreso">Rótulo: impreso</option>
@@ -121,10 +126,13 @@
             <ng-template #sinProductos><span class="productos">Sin productos</span></ng-template>
           </div>
 
-          <span class="c-barrio">{{ p.barrio || '—' }}</span>
+          <span class="c-barrio">
+            <span class="chip-local" *ngIf="p.canal === 'local'; else barrioTexto">En local</span>
+            <ng-template #barrioTexto>{{ p.barrio || '—' }}</ng-template>
+          </span>
 
           <div class="c-dom">
-            <ng-container *ngIf="editable(p); else domiciliarioFijo">
+            <ng-container *ngIf="editable(p) && p.canal !== 'local'; else domiciliarioFijo">
               <app-avatar
                 [nombre]="p.domiciliario_id ? nombreDomiciliario(p.domiciliario_id) : null"
                 [url]="fotoDomiciliario(p.domiciliario_id)"
@@ -156,10 +164,11 @@
             </ng-template>
           </div>
 
-          <span class="c-rot" [class.pending]="!p.rotulo_impreso_at">
+          <span class="c-rot" [class.pending]="!p.rotulo_impreso_at" *ngIf="p.canal !== 'local'; else sinRotulo">
             <ion-icon name="print-outline" aria-hidden="true"></ion-icon>
             {{ p.rotulo_impreso_at ? 'Impreso' : 'Pendiente' }}
           </span>
+          <ng-template #sinRotulo><span class="c-rot muted">—</span></ng-template>
 
           <span class="c-total num">{{ formatoMoneda(p.total) }}</span>
           <span class="c-fecha num" [title]="formatoFechaCompleta(p.created_at) + ', vendió ' + nombreVendedor(p.vendedor_id)">
@@ -169,7 +178,6 @@
           <div class="c-menu">
             <button
               class="icon-btn"
-              *ngIf="p.estado !== 'entregado'"
               (click)="toggleMenu(p.id)"
               [attr.aria-expanded]="menuAbiertoId === p.id"
               [attr.aria-label]="'Más acciones del pedido ' + p.numero"
@@ -180,10 +188,13 @@
               <button class="popover-backdrop" aria-label="Cerrar" (click)="menuAbiertoId = null"></button>
               <div class="popover" role="menu">
                 <p class="popover-meta">Vendió {{ nombreVendedor(p.vendedor_id) }}</p>
-                <button role="menuitem" *ngIf="p.estado !== 'cancelado'" (click)="cancelarPedido(p)">
+                <a role="menuitem" *ngIf="p.estado !== 'cancelado'" [routerLink]="rutaEditar(p)" (click)="menuAbiertoId = null">
+                  Editar pedido
+                </a>
+                <button role="menuitem" *ngIf="editable(p)" (click)="cancelarPedido(p)">
                   Cancelar pedido
                 </button>
-                <button role="menuitem" class="danger" (click)="eliminarPedido(p)">Eliminar pedido</button>
+                <button role="menuitem" class="danger" *ngIf="p.estado !== 'entregado'" (click)="eliminarPedido(p)">Eliminar pedido</button>
               </div>
             </ng-container>
           </div>

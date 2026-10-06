@@ -552,7 +552,9 @@
   color: var(--text-muted);
 }
 
-.popover button {
+.popover button,
+.popover a {
+  box-sizing: border-box;
   display: block;
   width: 100%;
   height: 32px;
@@ -566,7 +568,8 @@
   cursor: pointer;
 }
 
-.popover button:hover {
+.popover button:hover,
+.popover a:hover {
   background: var(--hover);
 }
 
@@ -885,4 +888,23 @@
   .bar-btn {
     height: 40px;
   }
+}
+
+.popover a {
+  box-sizing: border-box;
+  line-height: 32px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.chip-local {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--accent-wash);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 500;
 }

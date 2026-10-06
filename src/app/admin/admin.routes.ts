@@ -33,6 +33,18 @@ export const ADMIN_ROUTES: Routes = [
           import('../vendedor/nuevo-pedido/nuevo-pedido.page').then((m) => m.NuevoPedidoPage),
       },
       {
+        path: 'pedidos/:id/editar',
+        data: { volverA: '/admin/pedidos' },
+        loadComponent: () =>
+          import('../vendedor/nuevo-pedido/nuevo-pedido.page').then((m) => m.NuevoPedidoPage),
+      },
+      {
+        path: 'venta-local',
+        data: { canal: 'local', volverA: '/admin/pedidos' },
+        loadComponent: () =>
+          import('../vendedor/nuevo-pedido/nuevo-pedido.page').then((m) => m.NuevoPedidoPage),
+      },
+      {
         path: 'cuadres',
         loadComponent: () => import('./cuadres/cuadres.page').then((m) => m.AdminCuadresPage),
       },

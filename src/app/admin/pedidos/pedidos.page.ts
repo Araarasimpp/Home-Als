@@ -23,6 +23,7 @@ interface PedidoFila {
   direccion: string;
   barrio: string | null;
   observaciones: string | null;
+  canal: 'domicilio' | 'local';
   estado: EstadoPedido;
   total: number;
   domiciliario_id: string | null;
@@ -53,6 +54,7 @@ interface GrupoPedidos {
 
 type FiltroEstado = 'todos' | EstadoPedido;
 type FiltroRotulo = 'todos' | 'pendiente' | 'impreso';
+type FiltroCanal = 'domicilio' | 'local' | 'todos';
 
 // Orden en que se muestran los grupos en la vista "Todos"
 const ORDEN_ESTADOS: EstadoPedido[] = ['pendiente', 'en_ruta', 'entregado', 'cancelado'];
@@ -76,6 +78,8 @@ export class PedidosPage implements OnInit, OnDestroy {
   /** Imagen de producto abierta en grande. */
   imagenAmpliada: string | null = null;
   filtroRotulo: FiltroRotulo = 'todos';
+  /** Domicilios por defecto; las ventas del punto físico se ven aparte. */
+  filtroCanal: FiltroCanal = 'domicilio';
   guardandoId: string | null = null;
   asignandoLote = false;
   seleccionados = new Set<string>();
@@ -84,6 +88,7 @@ export class PedidosPage implements OnInit, OnDestroy {
 
   // Esta misma página la usan admin y despachador (ver despachador.routes.ts)
   readonly rutaNuevo: string;
+  readonly rutaBase: string;
   readonly hoy = new Date().toLocaleDateString('es-CO', {
     weekday: 'long',
     day: 'numeric',
@@ -123,9 +128,8 @@ export class PedidosPage implements OnInit, OnDestroy {
       .map((r) => r.url.map((s) => s.path).join('/'))
       .filter(Boolean)
       .join('/');
-    this.rutaNuevo = ruta.startsWith('despachador')
-      ? '/despachador/pedidos/nuevo'
-      : '/admin/pedidos/nuevo';
+    this.rutaBase = ruta.startsWith('despachador') ? '/despachador' : '/admin';
+    this.rutaNuevo = this.rutaBase + '/pedidos/nuevo';
     addIcons({ add, searchOutline, ellipsisHorizontal, printOutline, close });
   }
 
@@ -186,7 +190,7 @@ export class PedidosPage implements OnInit, OnDestroy {
     const { data, error } = await this.supabase.client
       .from('pedidos')
       .select(
-        'id, numero, vendedor_id, cliente_nombre, cliente_telefono, direccion, barrio, observaciones, estado, total, domiciliario_id, rotulo_impreso_at, created_at'
+        'id, numero, vendedor_id, cliente_nombre, cliente_telefono, direccion, barrio, observaciones, canal, estado, total, domiciliario_id, rotulo_impreso_at, created_at'
       )
       .order('created_at', { ascending: false });
 
@@ -251,6 +255,10 @@ export class PedidosPage implements OnInit, OnDestroy {
   /** Pedidos después de aplicar búsqueda y filtro de rótulo (sin el de estado). */
   private get base(): PedidoFila[] {
     let lista = this.pedidos;
+
+    if (this.filtroCanal !== 'todos') {
+      lista = lista.filter((p) => (p.canal ?? 'domicilio') === this.filtroCanal);
+    }
 
     if (this.filtroRotulo === 'pendiente') {
       lista = lista.filter((p) => !p.rotulo_impreso_at);
@@ -389,6 +397,21 @@ export class PedidosPage implements OnInit, OnDestroy {
     await this.cargarPedidos();
   }
 
+  /** Las ventas en local nacen entregadas: al verlas se muestran todas. */
+  onCambioCanal(): void {
+    if (this.filtroCanal === 'local') {
+      this.filtroEstado = 'todos';
+      this.filtroRotulo = 'todos';
+    } else if (this.filtroEstado === 'todos') {
+      this.filtroEstado = 'pendiente';
+    }
+    this.seleccionados.clear();
+  }
+
+  rutaEditar(p: PedidoFila): string {
+    return `${this.rutaBase}/pedidos/${p.id}/editar`;
+  }
+
   toggleMenu(id: string): void {
     this.menuAbiertoId = this.menuAbiertoId === id ? null : id;
   }
@@ -519,7 +542,7 @@ export class PedidosPage implements OnInit, OnDestroy {
     }
 
     const rotulos = this.pedidos
-      .filter((p) => this.seleccionados.has(p.id))
+      .filter((p) => this.seleccionados.has(p.id) && p.canal !== 'local')
       .map((p) =>
         rotuloHtml(
           {

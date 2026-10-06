@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { IonIcon } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { homeOutline, add, logOutOutline, sunnyOutline, moonOutline, notificationsOutline } from 'ionicons/icons';
+import { homeOutline, add, logOutOutline, sunnyOutline, moonOutline, notificationsOutline, storefrontOutline } from 'ionicons/icons';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { NotificacionesService } from '../../core/services/notificaciones.service';
@@ -23,7 +23,7 @@ export class VendedorLayoutComponent implements OnInit {
     public theme: ThemeService,
     public avisos: NotificacionesService
   ) {
-    addIcons({ homeOutline, add, logOutOutline, sunnyOutline, moonOutline, notificationsOutline });
+    addIcons({ homeOutline, add, logOutOutline, sunnyOutline, moonOutline, notificationsOutline, storefrontOutline });
   }
 
   ngOnInit(): void {

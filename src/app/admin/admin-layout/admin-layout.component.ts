@@ -6,6 +6,7 @@ import { addIcons } from 'ionicons';
 import {
   homeOutline,
   receiptOutline,
+  storefrontOutline,
   cubeOutline,
   peopleOutline,
   walletOutline,
@@ -62,6 +63,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
   menuItems: MenuItem[] = [
     { label: 'Inicio', path: '/admin', icon: 'home-outline' },
     { label: 'Pedidos', path: '/admin/pedidos', icon: 'receipt-outline' },
+    { label: 'Venta en local', path: '/admin/venta-local', icon: 'storefront-outline' },
     { label: 'Cuadres', path: '/admin/cuadres', icon: 'wallet-outline' },
     { label: 'Clientes', path: '/admin/clientes', icon: 'people-circle-outline' },
     { label: 'Productos', path: '/admin/productos', icon: 'cube-outline' },
@@ -87,6 +89,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     addIcons({
       homeOutline,
       receiptOutline,
+      storefrontOutline,
       cubeOutline,
       peopleOutline,
       walletOutline,

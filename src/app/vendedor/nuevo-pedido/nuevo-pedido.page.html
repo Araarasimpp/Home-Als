@@ -3,22 +3,35 @@
     <button class="icon-btn" (click)="volver()" aria-label="Volver">
       <ion-icon name="chevron-back-outline"></ion-icon>
     </button>
-    <h1>Nuevo pedido</h1>
+    <h1>{{ titulo }}</h1>
   </header>
 
   <!-- Confirmación -->
   <div class="creado" *ngIf="creado !== null; else formulario" role="status">
     <span class="creado-icono" aria-hidden="true"><ion-icon name="checkmark"></ion-icon></span>
-    <h2>Pedido #{{ creado }} creado</h2>
-    <p>Ya aparece en la lista de pedidos para asignarle domiciliario.</p>
+    <h2>{{ esLocal ? 'Venta #' + creado + ' registrada' : 'Pedido #' + creado + ' creado' }}</h2>
+    <p *ngIf="!esLocal">Ya aparece en la lista de pedidos para asignarle domiciliario.</p>
+    <p *ngIf="esLocal">Quedó como entregada y el stock ya se descontó.</p>
     <div class="creado-acciones">
       <button class="btn" (click)="volver()">Volver</button>
-      <button class="btn btn-primary" (click)="otroPedido()">Crear otro pedido</button>
+      <button class="btn btn-primary" (click)="otroPedido()">{{ esLocal ? 'Registrar otra venta' : 'Crear otro pedido' }}</button>
     </div>
   </div>
 
   <ng-template #formulario>
-    <div class="np-grid">
+    <div class="aviso-edicion" *ngIf="pedidoEditado" role="note">
+      <ng-container [ngSwitch]="pedidoEditado.estado">
+        <span *ngSwitchCase="'entregado'">
+          Este pedido ya está entregado.
+          <ng-container *ngIf="pedidoEditado.cuadre_id; else sinCuadre">Al guardar se recalcula el cuadre del domiciliario.</ng-container>
+          <ng-template #sinCuadre>Los cambios entran en el cuadre del domiciliario cuando lo cierre.</ng-template>
+        </span>
+        <span *ngSwitchCase="'en_ruta'">Este pedido va en camino: avísale al domiciliario si cambias productos o el valor.</span>
+        <span *ngSwitchDefault>Puedes cambiar productos, cantidades, precios y datos del cliente. El stock se ajusta al guardar.</span>
+      </ng-container>
+    </div>
+    <p class="catalogo-vacio" *ngIf="cargandoPedido">Cargando pedido…</p>
+    <div class="np-grid" [hidden]="cargandoPedido">
       <!-- Productos -->
       <section class="np-productos" aria-labelledby="t-productos">
         <h2 id="t-productos">Productos</h2>
@@ -33,28 +46,42 @@
         </label>
 
         <div class="catalogo" *ngIf="!loadingProductos; else cargandoProd">
-          <button
-            type="button"
+          <div
             class="producto"
             *ngFor="let p of productosFiltrados"
-            (click)="agregarProducto(p)"
-            [disabled]="cantidadEnCarrito(p.id) >= p.stock"
+            [class.agotado]="cantidadEnCarrito(p.id) >= p.stock"
             [class.en-carrito]="cantidadEnCarrito(p.id) > 0"
           >
-            <span class="producto-texto">
-              <span class="producto-nombre">{{ p.nombre }}</span>
-              <span class="producto-meta num">
-                {{ p.sku }}, {{ p.stock - cantidadEnCarrito(p.id) }} disponibles
+            <button
+              type="button"
+              class="producto-foto"
+              (click)="verFoto(p)"
+              [attr.aria-label]="'Ver foto de ' + p.nombre"
+            >
+              <img *ngIf="foto(p, 160) as src; else sinFoto" [src]="src" alt="" loading="lazy" (error)="marcarFotoRota(p)" />
+              <ng-template #sinFoto><span class="foto-inicial" aria-hidden="true">{{ inicial(p.nombre) }}</span></ng-template>
+            </button>
+            <button
+              type="button"
+              class="producto-accion"
+              (click)="agregarProducto(p)"
+              [disabled]="cantidadEnCarrito(p.id) >= p.stock"
+            >
+              <span class="producto-texto">
+                <span class="producto-nombre">{{ p.nombre }}</span>
+                <span class="producto-meta num">
+                  {{ p.sku }}, {{ p.stock - cantidadEnCarrito(p.id) }} disponibles
+                </span>
               </span>
-            </span>
-            <span class="num producto-precio">{{ formatoMoneda(p.precio_sugerido) }}</span>
-            <span class="producto-add" aria-hidden="true">
-              <ng-container *ngIf="cantidadEnCarrito(p.id) > 0; else iconoMas">
-                <span class="num">{{ cantidadEnCarrito(p.id) }}</span>
-              </ng-container>
-              <ng-template #iconoMas><ion-icon name="add"></ion-icon></ng-template>
-            </span>
-          </button>
+              <span class="num producto-precio">{{ formatoMoneda(p.precio_sugerido) }}</span>
+              <span class="producto-add" aria-hidden="true">
+                <ng-container *ngIf="cantidadEnCarrito(p.id) > 0; else iconoMas">
+                  <span class="num">{{ cantidadEnCarrito(p.id) }}</span>
+                </ng-container>
+                <ng-template #iconoMas><ion-icon name="add"></ion-icon></ng-template>
+              </span>
+            </button>
+          </div>
 
           <p class="catalogo-vacio" *ngIf="!productosFiltrados.length">
             {{ busquedaProducto ? 'Ningún producto coincide con "' + busquedaProducto + '".' : 'No hay productos con stock.' }}
@@ -77,6 +104,10 @@
           <div class="carrito" *ngIf="carrito.length; else carritoVacio">
             <div class="item" *ngFor="let item of carrito">
               <div class="item-top">
+                <button type="button" class="item-foto" (click)="verFoto(item.producto)" [attr.aria-label]="'Ver foto de ' + item.producto.nombre">
+                  <img *ngIf="foto(item.producto, 120) as src; else sinFotoItem" [src]="src" alt="" loading="lazy" (error)="marcarFotoRota(item.producto)" />
+                  <ng-template #sinFotoItem><span class="foto-inicial" aria-hidden="true">{{ inicial(item.producto.nombre) }}</span></ng-template>
+                </button>
                 <span class="item-nombre">{{ item.producto.nombre }}</span>
                 <button class="icon-btn icon-btn-sm" (click)="quitarDelCarrito(item)" [attr.aria-label]="'Quitar ' + item.producto.nombre">
                   <ion-icon name="trash-outline"></ion-icon>
@@ -123,7 +154,7 @@
         </div>
 
         <div class="bloque">
-          <h2>Cliente y entrega</h2>
+          <h2>{{ esLocal ? 'Cliente (opcional)' : 'Cliente y entrega' }}</h2>
           <div class="campos">
             <div class="campo">
               <label for="telefono">Teléfono</label>
@@ -138,13 +169,13 @@
               />
             </div>
             <div class="campo">
-              <label for="cliente">Nombre <span class="req" aria-hidden="true">*</span></label>
+              <label for="cliente">Nombre <span class="req" aria-hidden="true" *ngIf="!esLocal">*</span></label>
               <input
                 id="cliente"
                 type="text"
                 autocomplete="off"
                 [(ngModel)]="clienteNombre"
-                [attr.aria-invalid]="intentoEnviar && !clienteNombre.trim()"
+                [attr.aria-invalid]="!esLocal && intentoEnviar && !clienteNombre.trim()"
               />
             </div>
             <div class="cliente-conocido campo-ancho" *ngIf="clienteEncontrado" role="status">
@@ -155,6 +186,7 @@
               </div>
               <button type="button" class="btn btn-sm" *ngIf="!datosClienteUsados" (click)="usarDatosCliente()">Usar sus datos</button>
             </div>
+            <ng-container *ngIf="!esLocal">
             <div class="campo campo-ancho">
               <label for="direccion">Dirección <span class="req" aria-hidden="true">*</span></label>
               <input
@@ -185,17 +217,52 @@
                 </button>
               </div>
             </div>
+            <div class="campo" *ngIf="esEdicion">
+              <label for="pago-dom">Pago al domiciliario</label>
+              <span class="precio-input precio-input-lg">
+                <span aria-hidden="true">$</span>
+                <input id="pago-dom" type="number" class="num" inputmode="numeric" min="0" [(ngModel)]="pagoDomiciliario" />
+              </span>
+            </div>
             <div class="campo">
-              <label for="domicilio">Domicilio</label>
+              <label for="domicilio">{{ esEdicion ? 'Domicilio cobrado al cliente' : 'Domicilio' }}</label>
               <span class="precio-input precio-input-lg">
                 <span aria-hidden="true">$</span>
                 <input id="domicilio" type="number" class="num" inputmode="numeric" min="0" [(ngModel)]="valorDomicilio" />
               </span>
             </div>
+            </ng-container>
             <div class="campo campo-ancho">
               <label for="obs">Observaciones</label>
-              <textarea id="obs" rows="2" [(ngModel)]="observaciones" placeholder="Ej. llamar al llegar, portería 2"></textarea>
+              <textarea id="obs" rows="2" [(ngModel)]="observaciones" [placeholder]="esLocal ? 'Opcional' : 'Ej. llamar al llegar, portería 2'"></textarea>
             </div>
+          </div>
+        </div>
+
+        <div class="bloque" *ngIf="pidePago">
+          <fieldset class="metodos">
+            <legend>¿Cómo pagó? <span class="req" aria-hidden="true">*</span></legend>
+            <button type="button" class="metodo" [class.on]="metodoPago === 'efectivo'" [attr.aria-pressed]="metodoPago === 'efectivo'" (click)="elegirMetodo('efectivo')">
+              <ion-icon name="cash-outline" aria-hidden="true"></ion-icon>
+              Efectivo
+            </button>
+            <button type="button" class="metodo" [class.on]="metodoPago === 'transferencia'" [attr.aria-pressed]="metodoPago === 'transferencia'" (click)="elegirMetodo('transferencia')">
+              <ion-icon name="phone-portrait-outline" aria-hidden="true"></ion-icon>
+              Transferencia
+            </button>
+            <button type="button" class="metodo" [class.on]="metodoPago === 'mixto'" [attr.aria-pressed]="metodoPago === 'mixto'" (click)="elegirMetodo('mixto')">
+              <ion-icon name="swap-horizontal-outline" aria-hidden="true"></ion-icon>
+              Mixto
+            </button>
+          </fieldset>
+          <p class="error-campo" *ngIf="intentoEnviar && !metodoPago">Elige cómo pagó el cliente.</p>
+          <div class="mixto" *ngIf="metodoPago === 'mixto'">
+            <label for="efectivo">¿Cuánto fue en efectivo?</label>
+            <span class="precio-input precio-input-lg">
+              <span aria-hidden="true">$</span>
+              <input id="efectivo" type="number" class="num" inputmode="numeric" min="0" [max]="total" [(ngModel)]="montoEfectivo" placeholder="0" />
+            </span>
+            <p class="mixto-resto num">Por transferencia: <strong>{{ formatoMoneda(montoTransferencia) }}</strong></p>
           </div>
         </div>
 
@@ -203,13 +270,13 @@
         <div class="cierre">
           <dl class="totales">
             <div><dt>Productos</dt><dd class="num">{{ formatoMoneda(subtotal) }}</dd></div>
-            <div><dt>Domicilio</dt><dd class="num">{{ formatoMoneda(valorDomicilio) }}</dd></div>
+            <div *ngIf="!esLocal"><dt>Domicilio</dt><dd class="num">{{ formatoMoneda(valorDomicilio) }}</dd></div>
             <div class="total"><dt>Total a cobrar</dt><dd class="num">{{ formatoMoneda(total) }}</dd></div>
-            <div class="comision"><dt>{{ porcentajeComision !== null ? 'Tu comisión (' + porcentajeComision + '% de la ganancia)' : 'Tu comisión (incluida)' }}</dt><dd class="num" [class.negativa]="comisionTotal < 0">{{ formatoMoneda(comisionTotal) }}</dd></div>
+            <div class="comision" *ngIf="!esEdicion"><dt>{{ esEdicion ? 'Comisión del vendedor' : porcentajeComision !== null ? 'Tu comisión (' + porcentajeComision + '% de la ganancia)' : 'Tu comisión (incluida)' }}</dt><dd class="num" [class.negativa]="comisionTotal < 0">{{ formatoMoneda(comisionTotal) }}</dd></div>
           </dl>
           <p class="error" role="alert" *ngIf="errorMsg">{{ errorMsg }}</p>
           <button class="btn btn-primary btn-block" (click)="onCrearPedido()" [disabled]="guardando">
-            {{ guardando ? 'Creando pedido…' : 'Crear pedido' }}
+            {{ textoBoton }}
           </button>
         </div>
       </section>
@@ -223,8 +290,19 @@
         <strong class="num">{{ formatoMoneda(total) }}</strong>
       </div>
       <button class="btn btn-primary" (click)="onCrearPedido()" [disabled]="guardando">
-        {{ guardando ? 'Creando…' : 'Crear pedido' }}
+        {{ textoBoton }}
       </button>
     </div>
   </ng-template>
+</div>
+
+<div class="visor-foto" *ngIf="fotoAbierta" (click)="cerrarFoto()" role="dialog" aria-modal="true" [attr.aria-label]="fotoAbierta.nombre">
+  <figure (click)="$event.stopPropagation()">
+    <img [src]="fotoAbierta.src" [alt]="fotoAbierta.nombre" />
+    <figcaption>
+      <span>{{ fotoAbierta.nombre }}</span>
+      <span class="num">{{ fotoAbierta.precio }}</span>
+    </figcaption>
+  </figure>
+  <button type="button" class="visor-cerrar" (click)="cerrarFoto()" aria-label="Cerrar foto"><ion-icon name="close"></ion-icon></button>
 </div>

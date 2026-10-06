@@ -30,6 +30,18 @@ export const DESPACHADOR_ROUTES: Routes = [
           ),
       },
       {
+        path: 'pedidos/:id/editar',
+        data: { volverA: '/despachador/pedidos' },
+        loadComponent: () =>
+          import('../vendedor/nuevo-pedido/nuevo-pedido.page').then((m) => m.NuevoPedidoPage),
+      },
+      {
+        path: 'venta-local',
+        data: { canal: 'local', volverA: '/despachador/pedidos' },
+        loadComponent: () =>
+          import('../vendedor/nuevo-pedido/nuevo-pedido.page').then((m) => m.NuevoPedidoPage),
+      },
+      {
         path: 'cuadres',
         loadComponent: () =>
           import('../admin/cuadres/cuadres.page').then((m) => m.AdminCuadresPage),
