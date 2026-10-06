@@ -80,7 +80,9 @@ jobs:
           export PGCONNECT_TIMEOUT=20
           case "$MODO" in
             leer)
-              psql "$DB_URL" -X -v ON_ERROR_STOP=1 -P pager=off -f "$ARCHIVO" ;;
+              # Por si alguna función guarda una llave: se ocultan JWT y cadenas largas tipo secreto.
+              psql "$DB_URL" -X -v ON_ERROR_STOP=1 -P pager=off -f "$ARCHIVO" \
+                | sed -E 's/eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*/[OCULTO]/g; s/(sk|pk|whsec|sb_secret|sb_publishable)_[A-Za-z0-9_-]{8,}/[OCULTO]/g; s/[A-Za-z0-9+\/_-]{40,}/[OCULTO]/g' ;;
             probar)
               { echo 'begin;'; cat "$ARCHIVO"; echo; echo 'rollback;'; } \
                 | psql "$DB_URL" -X -v ON_ERROR_STOP=1 -P pager=off
