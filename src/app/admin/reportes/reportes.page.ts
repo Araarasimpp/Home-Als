@@ -5,6 +5,7 @@ import { descargarExcelVentas } from './excel-ventas';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { EstadoPedido } from '../../shared/models/models';
 import { hoyColombiaISO, inicioDiaColombia, finDiaColombia, formatoFechaCO } from '../../shared/fecha-colombia';
+import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
 
 interface FilaReporte {
   pedidoId: string;
@@ -36,7 +37,7 @@ type FiltroEstado = 'todos' | EstadoPedido;
 @Component({
   selector: 'app-reportes',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [EsqueletoComponent, CommonModule, FormsModule],
   templateUrl: './reportes.page.html',
   styleUrls: ['./reportes.page.scss', './reportes-esquema.scss'],
 })

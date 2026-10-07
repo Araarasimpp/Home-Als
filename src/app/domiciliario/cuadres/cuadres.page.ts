@@ -11,6 +11,7 @@ import {
   formatoHoraCO,
   formatoFechaCO,
 } from '../../shared/fecha-colombia';
+import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
 
 interface PedidoSinCuadrar {
   id: string;
@@ -33,7 +34,7 @@ interface PedidoSinCuadrar {
 @Component({
   selector: 'app-cuadres',
   standalone: true,
-  imports: [CommonModule, FormsModule, ImagenPreviewComponent],
+  imports: [EsqueletoComponent, CommonModule, FormsModule, ImagenPreviewComponent],
   templateUrl: './cuadres.page.html',
   styleUrls: ['../../shared/ui.scss', './cuadres.page.scss', '../../shared/filtro-fecha.scss'],
 })

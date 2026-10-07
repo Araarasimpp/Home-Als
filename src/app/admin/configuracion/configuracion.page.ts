@@ -15,6 +15,7 @@ import {
   ROTULO_CSS_VISTA_PREVIA,
   rotuloHtml,
 } from '../../shared/rotulo/rotulo';
+import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
 
 interface Configuracion {
   nombre_negocio: string;
@@ -48,7 +49,7 @@ const PEDIDO_EJEMPLO: PedidoRotulo = {
 @Component({
   selector: 'app-configuracion',
   standalone: true,
-  imports: [CommonModule, FormsModule, IonIcon, MfaConfigComponent],
+  imports: [EsqueletoComponent, CommonModule, FormsModule, IonIcon, MfaConfigComponent],
   templateUrl: './configuracion.page.html',
   styleUrls: ['./configuracion.page.scss'],
 })

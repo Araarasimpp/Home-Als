@@ -117,7 +117,7 @@
     </ng-container>
 
     <ng-template #cargando>
-      <p class="empty-msg">Cargando productos...</p>
+      <app-esqueleto tipo="lista" [cantidad]="8" etiqueta="Cargando productos"></app-esqueleto>
     </ng-template>
 
     <footer class="table-footer" *ngIf="filtrados.length">

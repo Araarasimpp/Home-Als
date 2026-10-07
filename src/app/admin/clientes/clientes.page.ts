@@ -7,6 +7,7 @@ import { logoWhatsapp, searchOutline, chevronDownOutline } from 'ionicons/icons'
 import { SupabaseService } from '../../core/services/supabase.service';
 import { EstadoPedido } from '../../shared/models/models';
 import { EstadoIconComponent } from '../../shared/estado-icon/estado-icon.component';
+import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
 
 interface Cliente {
   id: string;
@@ -34,7 +35,7 @@ type Orden = 'recientes' | 'compras' | 'nombre';
 @Component({
   selector: 'app-clientes',
   standalone: true,
-  imports: [CommonModule, FormsModule, IonIcon, EstadoIconComponent],
+  imports: [EsqueletoComponent, CommonModule, FormsModule, IonIcon, EstadoIconComponent],
   templateUrl: './clientes.page.html',
   styleUrls: ['../../shared/ui.scss', './clientes.page.scss'],
 })

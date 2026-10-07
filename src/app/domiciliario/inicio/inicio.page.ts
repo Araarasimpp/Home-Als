@@ -10,6 +10,7 @@ import { inicioDiaColombia } from '../../shared/fecha-colombia';
 import { efectivoDePedido } from '../../shared/models/models';
 import { EstadoIconComponent } from '../../shared/estado-icon/estado-icon.component';
 import { EntregarPedidoComponent } from '../entregar-pedido/entregar-pedido.component';
+import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
 
 interface PedidoRuta {
   id: string;
@@ -28,7 +29,7 @@ interface PedidoRuta {
 @Component({
   selector: 'app-inicio-domiciliario',
   standalone: true,
-  imports: [CommonModule, RouterLink, IonIcon, EstadoIconComponent, EntregarPedidoComponent],
+  imports: [EsqueletoComponent, CommonModule, RouterLink, IonIcon, EstadoIconComponent, EntregarPedidoComponent],
   templateUrl: './inicio.page.html',
   styleUrls: ['../../shared/ui.scss', './inicio.page.scss'],
 })

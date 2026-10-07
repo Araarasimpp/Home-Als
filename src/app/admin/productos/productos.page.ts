@@ -7,13 +7,14 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { ProductoFormComponent } from './producto-form/producto-form.component';
 import { Producto } from '../../shared/models/models';
 import { urlImagen } from '../../shared/imagenes/url-imagen';
+import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
 
 type TabFiltro = 'activos' | 'todos';
 
 @Component({
   selector: 'app-productos',
   standalone: true,
-  imports: [CommonModule, FormsModule, ProductoFormComponent],
+  imports: [EsqueletoComponent, CommonModule, FormsModule, ProductoFormComponent],
   templateUrl: './productos.page.html',
   styleUrls: ['./productos.page.scss', './productos-eliminar.scss'],
 })

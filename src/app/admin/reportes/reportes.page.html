@@ -101,7 +101,8 @@
     </ng-container>
 
     <ng-template #cargando>
-      <p class="empty-msg">Cargando reporte...</p>
+      <app-esqueleto tipo="kpis" [cantidad]="4"></app-esqueleto>
+      <app-esqueleto tipo="lista" [cantidad]="6" etiqueta="Cargando reporte"></app-esqueleto>
     </ng-template>
   </div>
 </div>

@@ -6,6 +6,7 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { EstadoPedido } from '../../shared/models/models';
 import { ROTULO_LOGO_BASE64 } from '../rotulo-logo';
+import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
 
 // Datos del negocio para el rótulo. Edítalos aquí, o si más adelante quieres
 // cambiarlos desde la app sin tocar código, se puede mover a una tabla
@@ -46,7 +47,7 @@ type FiltroRotulo = 'todos' | 'pendiente' | 'impreso';
 @Component({
   selector: 'app-pedidos',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [EsqueletoComponent, CommonModule, FormsModule, RouterLink],
   templateUrl: './pedidos.page.html',
   styleUrls: ['./pedidos.page.scss'],
 })

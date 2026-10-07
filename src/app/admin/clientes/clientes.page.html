@@ -71,7 +71,7 @@
               <span class="ped-fecha num">{{ fecha(p.created_at) }}</span>
               <span class="num ped-total">{{ formatoMoneda(p.total) }}</span>
             </div>
-            <p class="muted" *ngIf="!(pedidosDe.get(c.id) ?? []).length">Cargando…</p>
+            <app-esqueleto *ngIf="!(pedidosDe.get(c.id) ?? []).length" tipo="lista" [cantidad]="2" [compacto]="true" etiqueta="Cargando pedidos"></app-esqueleto>
           </div>
         </div>
       </div>
@@ -85,5 +85,5 @@
     </ng-template>
   </ng-container>
 
-  <p class="muted" *ngIf="loading">Cargando clientes…</p>
+  <app-esqueleto *ngIf="loading" tipo="lista" [cantidad]="8" etiqueta="Cargando clientes"></app-esqueleto>
 </div>

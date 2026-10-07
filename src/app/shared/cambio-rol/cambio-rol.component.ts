@@ -1,13 +1,13 @@
 // Selector de modo para quien tiene varios roles (ej. vendedor y domiciliario).
 // Cada layout pone su propio botón y llama a abrir(); este componente muestra
 // la lista de roles y hace el cambio.
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-import { IonIcon } from '@ionic/angular';
+import { IonIcon, NavController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { checkmark, close } from 'ionicons/icons';
 import { SupabaseService, UserRole } from '../../core/services/supabase.service';
+import { INICIO_ROL, recordarRol } from '../../core/app-init/app-init.page';
 
 export const ETIQUETA_ROL: Record<UserRole, string> = {
   admin: 'Admin',
@@ -44,9 +44,10 @@ const DESCRIPCION_ROL: Record<UserRole, string> = {
         >
           <span class="cr-texto">
             <strong>{{ etiqueta(r) }}</strong>
-            <span>{{ descripcion(r) }}</span>
+            <span>{{ r === destino ? 'Cambiando…' : descripcion(r) }}</span>
           </span>
-          <ion-icon *ngIf="r === actual" name="checkmark" aria-label="Actual"></ion-icon>
+          <span class="cr-spin" *ngIf="r === destino" aria-hidden="true"></span>
+          <ion-icon *ngIf="r === actual && !destino" name="checkmark" aria-label="Actual"></ion-icon>
         </button>
         <p class="cr-error" role="alert" *ngIf="error">{{ error }}</p>
       </div>
@@ -146,6 +147,22 @@ const DESCRIPCION_ROL: Record<UserRole, string> = {
         font-size: 12px;
         color: var(--text-soft);
       }
+      .cr-opcion:disabled {
+        cursor: progress;
+      }
+      .cr-spin {
+        width: 18px;
+        height: 18px;
+        border: 2px solid var(--accent-wash);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: cr-giro 0.7s linear infinite;
+      }
+      @keyframes cr-giro {
+        to {
+          transform: rotate(360deg);
+        }
+      }
       .cr-error {
         margin: 8px;
         font-size: 13px;
@@ -154,14 +171,17 @@ const DESCRIPCION_ROL: Record<UserRole, string> = {
     `,
   ],
 })
-export class CambioRolComponent implements OnInit {
+export class CambioRolComponent implements OnInit, OnDestroy {
+  private destruido = false;
   abierto = false;
   cambiando = false;
+  /** Rol al que se está cambiando (muestra el indicador en esa opción). */
+  destino: UserRole | null = null;
   error = '';
   roles: UserRole[] = [];
   actual: UserRole | null = null;
 
-  constructor(private supabase: SupabaseService, private router: Router, private cdr: ChangeDetectorRef) {
+  constructor(private supabase: SupabaseService, private nav: NavController, private cdr: ChangeDetectorRef) {
     addIcons({ checkmark, close });
   }
 
@@ -170,6 +190,10 @@ export class CambioRolComponent implements OnInit {
     this.roles = perfil?.roles?.length ? perfil.roles : perfil ? [perfil.role] : [];
     this.actual = perfil?.role ?? null;
     this.cdr.detectChanges();
+  }
+
+  ngOnDestroy(): void {
+    this.destruido = true;
   }
 
   /** true si la persona tiene más de un rol (los layouts muestran su botón solo así). */
@@ -190,6 +214,7 @@ export class CambioRolComponent implements OnInit {
   }
 
   abrir(): void {
+    if (this.cambiando) return;
     this.error = '';
     this.abierto = true;
     this.cdr.detectChanges();
@@ -201,23 +226,50 @@ export class CambioRolComponent implements OnInit {
   }
 
   async elegir(r: UserRole): Promise<void> {
+    if (this.cambiando) return;
     if (r === this.actual) {
       this.cerrar();
       return;
     }
     this.cambiando = true;
+    this.destino = r;
     this.error = '';
     this.cdr.detectChanges();
     try {
-      await this.supabase.cambiarRol(r);
+      await conLimite(this.supabase.cambiarRol(r), 15000);
+      recordarRol(r);
+      this.actual = r;
       this.abierto = false;
-      // El inicio manda a la sección del nuevo rol
-      await this.router.navigateByUrl('/', { replaceUrl: true });
+      // Directo a la sección del nuevo rol. navigateRoot limpia la pila de
+      // Ionic, así no se reutiliza ninguna pantalla vieja (antes se pasaba por
+      // "/" y Ionic mostraba otra vez el "Cargando..." del arranque sin redirigir).
+      await this.nav.navigateRoot(INICIO_ROL[r], { animated: false });
     } catch (e: any) {
-      this.error = e?.message ?? 'No se pudo cambiar de rol.';
+      this.error = e?.message === 'tiempo'
+        ? 'La conexión está lenta y no se pudo cambiar de rol. Intenta de nuevo.'
+        : e?.message ?? 'No se pudo cambiar de rol.';
     } finally {
       this.cambiando = false;
-      this.cdr.detectChanges();
+      this.destino = null;
+      // Al cambiar de rol este componente ya se destruyó con el layout anterior
+      if (!this.destruido) this.cdr.detectChanges();
     }
   }
+}
+
+/** Rechaza si la promesa no termina a tiempo (para no dejar la pantalla esperando). */
+function conLimite<T>(promesa: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((ok, falla) => {
+    const t = setTimeout(() => falla(new Error('tiempo')), ms);
+    promesa.then(
+      (v) => {
+        clearTimeout(t);
+        ok(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        falla(e);
+      }
+    );
+  });
 }

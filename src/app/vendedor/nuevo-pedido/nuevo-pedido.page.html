@@ -35,7 +35,7 @@
         <span *ngSwitchDefault>Puedes cambiar productos, cantidades, precios y datos del cliente. El stock se ajusta al guardar.</span>
       </ng-container>
     </div>
-    <p class="catalogo-vacio" *ngIf="cargandoPedido">Cargando pedido…</p>
+    <app-esqueleto *ngIf="cargandoPedido" tipo="formulario" [cantidad]="6" etiqueta="Cargando pedido"></app-esqueleto>
     <div class="np-grid" [hidden]="cargandoPedido">
       <!-- Productos -->
       <section class="np-productos" aria-labelledby="t-productos">
@@ -94,7 +94,7 @@
         </div>
 
         <ng-template #cargandoProd>
-          <p class="catalogo-vacio">Cargando productos…</p>
+          <app-esqueleto tipo="tarjetas" [cantidad]="6" etiqueta="Cargando productos"></app-esqueleto>
         </ng-template>
       </section>
 

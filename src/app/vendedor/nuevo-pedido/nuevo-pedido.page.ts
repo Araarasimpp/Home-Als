@@ -9,6 +9,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { MetodoPago, Producto } from '../../shared/models/models';
 import { urlImagen } from '../../shared/imagenes/url-imagen';
 import { comprimirImagen, extensionDe } from '../../shared/imagenes/comprimir';
+import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
 
 interface ItemCarrito {
   producto: Producto;
@@ -39,7 +40,7 @@ interface PedidoEditado {
 @Component({
   selector: 'app-nuevo-pedido',
   standalone: true,
-  imports: [CommonModule, FormsModule, IonIcon, RouterLink],
+  imports: [EsqueletoComponent, CommonModule, FormsModule, IonIcon, RouterLink],
   templateUrl: './nuevo-pedido.page.html',
   styleUrls: ['../../shared/ui.scss', './nuevo-pedido.page.scss'],
 })

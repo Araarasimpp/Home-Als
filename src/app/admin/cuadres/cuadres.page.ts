@@ -7,6 +7,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { Cuadre, MetodoPago, efectivoDePedido, transferenciaDePedido } from '../../shared/models/models';
 import { ImagenPreviewComponent } from '../../shared/imagen-preview/imagen-preview.component';
 import { diaColombiaDe, formatoFechaCO, hoyColombiaISO } from '../../shared/fecha-colombia';
+import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
 
 type FiltroCuadre = 'todos' | 'pendiente' | 'confirmado';
 
@@ -44,7 +45,7 @@ interface Domiciliario {
 @Component({
   selector: 'app-admin-cuadres',
   standalone: true,
-  imports: [CommonModule, FormsModule, ImagenPreviewComponent],
+  imports: [EsqueletoComponent, CommonModule, FormsModule, ImagenPreviewComponent],
   templateUrl: './cuadres.page.html',
   styleUrls: ['./cuadres.page.scss', '../../shared/filtro-fecha.scss'],
 })

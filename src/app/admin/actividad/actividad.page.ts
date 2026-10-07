@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { finDiaColombia, hoyColombiaISO, inicioDiaColombia } from '../../shared/fecha-colombia';
+import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
 
 interface Registro {
   id: number;
@@ -27,7 +28,7 @@ const ENTIDADES = [
 @Component({
   selector: 'app-actividad',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [EsqueletoComponent, CommonModule, FormsModule],
   templateUrl: './actividad.page.html',
   styleUrls: ['../../shared/ui.scss', '../clientes/clientes.page.scss', '../../shared/filtro-fecha.scss', './actividad.page.scss'],
 })

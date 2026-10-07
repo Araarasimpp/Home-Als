@@ -5,6 +5,7 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 import { ComisionTipo, SupabaseService, UserRole } from '../../core/services/supabase.service';
 import { AvatarComponent } from '../../shared/avatar/avatar.component';
 import { comprimirImagen } from '../../shared/imagenes/comprimir';
+import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
 
 interface UsuarioFila {
   id: string;
@@ -30,7 +31,7 @@ const TAMANO_FOTO = 256; // px, cuadrada
 @Component({
   selector: 'app-usuarios',
   standalone: true,
-  imports: [CommonModule, FormsModule, AvatarComponent],
+  imports: [EsqueletoComponent, CommonModule, FormsModule, AvatarComponent],
   templateUrl: './usuarios.page.html',
   styleUrls: ['./usuarios.page.scss'],
 })

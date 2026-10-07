@@ -47,5 +47,5 @@
     </ng-template>
   </ng-container>
 
-  <p class="muted" *ngIf="loading">Cargando actividad…</p>
+  <app-esqueleto *ngIf="loading" tipo="lista" [cantidad]="8" etiqueta="Cargando actividad"></app-esqueleto>
 </div>
