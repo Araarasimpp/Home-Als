@@ -68,43 +68,48 @@ import { NotificacionesService, Aviso } from '../../core/services/notificaciones
       .fondo { position: fixed; inset: 0; z-index: 140; border: none; padding: 0; background: rgba(15, 16, 19, 0.2); }
       .panel {
         position: fixed; z-index: 141; left: 240px; bottom: 16px; width: 380px;
-        max-height: min(560px, calc(100dvh - 32px)); display: flex; flex-direction: column;
+        --panel-max: min(560px, calc(100vh - 32px)); max-height: var(--panel-max); display: flex; flex-direction: column;
         background: var(--surface); color: var(--text); border: 1px solid var(--border);
         border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); overflow: hidden;
         animation: subir 180ms var(--ease);
       }
+      /* Celular: hoja sobre la barra inferior, como máximo el 65% de la pantalla
+         y sin meterse debajo de la barra de estado del iPhone (notch). */
       .panel.barra {
+        --panel-max: min(65vh, calc(100vh - var(--tabbar-h) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px));
         left: 8px; right: 8px; width: auto; margin: 0 auto; max-width: 480px;
         bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 8px);
-        max-height: calc(100dvh - var(--tabbar-h) - 40px);
+        max-height: var(--panel-max);
       }
       @media (max-width: 860px) {
         .panel:not(.barra) {
-          left: 8px; right: 8px; width: auto;
+          --panel-max: min(65vh, calc(100vh - var(--tabbar-h) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px));
+            left: 8px; right: 8px; width: auto;
           bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 8px);
-          max-height: calc(100dvh - var(--tabbar-h) - 40px);
+          max-height: var(--panel-max);
         }
       }
       @keyframes subir { from { opacity: 0; transform: translateY(6px); } }
-      header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--border-soft); }
+      header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--border-soft); }
       h2 { margin: 0; font-size: 15px; font-weight: 600; }
-      .permiso-ok { margin: 10px 14px 0; font-size: 12px; color: var(--st-entregado); }
+      .permiso-ok { flex-shrink: 0; margin: 10px 14px 0; font-size: 12px; color: var(--st-entregado); }
       .link { border: none; background: none; padding: 4px 0; color: var(--accent); font-size: 12px; font-weight: 500; cursor: pointer; }
-      .permiso { margin: 10px 12px 0; padding: 10px 12px; border-radius: var(--radius); background: var(--accent-wash); font-size: 13px; line-height: 1.45; }
+      .permiso { flex-shrink: 0; margin: 10px 12px 0; padding: 10px 12px; border-radius: var(--radius); background: var(--accent-wash); font-size: 13px; line-height: 1.45; }
       .permiso p { margin: 0 0 8px; }
       .permiso button { height: 32px; padding: 0 12px; border: none; border-radius: var(--radius-sm); background: var(--accent); color: var(--on-accent); font-size: 13px; font-weight: 500; cursor: pointer; }
       .permiso-off { background: var(--surface-2); color: var(--text-soft); }
-      .lista { overflow-y: auto; padding: 6px; }
-      .aviso { width: 100%; display: flex; gap: 10px; padding: 10px; border: none; border-radius: var(--radius); background: none; color: var(--text); text-align: left; cursor: pointer; }
-      .aviso:hover { background: var(--hover); }
+      .lista { flex: 1 1 auto; min-height: 0; max-height: calc(var(--panel-max) - 100px); overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; padding: 6px; }
+      .aviso { width: 100%; display: flex; gap: 10px; padding: 9px 10px; touch-action: pan-y; -webkit-tap-highlight-color: transparent; border: none; border-radius: var(--radius); background: none; color: var(--text); text-align: left; cursor: pointer; }
+      .aviso + .aviso { margin-top: 2px; }
+      @media (hover: hover) { .aviso:hover { background: var(--hover); } }
       .aviso.nuevo { background: var(--accent-wash); }
       .punto { width: 8px; height: 8px; margin-top: 6px; flex-shrink: 0; border-radius: 50%; background: var(--border-strong); }
       .aviso.nuevo .punto { background: var(--accent); }
       .punto[data-tipo='pedido_cancelado'] { background: var(--danger) !important; }
       .punto[data-tipo='pedido_entregado'], .punto[data-tipo='cuadre_confirmado'] { background: var(--st-entregado) !important; }
       .texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-      .titulo { font-size: 14px; font-weight: 500; }
-      .cuerpo { font-size: 13px; color: var(--text-soft); overflow: hidden; text-overflow: ellipsis; }
+      .titulo { font-size: 14px; font-weight: 500; line-height: 1.3; }
+      .cuerpo { font-size: 13px; color: var(--text-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .hora { font-size: 11px; color: var(--text-muted); }
       .vacio { margin: 0; padding: 24px 12px; text-align: center; font-size: 13px; line-height: 1.5; color: var(--text-soft); }
     `,
