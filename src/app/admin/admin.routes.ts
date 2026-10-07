@@ -40,9 +40,15 @@ export const ADMIN_ROUTES: Routes = [
       },
       {
         path: 'venta-local',
-        data: { canal: 'local', volverA: '/admin/pedidos' },
+        data: { canal: 'local', volverA: '/admin/pedidos', rutaVentas: '/admin/ventas-del-local' },
         loadComponent: () =>
           import('../vendedor/nuevo-pedido/nuevo-pedido.page').then((m) => m.NuevoPedidoPage),
+      },
+      {
+        path: 'ventas-del-local',
+        data: { rutaNueva: '/admin/venta-local' },
+        loadComponent: () =>
+          import('./ventas-local/ventas-local.page').then((m) => m.VentasLocalPage),
       },
       {
         path: 'cuadres',

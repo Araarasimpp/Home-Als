@@ -1,0 +1,211 @@
+.vl {
+  max-width: 920px;
+}
+
+.vl-controles {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.vl-fecha {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.vl-fecha input {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.vl-hoy {
+  height: 36px;
+}
+
+.vl-controles .tabs {
+  margin-left: auto;
+}
+
+.vl-error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--danger-wash);
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.vl-falta {
+  color: var(--danger);
+}
+
+.vl-lista {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.vl-venta {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  padding: 14px 16px;
+}
+
+.vl-venta + .vl-venta {
+  border-top: 1px solid var(--border);
+}
+
+.vl-venta.cancelada {
+  opacity: 0.55;
+}
+
+.vl-hora {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vl-hora strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.vl-hora span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.vl-cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.vl-cuerpo p {
+  margin: 0;
+}
+
+.vl-productos {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.vl-meta,
+.vl-obs {
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.vl-meta strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.vl-cancelada {
+  color: var(--danger);
+}
+
+.vl-pago {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  text-align: right;
+}
+
+.vl-total {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.vl-metodo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.vl-metodo[data-metodo='transferencia'],
+.vl-metodo[data-metodo='mixto'] {
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+
+.vl-desglose {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.vl-comprobante {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.vl-comprobante:hover {
+  text-decoration: underline;
+}
+
+.vl-sin-comprobante {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--danger);
+}
+
+@media (max-width: 640px) {
+  .vl-controles .tabs {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .vl-controles .tabs button {
+    flex: 1;
+  }
+
+  .vl-venta {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 12px;
+  }
+
+  .vl-hora {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+    grid-column: 1 / -1;
+  }
+}

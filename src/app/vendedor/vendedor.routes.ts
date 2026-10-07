@@ -21,9 +21,15 @@ export const VENDEDOR_ROUTES: Routes = [
       },
       {
         path: 'venta-local',
-        data: { canal: 'local' },
+        data: { canal: 'local', rutaVentas: '/vendedor/ventas-del-local' },
         loadComponent: () =>
           import('./nuevo-pedido/nuevo-pedido.page').then((m) => m.NuevoPedidoPage),
+      },
+      {
+        path: 'ventas-del-local',
+        data: { rutaNueva: '/vendedor/venta-local' },
+        loadComponent: () =>
+          import('../admin/ventas-local/ventas-local.page').then((m) => m.VentasLocalPage),
       },
     ],
   },

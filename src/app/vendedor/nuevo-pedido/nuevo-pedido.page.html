@@ -4,6 +4,10 @@
       <ion-icon name="chevron-back-outline"></ion-icon>
     </button>
     <h1>{{ titulo }}</h1>
+    <a class="btn np-ventas" *ngIf="rutaVentas && !esEdicion" [routerLink]="rutaVentas">
+      <ion-icon name="receipt-outline" aria-hidden="true"></ion-icon>
+      Ver ventas
+    </a>
   </header>
 
   <!-- Confirmación -->
@@ -14,6 +18,7 @@
     <p *ngIf="esLocal">Quedó como entregada y el stock ya se descontó.</p>
     <div class="creado-acciones">
       <button class="btn" (click)="volver()">Volver</button>
+      <a class="btn" *ngIf="esLocal && rutaVentas" [routerLink]="rutaVentas">Ver ventas del día</a>
       <button class="btn btn-primary" (click)="otroPedido()">{{ esLocal ? 'Registrar otra venta' : 'Crear otro pedido' }}</button>
     </div>
   </div>
@@ -264,6 +269,27 @@
             </span>
             <p class="mixto-resto num">Por transferencia: <strong>{{ formatoMoneda(montoTransferencia) }}</strong></p>
           </div>
+          <ng-container *ngIf="pideComprobante">
+            <p class="comprobante-titulo">
+              Comprobante de la transferencia
+              <span class="req" aria-hidden="true" *ngIf="comprobanteObligatorio">*</span>
+            </p>
+            <p class="comprobante-actual" *ngIf="pedidoEditado?.comprobante_url && !previewComprobante">
+              Este pedido ya tiene comprobante.
+              <button type="button" class="link" (click)="verComprobanteActual()">Ver</button>
+              · Puedes subir otro para reemplazarlo.
+            </p>
+            <label class="comprobante" [class.con-foto]="previewComprobante" [class.falta]="intentoEnviar && comprobanteObligatorio && !archivoComprobante">
+              <img *ngIf="previewComprobante" [src]="previewComprobante" alt="Comprobante de la transferencia" />
+              <span class="comprobante-vacio" *ngIf="!previewComprobante">
+                <ion-icon name="camera-outline" aria-hidden="true"></ion-icon>
+                Toma o sube la foto del comprobante
+              </span>
+              <span class="comprobante-cambiar" *ngIf="previewComprobante">Cambiar foto</span>
+              <input type="file" accept="image/*" (change)="onComprobante($event)" class="oculto" />
+            </label>
+            <p class="error-campo" *ngIf="intentoEnviar && comprobanteObligatorio && !archivoComprobante">Falta la foto del comprobante.</p>
+          </ng-container>
         </div>
 
         <!-- Totales y envío (en celular queda fijo abajo) -->

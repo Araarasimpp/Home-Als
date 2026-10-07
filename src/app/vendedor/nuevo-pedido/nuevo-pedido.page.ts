@@ -1,13 +1,14 @@
-import { ChangeDetectorRef, Component, HostListener, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { IonIcon } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, remove, searchOutline, chevronBackOutline, trashOutline, checkmark, close, cashOutline, phonePortraitOutline, swapHorizontalOutline } from 'ionicons/icons';
+import { add, remove, searchOutline, chevronBackOutline, trashOutline, checkmark, close, cashOutline, phonePortraitOutline, swapHorizontalOutline, cameraOutline, receiptOutline } from 'ionicons/icons';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { MetodoPago, Producto } from '../../shared/models/models';
 import { urlImagen } from '../../shared/imagenes/url-imagen';
+import { comprimirImagen, extensionDe } from '../../shared/imagenes/comprimir';
 
 interface ItemCarrito {
   producto: Producto;
@@ -31,16 +32,18 @@ interface PedidoEditado {
   canal: 'domicilio' | 'local';
   estado: string;
   cuadre_id: string | null;
+  metodo_pago: MetodoPago | null;
+  comprobante_url: string | null;
 }
 
 @Component({
   selector: 'app-nuevo-pedido',
   standalone: true,
-  imports: [CommonModule, FormsModule, IonIcon],
+  imports: [CommonModule, FormsModule, IonIcon, RouterLink],
   templateUrl: './nuevo-pedido.page.html',
   styleUrls: ['../../shared/ui.scss', './nuevo-pedido.page.scss'],
 })
-export class NuevoPedidoPage implements OnInit {
+export class NuevoPedidoPage implements OnInit, OnDestroy {
   loadingProductos = true;
   productos: Producto[] = [];
   busquedaProducto = '';
@@ -80,6 +83,13 @@ export class NuevoPedidoPage implements OnInit {
   private cantidadesOriginales = new Map<string, number>();
   metodoPago: MetodoPago | null = null;
   montoEfectivo: number | null = null;
+  /** Foto del comprobante (transferencia o mixto), obligatoria en ventas de local. */
+  archivoComprobante: File | null = null;
+  previewComprobante: string | null = null;
+  /** Ruta del comprobante ya subido (si se reintenta, no se vuelve a subir). */
+  private comprobanteSubido: { archivo: File; ruta: string } | null = null;
+  /** Lista de ventas del local (solo en las rutas de venta en local). */
+  readonly rutaVentas: string | null;
 
   /** Fotos que no cargaron (se muestra la inicial en su lugar). */
   private fotosRotas = new Set<string>();
@@ -107,7 +117,8 @@ export class NuevoPedidoPage implements OnInit {
   ) {
     this.esLocal = this.route.snapshot.data['canal'] === 'local';
     this.pedidoId = this.route.snapshot.paramMap.get('id');
-    addIcons({ add, remove, searchOutline, chevronBackOutline, trashOutline, checkmark, close, cashOutline, phonePortraitOutline, swapHorizontalOutline });
+    this.rutaVentas = (this.route.snapshot.data['rutaVentas'] as string) ?? null;
+    addIcons({ add, remove, searchOutline, chevronBackOutline, trashOutline, checkmark, close, cashOutline, phonePortraitOutline, swapHorizontalOutline, cameraOutline, receiptOutline });
   }
 
   async ngOnInit(): Promise<void> {
@@ -123,6 +134,10 @@ export class NuevoPedidoPage implements OnInit {
       await this.cargarPedidoEditado(this.pedidoId);
     }
     this.cdr.detectChanges();
+  }
+
+  ngOnDestroy(): void {
+    if (this.previewComprobante) URL.revokeObjectURL(this.previewComprobante);
   }
 
   async cargarZonas(): Promise<void> {
@@ -180,6 +195,8 @@ export class NuevoPedidoPage implements OnInit {
       canal: p.canal ?? 'domicilio',
       estado: p.estado,
       cuadre_id: p.cuadre_id,
+      metodo_pago: p.metodo_pago ?? null,
+      comprobante_url: p.comprobante_url ?? null,
     };
     this.esLocal = this.pedidoEditado.canal === 'local';
     this.clienteNombre = this.esLocal && p.cliente_nombre === 'Cliente en local' ? '' : p.cliente_nombre ?? '';
@@ -408,6 +425,60 @@ export class NuevoPedidoPage implements OnInit {
     if (m !== 'mixto') this.montoEfectivo = null;
   }
 
+  /** Transferencia o mixto: se muestra el campo del comprobante. */
+  get pideComprobante(): boolean {
+    return this.pidePago && (this.metodoPago === 'transferencia' || this.metodoPago === 'mixto');
+  }
+
+  /**
+   * El comprobante es obligatorio al registrar una venta en local, y al editar
+   * cuando el pago cambia a transferencia o mixto y el pedido no tiene uno.
+   */
+  get comprobanteObligatorio(): boolean {
+    if (!this.pideComprobante) return false;
+    if (!this.esEdicion) return true;
+    return this.metodoPago !== this.pedidoEditado?.metodo_pago && !this.pedidoEditado?.comprobante_url;
+  }
+
+  onComprobante(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (this.previewComprobante) URL.revokeObjectURL(this.previewComprobante);
+    this.archivoComprobante = file;
+    this.previewComprobante = URL.createObjectURL(file);
+    this.errorMsg = '';
+  }
+
+  private quitarComprobante(): void {
+    if (this.previewComprobante) URL.revokeObjectURL(this.previewComprobante);
+    this.archivoComprobante = null;
+    this.previewComprobante = null;
+    this.comprobanteSubido = null;
+  }
+
+  /** Sube la foto (comprimida) al bucket privado y devuelve la ruta interna. */
+  private async subirComprobante(original: File): Promise<string> {
+    if (this.comprobanteSubido?.archivo === original) return this.comprobanteSubido.ruta;
+    const file = await comprimirImagen(original, 'comprobante');
+    const prefijo = this.pedidoId ?? 'local';
+    const ruta = `${prefijo}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extensionDe(file)}`;
+    const { error } = await this.supabase.client.storage
+      .from('comprobantes')
+      .upload(ruta, file, { upsert: false, contentType: file.type });
+    if (error) throw error;
+    this.comprobanteSubido = { archivo: original, ruta };
+    return ruta;
+  }
+
+  /** Abre el comprobante que ya tiene el pedido (modo edición). */
+  async verComprobanteActual(): Promise<void> {
+    const ruta = this.pedidoEditado?.comprobante_url;
+    if (!ruta) return;
+    const { data } = await this.supabase.client.storage.from('comprobantes').createSignedUrl(ruta, 60);
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank', 'noopener');
+  }
+
   get textoBoton(): string {
     if (this.esEdicion) return this.guardando ? 'Guardando…' : 'Guardar cambios';
     if (this.guardando) return this.esLocal ? 'Registrando…' : 'Creando…';
@@ -435,8 +506,12 @@ export class NuevoPedidoPage implements OnInit {
         return;
       }
       const efectivo = Number(this.montoEfectivo);
-      if (this.metodoPago === 'mixto' && !(efectivo >= 0 && efectivo <= this.total && this.montoEfectivo !== null)) {
-        this.errorMsg = 'En pago mixto, escribe cuánto fue en efectivo (entre $0 y el total).';
+      if (this.metodoPago === 'mixto' && !(this.montoEfectivo !== null && efectivo > 0 && efectivo < this.total)) {
+        this.errorMsg = 'En pago mixto, escribe cuánto fue en efectivo: más de $0 y menos que el total.';
+        return;
+      }
+      if (this.comprobanteObligatorio && !this.archivoComprobante) {
+        this.errorMsg = 'Toma o sube la foto del comprobante de la transferencia.';
         return;
       }
     }
@@ -449,8 +524,20 @@ export class NuevoPedidoPage implements OnInit {
     this.guardando = true;
     this.cdr.detectChanges();
 
+    let comprobanteUrl: string | null = null;
+    if (this.pideComprobante && this.archivoComprobante) {
+      try {
+        comprobanteUrl = await this.subirComprobante(this.archivoComprobante);
+      } catch {
+        this.guardando = false;
+        this.errorMsg = 'No se pudo subir el comprobante. Revisa tu conexión e intenta de nuevo.';
+        this.cdr.detectChanges();
+        return;
+      }
+    }
+
     if (this.esEdicion) {
-      await this.guardarEdicion();
+      await this.guardarEdicion(comprobanteUrl);
       return;
     }
 
@@ -471,6 +558,7 @@ export class NuevoPedidoPage implements OnInit {
       p_canal: this.esLocal ? 'local' : 'domicilio',
       p_metodo_pago: this.esLocal ? this.metodoPago : null,
       p_monto_efectivo: this.esLocal && this.metodoPago === 'mixto' ? Number(this.montoEfectivo) : null,
+      p_comprobante_url: this.esLocal ? comprobanteUrl : null,
     });
 
     this.guardando = false;
@@ -487,7 +575,7 @@ export class NuevoPedidoPage implements OnInit {
     this.cdr.detectChanges();
   }
 
-  private async guardarEdicion(): Promise<void> {
+  private async guardarEdicion(comprobanteUrl: string | null): Promise<void> {
     const datos: Record<string, unknown> = {
       cliente_nombre: this.clienteNombre.trim(),
       cliente_telefono: this.clienteTelefono.trim(),
@@ -502,6 +590,7 @@ export class NuevoPedidoPage implements OnInit {
     if (this.pidePago) {
       datos['metodo_pago'] = this.metodoPago;
       if (this.metodoPago === 'mixto') datos['monto_efectivo'] = Number(this.montoEfectivo) || 0;
+      if (comprobanteUrl) datos['comprobante_url'] = comprobanteUrl;
     }
     const items = this.carrito.map((i) => ({
       producto_id: i.producto.id,
@@ -534,6 +623,7 @@ export class NuevoPedidoPage implements OnInit {
     this.observaciones = '';
     this.metodoPago = null;
     this.montoEfectivo = null;
+    this.quitarComprobante();
     this.busquedaProducto = '';
     this.intentoEnviar = false;
     this.errorMsg = '';

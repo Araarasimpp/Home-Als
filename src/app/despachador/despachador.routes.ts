@@ -37,9 +37,15 @@ export const DESPACHADOR_ROUTES: Routes = [
       },
       {
         path: 'venta-local',
-        data: { canal: 'local', volverA: '/despachador/pedidos' },
+        data: { canal: 'local', volverA: '/despachador/pedidos', rutaVentas: '/despachador/ventas-del-local' },
         loadComponent: () =>
           import('../vendedor/nuevo-pedido/nuevo-pedido.page').then((m) => m.NuevoPedidoPage),
+      },
+      {
+        path: 'ventas-del-local',
+        data: { rutaNueva: '/despachador/venta-local' },
+        loadComponent: () =>
+          import('../admin/ventas-local/ventas-local.page').then((m) => m.VentasLocalPage),
       },
       {
         path: 'cuadres',

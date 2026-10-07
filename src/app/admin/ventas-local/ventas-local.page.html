@@ -1,0 +1,119 @@
+<div class="page vl">
+  <header class="head">
+    <div>
+      <p class="fecha">{{ fechaTexto }}</p>
+      <h1>Ventas del local</h1>
+    </div>
+    <a class="btn btn-primary" [routerLink]="rutaNueva">
+      <ion-icon name="add" aria-hidden="true"></ion-icon>
+      Registrar venta
+    </a>
+  </header>
+
+  <div class="vl-controles">
+    <label class="vl-fecha">
+      <span>Día</span>
+      <input type="date" [ngModel]="fecha" (ngModelChange)="cambiarFecha($event)" aria-label="Día de las ventas" />
+    </label>
+    <button class="btn vl-hoy" *ngIf="!esHoy" (click)="irAHoy()">Hoy</button>
+    <div class="tabs" role="group" aria-label="Filtrar por forma de pago">
+      <button [class.on]="filtroMetodo === 'todos'" [attr.aria-pressed]="filtroMetodo === 'todos'" (click)="filtroMetodo = 'todos'">
+        Todas <span class="num">{{ conteo('todos') }}</span>
+      </button>
+      <button [class.on]="filtroMetodo === 'efectivo'" [attr.aria-pressed]="filtroMetodo === 'efectivo'" (click)="filtroMetodo = 'efectivo'">
+        Efectivo <span class="num">{{ conteo('efectivo') }}</span>
+      </button>
+      <button [class.on]="filtroMetodo === 'transferencia'" [attr.aria-pressed]="filtroMetodo === 'transferencia'" (click)="filtroMetodo = 'transferencia'">
+        Transf. <span class="num">{{ conteo('transferencia') }}</span>
+      </button>
+      <button [class.on]="filtroMetodo === 'mixto'" [attr.aria-pressed]="filtroMetodo === 'mixto'" (click)="filtroMetodo = 'mixto'">
+        Mixto <span class="num">{{ conteo('mixto') }}</span>
+      </button>
+    </div>
+  </div>
+
+  <p class="vl-error" role="alert" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+  <ng-container *ngIf="!loading; else cargando">
+    <section class="kpis" aria-label="Resumen del día">
+      <div class="kpi kpi-principal">
+        <span class="kpi-label">Vendido</span>
+        <span class="kpi-valor num">{{ formatoMoneda(totalVendido) }}</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Ventas</span>
+        <span class="kpi-valor num">{{ conteo('todos') }}</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Efectivo</span>
+        <span class="kpi-valor num">{{ formatoMoneda(totalEfectivo) }}</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Transferencia</span>
+        <span class="kpi-valor num">{{ formatoMoneda(totalTransferencia) }}</span>
+        <span class="kpi-nota vl-falta" *ngIf="sinComprobante">
+          {{ sinComprobante }} sin comprobante
+        </span>
+      </div>
+    </section>
+
+    <ul class="vl-lista" *ngIf="filtradas.length; else vacio">
+      <li class="vl-venta" *ngFor="let v of filtradas; trackBy: trackVenta" [class.cancelada]="v.estado === 'cancelado'">
+        <div class="vl-hora">
+          <strong class="num">{{ hora(v.created_at) }}</strong>
+          <span class="num">#{{ v.numero }}</span>
+        </div>
+
+        <div class="vl-cuerpo">
+          <p class="vl-productos">{{ v.productos || 'Sin productos' }}</p>
+          <p class="vl-meta">
+            Vendió <strong>{{ vendedor(v.vendedor_id) }}</strong>
+            <ng-container *ngIf="v.cliente_nombre && v.cliente_nombre !== 'Cliente en local'"> · {{ v.cliente_nombre }}</ng-container>
+            <span class="vl-cancelada" *ngIf="v.estado === 'cancelado'"> · Cancelada</span>
+          </p>
+          <p class="vl-obs" *ngIf="v.observaciones">{{ v.observaciones }}</p>
+        </div>
+
+        <div class="vl-pago">
+          <strong class="num vl-total">{{ formatoMoneda(v.total) }}</strong>
+          <span class="vl-metodo" [attr.data-metodo]="v.metodo_pago">
+            <ion-icon [name]="icono(v.metodo_pago)" aria-hidden="true"></ion-icon>
+            {{ metodo(v.metodo_pago) }}
+          </span>
+          <span class="vl-desglose num" *ngIf="v.metodo_pago === 'mixto'">
+            {{ formatoMoneda(efectivo(v)) }} efectivo + {{ formatoMoneda(transferencia(v)) }} transf.
+          </span>
+          <ng-container *ngIf="pideComprobante(v)">
+            <button class="vl-comprobante" *ngIf="v.comprobante_url; else faltaComprobante" (click)="verComprobante(v)" [disabled]="abriendoId === v.id">
+              <ion-icon name="receipt-outline" aria-hidden="true"></ion-icon>
+              {{ abriendoId === v.id ? 'Abriendo…' : 'Ver comprobante' }}
+            </button>
+            <ng-template #faltaComprobante>
+              <span class="vl-sin-comprobante">
+                <ion-icon name="alert-circle-outline" aria-hidden="true"></ion-icon>
+                Sin comprobante
+              </span>
+            </ng-template>
+          </ng-container>
+        </div>
+      </li>
+    </ul>
+  </ng-container>
+
+  <ng-template #vacio>
+    <div class="vacio">
+      <p class="vacio-titulo">{{ ventas.length ? 'Ninguna venta con ese pago' : 'No hay ventas en el local este día' }}</p>
+      <p *ngIf="!ventas.length">Las ventas que se registren en "Venta en local" aparecen aquí al instante.</p>
+    </div>
+  </ng-template>
+
+  <ng-template #cargando>
+    <div class="vl-lista" aria-busy="true" aria-label="Cargando ventas">
+      <div class="vl-venta" *ngFor="let i of [1, 2, 3, 4]">
+        <span class="sk sk-a"></span><span class="sk sk-b"></span>
+      </div>
+    </div>
+  </ng-template>
+
+  <app-imagen-preview *ngIf="previewUrl" [url]="previewUrl" (cerrar)="previewUrl = null"></app-imagen-preview>
+</div>

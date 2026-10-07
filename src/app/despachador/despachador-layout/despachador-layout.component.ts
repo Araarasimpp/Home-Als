@@ -8,6 +8,7 @@ import {
   swapHorizontalOutline,
   receiptOutline,
   storefrontOutline,
+  listOutline,
   walletOutline,
   add,
   sunnyOutline,
@@ -59,6 +60,7 @@ export class DespachadorLayoutComponent implements OnInit, OnDestroy {
     { label: 'Inicio', path: '/despachador', icon: 'home-outline' },
     { label: 'Pedidos', path: '/despachador/pedidos', icon: 'receipt-outline' },
     { label: 'Venta en local', path: '/despachador/venta-local', icon: 'storefront-outline' },
+    { label: 'Ventas del local', path: '/despachador/ventas-del-local', icon: 'list-outline' },
     { label: 'Cuadres', path: '/despachador/cuadres', icon: 'wallet-outline' },
   ];
 
@@ -71,6 +73,7 @@ export class DespachadorLayoutComponent implements OnInit, OnDestroy {
   ) {
     addIcons({
       homeOutline,
+      listOutline,
       swapHorizontalOutline,
       receiptOutline,
       storefrontOutline,
