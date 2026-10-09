@@ -13,7 +13,8 @@
 // Con "Todos los vendedores" se arma en cambio la planilla "VENTA DIARIA": una
 // hoja por día con todos los pedidos agrupados por vendedor (CANT, PRODUCTO,
 // COSTO, VENTA, GANANCIA TIENDA, GANANCIA VENDEDOR, DOMICILIO, TOTAL RECOGIDA,
-// MENSAJERO, VENDEDOR) y una hoja "Resumen" por día cuando hay varios días.
+// MENSAJERO, VENDEDOR, ESTADO) y una hoja "Resumen" por día cuando hay varios
+// días. Ahí sí se listan los cancelados (para verlos), pero no suman.
 import type { Borders, Cell, Fill, Worksheet } from 'exceljs';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { diaColombiaDe, finDiaColombia, inicioDiaColombia } from '../../shared/fecha-colombia';
@@ -43,6 +44,7 @@ interface FilaPedido {
   /** Día de la venta en Colombia (YYYY-MM-DD) y hora exacta, para ordenar. */
   dia: string;
   creado: string;
+  estado: string;
   sinCosto: boolean;
 }
 
@@ -96,7 +98,7 @@ function nombreHoja(base: string, usados: Set<string>): string {
 }
 
 // ---------- Datos ----------
-async function cargarGrupos(db: SupabaseClient, o: OpcionesExcel): Promise<Grupo[]> {
+async function cargarGrupos(db: SupabaseClient, o: OpcionesExcel, incluirCancelados = false): Promise<Grupo[]> {
   let q = db
     .from('pedidos')
     .select('*')
@@ -104,8 +106,9 @@ async function cargarGrupos(db: SupabaseClient, o: OpcionesExcel): Promise<Grupo
     .lte('created_at', finDiaColombia(o.hasta).toISOString())
     .order('created_at', { ascending: true });
   if (o.vendedorId !== 'todos') q = q.eq('vendedor_id', o.vendedorId);
-  // Los cancelados nunca cuentan como venta
-  q = o.estado !== 'todos' ? q.eq('estado', o.estado) : q.neq('estado', 'cancelado');
+  // Los cancelados nunca cuentan como venta (en la planilla general se listan, sin sumar)
+  if (o.estado !== 'todos') q = q.eq('estado', o.estado);
+  else if (!incluirCancelados) q = q.neq('estado', 'cancelado');
 
   const [{ data: pedidos, error }, { data: perfiles }] = await Promise.all([
     q,
@@ -174,6 +177,7 @@ async function cargarGrupos(db: SupabaseClient, o: OpcionesExcel): Promise<Grupo
       vendedorId: p.vendedor_id,
       dia: diaColombiaDe(p.created_at),
       creado: p.created_at,
+      estado: p.estado,
       sinCosto,
     });
   }
@@ -394,7 +398,22 @@ const COLS_DIARIA = [
   { k: 'total', t: 'TOTAL RECOGIDA', w: 16, num: true },
   { k: 'mensajero', t: 'MENSAJERO', w: 28 },
   { k: 'vendedor', t: 'VENDEDOR', w: 20 },
+  { k: 'estado', t: 'ESTADO', w: 13 },
 ] as const;
+
+const ETIQUETA_ESTADO: Record<string, string> = {
+  pendiente: 'PENDIENTE',
+  en_ruta: 'EN RUTA',
+  entregado: 'ENTREGADO',
+  cancelado: 'CANCELADO',
+};
+const COLOR_ESTADO: Record<string, string> = {
+  pendiente: 'FFEDEDED',
+  en_ruta: 'FFFFE699',
+  entregado: 'FFC6EFCE',
+  cancelado: 'FFFFC7CE',
+};
+const vigente = (f: FilaPedido) => f.estado !== 'cancelado';
 
 /** "JUEVES 8 DE OCTUBRE" a partir de YYYY-MM-DD (día de Colombia). */
 function tituloDia(dia: string): string {
@@ -454,8 +473,10 @@ function hojaDiaria(ws: Worksheet, dia: string, filas: FilaPedido[], colores: Ma
       total: f.total,
       mensajero: f.mensajero,
       vendedor: f.vendedor,
+      estado: ETIQUETA_ESTADO[f.estado] ?? f.estado.toUpperCase(),
     };
     const colorM = colorMensajero(f.mensajeroId, colores);
+    const cancelado = !vigente(f);
     COLS_DIARIA.forEach((c, i) => {
       const cel = fila.getCell(i + 1);
       cel.value = valores[c.k] ?? null;
@@ -466,8 +487,12 @@ function hojaDiaria(ws: Worksheet, dia: string, filas: FilaPedido[], colores: Ma
           c.k === 'gananciaTienda' ? ROSA_GANANCIA
           : c.k === 'gananciaVendedor' ? AZUL_COMISION
           : c.k === 'total' || c.k === 'mensajero' ? colorM
+          : c.k === 'estado' ? COLOR_ESTADO[f.estado]
           : undefined,
       });
+      // Cancelado: se ve tachado y en gris, y no entra en los totales
+      if (cancelado && c.k !== 'estado') cel.font = { name: 'Calibri', size: 10, strike: true, color: { argb: 'FF8C8C8C' } };
+      if (c.k === 'estado') cel.font = { name: 'Calibri', size: 10, bold: true, color: { argb: cancelado ? 'FF9C0006' : 'FF000000' } };
     });
     if (f.sinCosto) fila.getCell(col('costo')).note = 'Algún producto no tiene costo registrado: se usó su precio base.';
 
@@ -487,8 +512,15 @@ function hojaDiaria(ws: Worksheet, dia: string, filas: FilaPedido[], colores: Ma
   const ultima = r - 1;
   const rt = ws.getRow(r);
   rt.height = 20;
-  const suma = (k: string, valor: number) => ({ formula: `SUM(${letra(k)}${primera}:${letra(k)}${ultima})`, result: valor });
-  const tot = (fn: (f: FilaPedido) => number) => filas.reduce((s, f) => s + fn(f), 0);
+  // Solo suman los pedidos que no están cancelados
+  const rangoEstado = `${letra('estado')}${primera}:${letra('estado')}${ultima}`;
+  const suma = (k: string, valor: number) => ({
+    formula: `SUMIF(${rangoEstado},"<>CANCELADO",${letra(k)}${primera}:${letra(k)}${ultima})`,
+    result: valor,
+  });
+  const tot = (fn: (f: FilaPedido) => number) => filas.filter(vigente).reduce((s, f) => s + fn(f), 0);
+  const vigentes = filas.filter(vigente).length;
+  const cancelados = filas.length - vigentes;
   const totales: Record<string, unknown> = {
     cantidad: suma('cantidad', tot((f) => f.cantidad)),
     productos: 'TOTAL',
@@ -498,8 +530,9 @@ function hojaDiaria(ws: Worksheet, dia: string, filas: FilaPedido[], colores: Ma
     gananciaVendedor: suma('gananciaVendedor', tot(gananciaVendedorDe)),
     domicilio: suma('domicilio', tot((f) => f.domicilio)),
     total: suma('total', tot((f) => f.total)),
-    mensajero: `${filas.length} ${filas.length === 1 ? 'PEDIDO' : 'PEDIDOS'}`,
+    mensajero: `${vigentes} ${vigentes === 1 ? 'PEDIDO' : 'PEDIDOS'}`,
     vendedor: null,
+    estado: cancelados ? `${cancelados} ${cancelados === 1 ? 'CANCELADO' : 'CANCELADOS'}` : null,
   };
   COLS_DIARIA.forEach((c, i) => {
     const celda = rt.getCell(i + 1);
@@ -526,7 +559,8 @@ function hojaResumenDias(ws: Worksheet, dias: [string, FilaPedido[]][]): void {
     c.value = t;
     estilarCelda(c, { fill: ROSA_ENCABEZADO, bold: true });
   });
-  dias.forEach(([dia, filas], idx) => {
+  dias.forEach(([dia, todas], idx) => {
+    const filas = todas.filter(vigente);
     const tot = (fn: (f: FilaPedido) => number) => filas.reduce((s, f) => s + fn(f), 0);
     const valores = [
       tituloDia(dia),
@@ -560,7 +594,8 @@ function hojaResumenDias(ws: Worksheet, dias: [string, FilaPedido[]][]): void {
 // ---------- Punto de entrada ----------
 /** Genera y descarga el Excel. Devuelve cuántos pedidos incluyó. */
 export async function descargarExcelVentas(db: SupabaseClient, o: OpcionesExcel): Promise<number> {
-  const grupos = await cargarGrupos(db, o);
+  const general = o.vendedorId === 'todos';
+  const grupos = await cargarGrupos(db, o, general);
   if (!grupos.length) return 0;
 
   // exceljs pesa ~1 MB: se carga solo al descargar, no al abrir la app
@@ -574,7 +609,7 @@ export async function descargarExcelVentas(db: SupabaseClient, o: OpcionesExcel)
   const usados = new Set<string>();
   const colores = new Map<string, string>(); // mismo color por mensajero en todas las hojas
 
-  if (o.vendedorId === 'todos') {
+  if (general) {
     // Planilla general: una hoja "VENTA DIARIA" por día
     const porDia = new Map<string, FilaPedido[]>();
     for (const f of grupos.flatMap((g) => g.filas)) {
