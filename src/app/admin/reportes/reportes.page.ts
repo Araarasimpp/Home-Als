@@ -241,9 +241,10 @@ export class ReportesPage implements OnInit {
   }
 
   /**
-   * Excel con el formato de la planilla de la tienda (una hoja por vendedor,
-   * colores por mensajero y comisiones al final). Respeta los filtros de
-   * fechas, vendedor y estado; con "Todos" deja por fuera los cancelados.
+   * Excel con el formato de la planilla de la tienda. Con "Todos los
+   * vendedores" es la "VENTA DIARIA" (una hoja por día, todos los pedidos);
+   * con un vendedor, su hoja con las comisiones al final. Respeta los filtros
+   * de fechas, vendedor y estado; con "Todos" deja por fuera los cancelados.
    */
   async descargarExcel(): Promise<void> {
     if (this.descargando) return;

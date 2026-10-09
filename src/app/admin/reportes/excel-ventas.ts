@@ -9,9 +9,14 @@
 //
 // Una hoja por vendedor (y por esquema, si se le cambió en el periodo) y una
 // hoja "Resumen" cuando hay más de una. Necesita: npm install exceljs
+//
+// Con "Todos los vendedores" se arma en cambio la planilla "VENTA DIARIA": una
+// hoja por día con todos los pedidos agrupados por vendedor (CANT, PRODUCTO,
+// COSTO, VENTA, GANANCIA TIENDA, GANANCIA VENDEDOR, DOMICILIO, TOTAL RECOGIDA,
+// MENSAJERO, VENDEDOR) y una hoja "Resumen" por día cuando hay varios días.
 import type { Borders, Cell, Fill, Worksheet } from 'exceljs';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { finDiaColombia, inicioDiaColombia } from '../../shared/fecha-colombia';
+import { diaColombiaDe, finDiaColombia, inicioDiaColombia } from '../../shared/fecha-colombia';
 
 export interface OpcionesExcel {
   desde: string; // YYYY-MM-DD
@@ -34,6 +39,10 @@ interface FilaPedido {
   mensajero: string;
   mensajeroId: string; // para el color
   vendedor: string;
+  vendedorId: string;
+  /** Día de la venta en Colombia (YYYY-MM-DD) y hora exacta, para ordenar. */
+  dia: string;
+  creado: string;
   sinCosto: boolean;
 }
 
@@ -162,6 +171,9 @@ async function cargarGrupos(db: SupabaseClient, o: OpcionesExcel): Promise<Grupo
       mensajero,
       mensajeroId: esLocal ? 'local' : p.domiciliario_id ?? 'sin',
       vendedor,
+      vendedorId: p.vendedor_id,
+      dia: diaColombiaDe(p.created_at),
+      creado: p.created_at,
       sinCosto,
     });
   }
@@ -370,6 +382,181 @@ function hojaResumen(ws: Worksheet, grupos: Grupo[]): void {
   ws.views = [{ state: 'frozen', ySplit: 1 }];
 }
 
+// ---------- Planilla general: VENTA DIARIA ----------
+const COLS_DIARIA = [
+  { k: 'cantidad', t: 'CANT', w: 7 },
+  { k: 'productos', t: 'PRODUCTO', w: 46 },
+  { k: 'costo', t: 'COSTO', w: 12, num: true },
+  { k: 'venta', t: 'VENTA', w: 12, num: true },
+  { k: 'gananciaTienda', t: 'GANANCIA TIENDA', w: 16, num: true },
+  { k: 'gananciaVendedor', t: 'GANANCIA VENDEDOR', w: 18, num: true },
+  { k: 'domicilio', t: 'DOMICILIO', w: 12, num: true },
+  { k: 'total', t: 'TOTAL RECOGIDA', w: 16, num: true },
+  { k: 'mensajero', t: 'MENSAJERO', w: 28 },
+  { k: 'vendedor', t: 'VENDEDOR', w: 20 },
+] as const;
+
+/** "JUEVES 8 DE OCTUBRE" a partir de YYYY-MM-DD (día de Colombia). */
+function tituloDia(dia: string): string {
+  const d = inicioDiaColombia(dia);
+  const t = d.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Bogota' });
+  return sinTildes(t).replace(',', '').toUpperCase();
+}
+
+/** Nombre corto de hoja: "JUE 8 OCT". */
+function hojaDiaNombre(dia: string): string {
+  const d = inicioDiaColombia(dia);
+  const t = d.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'America/Bogota' });
+  return sinTildes(t).replace(/[.,]/g, '').toUpperCase();
+}
+
+const gananciaVendedorDe = (f: FilaPedido) => f.comision;
+const gananciaTiendaDe = (f: FilaPedido) => f.venta - f.costo - f.comision;
+
+function hojaDiaria(ws: Worksheet, dia: string, filas: FilaPedido[], colores: Map<string, string>): void {
+  const n = COLS_DIARIA.length;
+  ws.columns = COLS_DIARIA.map((c) => ({ key: c.k, width: c.w }));
+  const letra = (k: string) => ws.getColumn(k).letter;
+  const col = (k: string) => ws.getColumn(k).number;
+
+  // Título: VENTA DIARIA + día
+  ws.mergeCells(1, 1, 1, n);
+  const titulo = ws.getRow(1).getCell(1);
+  titulo.value = `VENTA DIARIA · ${tituloDia(dia)}`;
+  estilarCelda(titulo, { fill: ROSA_ENCABEZADO, bold: true });
+  titulo.font = { name: 'Calibri', size: 12, bold: true };
+  ws.getRow(1).height = 20;
+
+  const enc = ws.getRow(2);
+  COLS_DIARIA.forEach((c, i) => {
+    const cel = enc.getCell(i + 1);
+    cel.value = c.t;
+    estilarCelda(cel, { fill: ROSA_ENCABEZADO, bold: true });
+  });
+  enc.height = 18;
+
+  // Agrupados por vendedor (como en la planilla) y por hora dentro de cada grupo
+  const ordenadas = [...filas].sort(
+    (a, b) => a.vendedor.localeCompare(b.vendedor) || a.creado.localeCompare(b.creado)
+  );
+
+  let r = 3;
+  ordenadas.forEach((f, idx) => {
+    const fila = ws.getRow(r);
+    const valores: Record<string, string | number | null> = {
+      cantidad: f.cantidad,
+      productos: f.productos,
+      costo: f.costo,
+      venta: f.venta,
+      gananciaTienda: gananciaTiendaDe(f),
+      gananciaVendedor: gananciaVendedorDe(f),
+      domicilio: f.domicilio || null,
+      total: f.total,
+      mensajero: f.mensajero,
+      vendedor: f.vendedor,
+    };
+    const colorM = colorMensajero(f.mensajeroId, colores);
+    COLS_DIARIA.forEach((c, i) => {
+      const cel = fila.getCell(i + 1);
+      cel.value = valores[c.k] ?? null;
+      estilarCelda(cel, {
+        num: 'num' in c && c.num,
+        izquierda: c.k === 'productos',
+        fill:
+          c.k === 'gananciaTienda' ? ROSA_GANANCIA
+          : c.k === 'gananciaVendedor' ? AZUL_COMISION
+          : c.k === 'total' || c.k === 'mensajero' ? colorM
+          : undefined,
+      });
+    });
+    if (f.sinCosto) fila.getCell(col('costo')).note = 'Algún producto no tiene costo registrado: se usó su precio base.';
+
+    // Línea doble al cambiar de vendedor (separa los grupos como en la planilla)
+    const siguiente = ordenadas[idx + 1];
+    if (siguiente && siguiente.vendedorId !== f.vendedorId) {
+      for (let i = 1; i <= n; i++) {
+        const c = fila.getCell(i);
+        c.border = { ...BORDE, bottom: { style: 'double', color: { argb: 'FF7F3F98' } } };
+      }
+    }
+    r++;
+  });
+
+  // Totales del día
+  const primera = 3;
+  const ultima = r - 1;
+  const rt = ws.getRow(r);
+  rt.height = 20;
+  const suma = (k: string, valor: number) => ({ formula: `SUM(${letra(k)}${primera}:${letra(k)}${ultima})`, result: valor });
+  const tot = (fn: (f: FilaPedido) => number) => filas.reduce((s, f) => s + fn(f), 0);
+  const totales: Record<string, unknown> = {
+    cantidad: suma('cantidad', tot((f) => f.cantidad)),
+    productos: 'TOTAL',
+    costo: suma('costo', tot((f) => f.costo)),
+    venta: suma('venta', tot((f) => f.venta)),
+    gananciaTienda: suma('gananciaTienda', tot(gananciaTiendaDe)),
+    gananciaVendedor: suma('gananciaVendedor', tot(gananciaVendedorDe)),
+    domicilio: suma('domicilio', tot((f) => f.domicilio)),
+    total: suma('total', tot((f) => f.total)),
+    mensajero: `${filas.length} ${filas.length === 1 ? 'PEDIDO' : 'PEDIDOS'}`,
+    vendedor: null,
+  };
+  COLS_DIARIA.forEach((c, i) => {
+    const celda = rt.getCell(i + 1);
+    celda.value = totales[c.k] as any;
+    estilarCelda(celda, { fill: ROSA_ENCABEZADO, bold: true, num: 'num' in c && c.num || c.k === 'cantidad' });
+  });
+  for (const k of ['gananciaTienda', 'gananciaVendedor']) {
+    const c = rt.getCell(col(k));
+    c.font = { name: 'Calibri', size: 11, bold: true };
+    c.border = { top: { style: 'medium' }, left: { style: 'medium' }, bottom: { style: 'medium' }, right: { style: 'medium' } };
+  }
+
+  ws.views = [{ state: 'frozen', ySplit: 2 }];
+  ws.autoFilter = { from: { row: 2, column: 1 }, to: { row: Math.max(ultima, 2), column: n } };
+  ws.pageSetup = { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 };
+}
+
+/** Totales por día cuando el rango tiene varios días. */
+function hojaResumenDias(ws: Worksheet, dias: [string, FilaPedido[]][]): void {
+  const enc = ['DÍA', 'PEDIDOS', 'CANT', 'VENTA', 'GANANCIA TIENDA', 'GANANCIA VENDEDOR', 'DOMICILIOS', 'TOTAL RECOGIDA'];
+  ws.columns = [26, 10, 8, 14, 16, 18, 13, 16].map((w) => ({ width: w }));
+  enc.forEach((t, i) => {
+    const c = ws.getRow(1).getCell(i + 1);
+    c.value = t;
+    estilarCelda(c, { fill: ROSA_ENCABEZADO, bold: true });
+  });
+  dias.forEach(([dia, filas], idx) => {
+    const tot = (fn: (f: FilaPedido) => number) => filas.reduce((s, f) => s + fn(f), 0);
+    const valores = [
+      tituloDia(dia),
+      filas.length,
+      tot((f) => f.cantidad),
+      tot((f) => f.venta),
+      tot(gananciaTiendaDe),
+      tot(gananciaVendedorDe),
+      tot((f) => f.domicilio),
+      tot((f) => f.total),
+    ];
+    valores.forEach((v, i) => {
+      const c = ws.getRow(idx + 2).getCell(i + 1);
+      c.value = v;
+      estilarCelda(c, { num: i >= 3, izquierda: i === 0, fill: i === 4 ? ROSA_GANANCIA : i === 5 ? AZUL_COMISION : undefined });
+    });
+  });
+  const n = dias.length + 1;
+  const rt = ws.getRow(n + 1);
+  rt.getCell(1).value = 'TOTAL';
+  ['B', 'C', 'D', 'E', 'F', 'G', 'H'].forEach((letra, i) => {
+    let suma = 0;
+    for (let r = 2; r <= n; r++) suma += Number(ws.getRow(r).getCell(i + 2).value) || 0;
+    rt.getCell(i + 2).value = { formula: `SUM(${letra}2:${letra}${n})`, result: suma };
+  });
+  for (let i = 1; i <= enc.length; i++) estilarCelda(rt.getCell(i), { fill: ROSA_ENCABEZADO, bold: true, num: i >= 4 });
+  ws.views = [{ state: 'frozen', ySplit: 1 }];
+  ws.pageSetup = { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 };
+}
+
 // ---------- Punto de entrada ----------
 /** Genera y descarga el Excel. Devuelve cuántos pedidos incluyó. */
 export async function descargarExcelVentas(db: SupabaseClient, o: OpcionesExcel): Promise<number> {
@@ -385,12 +572,26 @@ export async function descargarExcelVentas(db: SupabaseClient, o: OpcionesExcel)
   libro.calcProperties.fullCalcOnLoad = true;
 
   const usados = new Set<string>();
-  if (grupos.length > 1) hojaResumen(libro.addWorksheet(nombreHoja('Resumen', usados)), grupos);
-
   const colores = new Map<string, string>(); // mismo color por mensajero en todas las hojas
-  for (const g of grupos) {
-    const titulo = g.porcentaje !== null ? `${g.vendedor} ${g.porcentaje}%` : g.vendedor;
-    hojaVendedor(libro.addWorksheet(nombreHoja(titulo, usados)), g, colores);
+
+  if (o.vendedorId === 'todos') {
+    // Planilla general: una hoja "VENTA DIARIA" por día
+    const porDia = new Map<string, FilaPedido[]>();
+    for (const f of grupos.flatMap((g) => g.filas)) {
+      if (!porDia.has(f.dia)) porDia.set(f.dia, []);
+      porDia.get(f.dia)!.push(f);
+    }
+    const dias = [...porDia.entries()].sort(([a], [b]) => a.localeCompare(b));
+    if (dias.length > 1) hojaResumenDias(libro.addWorksheet(nombreHoja('Resumen', usados)), dias);
+    for (const [dia, filas] of dias) {
+      hojaDiaria(libro.addWorksheet(nombreHoja(hojaDiaNombre(dia), usados)), dia, filas, colores);
+    }
+  } else {
+    if (grupos.length > 1) hojaResumen(libro.addWorksheet(nombreHoja('Resumen', usados)), grupos);
+    for (const g of grupos) {
+      const titulo = g.porcentaje !== null ? `${g.vendedor} ${g.porcentaje}%` : g.vendedor;
+      hojaVendedor(libro.addWorksheet(nombreHoja(titulo, usados)), g, colores);
+    }
   }
 
   const buffer = await libro.xlsx.writeBuffer();
@@ -400,7 +601,9 @@ export async function descargarExcelVentas(db: SupabaseClient, o: OpcionesExcel)
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `ventas_${o.desde}_a_${o.hasta}.xlsx`;
+  a.download = o.vendedorId === 'todos'
+    ? `venta_diaria_${o.desde}${o.hasta !== o.desde ? '_a_' + o.hasta : ''}.xlsx`
+    : `ventas_${o.desde}_a_${o.hasta}.xlsx`;
   document.body.appendChild(a);
   a.click();
   a.remove();
