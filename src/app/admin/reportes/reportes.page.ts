@@ -54,7 +54,7 @@ export class ReportesPage implements OnInit {
   filas: FilaReporte[] = [];
 
   // Totales a nivel de PEDIDO (no se duplican aunque el pedido tenga varias filas de producto)
-  private pedidosUnicos: { total: number; valorDomicilio: number; pagoDomiciliario: number; comision: number; cancelado: boolean }[] = [];
+  private pedidosUnicos: { total: number; valorDomicilio: number; pagoDomiciliario: number; comision: number; cancelado: boolean; entregado: boolean }[] = [];
 
   readonly estados: { valor: FiltroEstado; etiqueta: string }[] = [
     { valor: 'todos', etiqueta: 'Todos' },
@@ -148,6 +148,7 @@ export class ReportesPage implements OnInit {
       pagoDomiciliario: Number(p.pago_domiciliario ?? p.valor_domicilio ?? 0),
       comision: Number(p.comision ?? 0),
       cancelado: p.estado === 'cancelado',
+      entregado: p.estado === 'entregado',
     }));
 
     const filasNuevas: FilaReporte[] = [];
@@ -221,19 +222,20 @@ export class ReportesPage implements OnInit {
     return this.pedidosUnicos.reduce((s, p) => s + p.pagoDomiciliario, 0);
   }
 
-  /** Lo que la tienda pone de su bolsillo en envíos (pago al domiciliario − cobro al cliente), sin cancelados. */
+  /** Lo que la tienda pone de su bolsillo en envíos (pago al domiciliario − cobro al cliente), solo entregados. */
   get totalEnvioAsumido(): number {
     return this.pedidosUnicos
-      .filter((p) => !p.cancelado)
+      .filter((p) => p.entregado)
       .reduce((s, p) => s + (p.pagoDomiciliario - p.valorDomicilio), 0);
   }
 
+  // Las ganancias solo cuentan pedidos entregados (pendientes, en ruta y cancelados no suman)
   get totalComision(): number {
-    return this.pedidosUnicos.reduce((s, p) => s + p.comision, 0);
+    return this.pedidosUnicos.filter((p) => p.entregado).reduce((s, p) => s + p.comision, 0);
   }
 
   get totalGananciaTienda(): number {
-    return this.filas.reduce((s, f) => s + f.gananciaItem, 0);
+    return this.filas.filter((f) => f.estado === 'entregado').reduce((s, f) => s + f.gananciaItem, 0);
   }
 
   get totalCantidad(): number {
