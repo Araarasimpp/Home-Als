@@ -7,7 +7,7 @@
 //  - Vendedores por margen: además PRECIO BASE, GANANCIA TIENDA y COMISIÓN
 //    VENDEDOR (lo que cobró por encima del precio base).
 //  - Columna ESTADO al final: la ganancia y las comisiones de abajo solo
-//    suman los pedidos ENTREGADOS (pendientes y en ruta se listan sin sumar).
+//    suman los pedidos ENTREGADOS (los demás se listan tachados, sin sumar).
 //
 // Una hoja por vendedor (y por esquema, si se le cambió en el periodo) y una
 // hoja "Resumen" cuando hay más de una. Necesita: npm install exceljs
@@ -16,7 +16,8 @@
 // hoja por día con todos los pedidos agrupados por vendedor (CANT, PRODUCTO,
 // COSTO, VENTA, GANANCIA TIENDA, GANANCIA VENDEDOR, DOMICILIO, TOTAL RECOGIDA,
 // MENSAJERO, VENDEDOR, ESTADO) y una hoja "Resumen" por día cuando hay varios
-// días. Ahí sí se listan los cancelados (para verlos), pero no suman.
+// días. Ahí se listan todos los pedidos, pero los totales solo suman los
+// ENTREGADOS; los demás (pendientes, en ruta, cancelados) se ven tachados.
 import type { Borders, Cell, Fill, Worksheet } from 'exceljs';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { diaColombiaDe, finDiaColombia, inicioDiaColombia } from '../../shared/fecha-colombia';
@@ -279,6 +280,7 @@ function hojaVendedor(ws: Worksheet, g: Grupo, colores: Map<string, string>): vo
         fill: c.k === colGanancia ? ROSA_GANANCIA : c.k === 'total' || c.k === 'mensajero' ? colorM : c.k === 'estado' ? COLOR_ESTADO[f.estado] : undefined,
       });
       if (c.k === 'estado') cel.font = { name: 'Calibri', size: 10, bold: true };
+      else if (f.estado !== 'entregado') cel.font = { name: 'Calibri', size: 10, strike: true, color: { argb: 'FF8C8C8C' } };
     });
     if (f.sinCosto) {
       r.getCell(letra('costo')).note = 'Algún producto no tiene costo registrado: se usó su precio base.';
@@ -352,7 +354,7 @@ function hojaVendedor(ws: Worksheet, g: Grupo, colores: Map<string, string>): vo
 }
 
 function hojaResumen(ws: Worksheet, grupos: Grupo[]): void {
-  const enc = ['VENDEDOR', 'TIPO DE COMISIÓN', 'PEDIDOS', 'VENTA', 'GANANCIA TOTAL', 'COMISIÓN VENDEDOR', 'GANANCIA ALS'];
+  const enc = ['VENDEDOR', 'TIPO DE COMISIÓN', 'ENTREGADOS', 'VENTA', 'GANANCIA TOTAL', 'COMISIÓN VENDEDOR', 'GANANCIA ALS'];
   ws.columns = [24, 22, 10, 14, 16, 18, 16].map((w) => ({ width: w }));
   enc.forEach((t, i) => {
     const c = ws.getRow(1).getCell(i + 1);
@@ -361,9 +363,9 @@ function hojaResumen(ws: Worksheet, grupos: Grupo[]): void {
   });
 
   grupos.forEach((g, idx) => {
-    const venta = g.filas.reduce((s, f) => s + f.venta, 0);
-    // Ganancia y comisión solo de pedidos entregados
+    // Todo solo de pedidos entregados
     const ent = g.filas.filter((f) => f.estado === 'entregado');
+    const venta = ent.reduce((s, f) => s + f.venta, 0);
     const ganancia = ent.reduce((s, f) => s + f.ganancia, 0);
     const comision =
       g.porcentaje !== null
@@ -372,7 +374,7 @@ function hojaResumen(ws: Worksheet, grupos: Grupo[]): void {
     const fila = [
       g.vendedor,
       g.porcentaje !== null ? `${g.porcentaje}% de la ganancia` : 'Margen sobre precio base',
-      g.filas.length,
+      ent.length,
       venta,
       ganancia,
       comision,
@@ -490,6 +492,7 @@ function hojaDiaria(ws: Worksheet, dia: string, filas: FilaPedido[], colores: Ma
     };
     const colorM = colorMensajero(f.mensajeroId, colores);
     const cancelado = !vigente(f);
+    const noSuma = !entregado(f);
     COLS_DIARIA.forEach((c, i) => {
       const cel = fila.getCell(i + 1);
       cel.value = valores[c.k] ?? null;
@@ -503,8 +506,8 @@ function hojaDiaria(ws: Worksheet, dia: string, filas: FilaPedido[], colores: Ma
           : c.k === 'estado' ? COLOR_ESTADO[f.estado]
           : undefined,
       });
-      // Cancelado: se ve tachado y en gris, y no entra en los totales
-      if (cancelado && c.k !== 'estado') cel.font = { name: 'Calibri', size: 10, strike: true, color: { argb: 'FF8C8C8C' } };
+      // No entregado (pendiente, en ruta o cancelado): tachado y en gris, no entra en los totales
+      if (noSuma && c.k !== 'estado') cel.font = { name: 'Calibri', size: 10, strike: true, color: { argb: 'FF8C8C8C' } };
       if (c.k === 'estado') cel.font = { name: 'Calibri', size: 10, bold: true, color: { argb: cancelado ? 'FF9C0006' : 'FF000000' } };
     });
     if (f.sinCosto) fila.getCell(col('costo')).note = 'Algún producto no tiene costo registrado: se usó su precio base.';
@@ -525,33 +528,27 @@ function hojaDiaria(ws: Worksheet, dia: string, filas: FilaPedido[], colores: Ma
   const ultima = r - 1;
   const rt = ws.getRow(r);
   rt.height = 20;
-  // Solo suman los pedidos que no están cancelados
+  // Todos los totales suman solo los pedidos ENTREGADOS (los demás van tachados)
   const rangoEstado = `${letra('estado')}${primera}:${letra('estado')}${ultima}`;
   const suma = (k: string, valor: number) => ({
-    formula: `SUMIF(${rangoEstado},"<>CANCELADO",${letra(k)}${primera}:${letra(k)}${ultima})`,
-    result: valor,
-  });
-  const tot = (fn: (f: FilaPedido) => number) => filas.filter(vigente).reduce((s, f) => s + fn(f), 0);
-  // Las ganancias (tienda y vendedor) solo suman pedidos entregados
-  const sumaEntregado = (k: string, valor: number) => ({
     formula: `SUMIF(${rangoEstado},"ENTREGADO",${letra(k)}${primera}:${letra(k)}${ultima})`,
     result: valor,
   });
-  const totEnt = (fn: (f: FilaPedido) => number) => filas.filter(entregado).reduce((s, f) => s + fn(f), 0);
-  const vigentes = filas.filter(vigente).length;
-  const cancelados = filas.length - vigentes;
+  const tot = (fn: (f: FilaPedido) => number) => filas.filter(entregado).reduce((s, f) => s + fn(f), 0);
+  const nEntregados = filas.filter(entregado).length;
+  const nSinSumar = filas.length - nEntregados;
   const totales: Record<string, unknown> = {
     cantidad: suma('cantidad', tot((f) => f.cantidad)),
     productos: 'TOTAL',
     costo: suma('costo', tot((f) => f.costo)),
     venta: suma('venta', tot((f) => f.venta)),
-    gananciaTienda: sumaEntregado('gananciaTienda', totEnt(gananciaTiendaDe)),
-    gananciaVendedor: sumaEntregado('gananciaVendedor', totEnt(gananciaVendedorDe)),
+    gananciaTienda: suma('gananciaTienda', tot(gananciaTiendaDe)),
+    gananciaVendedor: suma('gananciaVendedor', tot(gananciaVendedorDe)),
     domicilio: suma('domicilio', tot((f) => f.domicilio)),
     total: suma('total', tot((f) => f.total)),
-    mensajero: `${vigentes} ${vigentes === 1 ? 'PEDIDO' : 'PEDIDOS'}`,
+    mensajero: `${nEntregados} ${nEntregados === 1 ? 'ENTREGADO' : 'ENTREGADOS'}`,
     vendedor: null,
-    estado: cancelados ? `${cancelados} ${cancelados === 1 ? 'CANCELADO' : 'CANCELADOS'}` : null,
+    estado: nSinSumar ? `${nSinSumar} SIN SUMAR` : null,
   };
   COLS_DIARIA.forEach((c, i) => {
     const celda = rt.getCell(i + 1);
@@ -571,7 +568,7 @@ function hojaDiaria(ws: Worksheet, dia: string, filas: FilaPedido[], colores: Ma
 
 /** Totales por día cuando el rango tiene varios días. */
 function hojaResumenDias(ws: Worksheet, dias: [string, FilaPedido[]][]): void {
-  const enc = ['DÍA', 'PEDIDOS', 'CANT', 'VENTA', 'GANANCIA TIENDA', 'GANANCIA VENDEDOR', 'DOMICILIOS', 'TOTAL RECOGIDA'];
+  const enc = ['DÍA', 'ENTREGADOS', 'CANT', 'VENTA', 'GANANCIA TIENDA', 'GANANCIA VENDEDOR', 'DOMICILIOS', 'TOTAL RECOGIDA'];
   ws.columns = [26, 10, 8, 14, 16, 18, 13, 16].map((w) => ({ width: w }));
   enc.forEach((t, i) => {
     const c = ws.getRow(1).getCell(i + 1);
@@ -579,16 +576,15 @@ function hojaResumenDias(ws: Worksheet, dias: [string, FilaPedido[]][]): void {
     estilarCelda(c, { fill: ROSA_ENCABEZADO, bold: true });
   });
   dias.forEach(([dia, todas], idx) => {
-    const filas = todas.filter(vigente);
+    const filas = todas.filter(entregado);
     const tot = (fn: (f: FilaPedido) => number) => filas.reduce((s, f) => s + fn(f), 0);
-    const totEnt = (fn: (f: FilaPedido) => number) => todas.filter(entregado).reduce((s, f) => s + fn(f), 0);
     const valores = [
       tituloDia(dia),
       filas.length,
       tot((f) => f.cantidad),
       tot((f) => f.venta),
-      totEnt(gananciaTiendaDe),
-      totEnt(gananciaVendedorDe),
+      tot(gananciaTiendaDe),
+      tot(gananciaVendedorDe),
       tot((f) => f.domicilio),
       tot((f) => f.total),
     ];

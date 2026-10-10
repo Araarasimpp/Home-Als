@@ -210,3 +210,27 @@ tfoot td {
   font-size: 13px;
   color: var(--k-text-soft, var(--text-soft));
 }
+
+// Pedidos que no están entregados: se ven, pero no suman en los totales
+tr.no-suma td {
+  text-decoration: line-through;
+  text-decoration-color: rgba(120, 120, 130, 0.7);
+  opacity: 0.55;
+}
+
+// La etiqueta de estado se deja legible para saber por qué no suma
+tr.no-suma td:nth-child(2) {
+  text-decoration: none;
+  opacity: 1;
+}
+
+.solo-entregados {
+  font-weight: 500;
+  opacity: 0.7;
+}
+
+.nota-tachados {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--text-soft);
+}

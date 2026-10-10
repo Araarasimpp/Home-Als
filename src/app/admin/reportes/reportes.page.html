@@ -57,7 +57,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let f of filas">
+          <tr *ngFor="let f of filas" [class.no-suma]="noSuma(f)" [attr.title]="noSuma(f) ? 'No suma: el pedido no está entregado' : null">
             <td class="text-soft">#{{ f.numero }}</td>
             <td><span class="badge" [ngClass]="claseEstado(f.estado)">{{ etiquetaEstado(f.estado) }}</span></td>
             <td class="text-soft">{{ formatoFecha(f.created_at) }}</td>
@@ -78,7 +78,7 @@
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="7">Totales del período</td>
+            <td colspan="7">Totales del período <span class="solo-entregados">(solo entregados)</span></td>
             <td>{{ totalCantidad }}</td>
             <td class="ganancia">{{ formatoMoneda(totalGananciaTienda) }}</td>
             <td>{{ formatoMoneda(totalPedido) }}</td>
@@ -88,6 +88,9 @@
           </tr>
         </tfoot>
       </table>
+      <p class="nota-tachados" *ngIf="hayNoSumados">
+        Los pedidos <s>tachados</s> (pendientes, en ruta o cancelados) se muestran pero no suman en los totales.
+      </p>
       <p class="nota-envio" *ngIf="filas.length && totalEnvioAsumido !== 0">
         Envíos que pone la tienda (pago al domiciliario − domicilio cobrado):
         <strong>{{ formatoMoneda(totalEnvioAsumido) }}</strong>.

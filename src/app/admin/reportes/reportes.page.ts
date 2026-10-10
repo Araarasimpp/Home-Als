@@ -210,16 +210,29 @@ export class ReportesPage implements OnInit {
     this.cdr.detectChanges();
   }
 
+  // Todos los totales cuentan solo pedidos ENTREGADOS; los demás se ven tachados en la tabla
+  private get entregados() {
+    return this.pedidosUnicos.filter((p) => p.entregado);
+  }
+
+  noSuma(f: FilaReporte): boolean {
+    return f.estado !== 'entregado';
+  }
+
+  get hayNoSumados(): boolean {
+    return this.filas.some((f) => this.noSuma(f));
+  }
+
   get totalPedido(): number {
-    return this.pedidosUnicos.reduce((s, p) => s + p.total, 0);
+    return this.entregados.reduce((s, p) => s + p.total, 0);
   }
 
   get totalDomicilio(): number {
-    return this.pedidosUnicos.reduce((s, p) => s + p.valorDomicilio, 0);
+    return this.entregados.reduce((s, p) => s + p.valorDomicilio, 0);
   }
 
   get totalPagoDomiciliario(): number {
-    return this.pedidosUnicos.reduce((s, p) => s + p.pagoDomiciliario, 0);
+    return this.entregados.reduce((s, p) => s + p.pagoDomiciliario, 0);
   }
 
   /** Lo que la tienda pone de su bolsillo en envíos (pago al domiciliario − cobro al cliente), solo entregados. */
@@ -239,7 +252,7 @@ export class ReportesPage implements OnInit {
   }
 
   get totalCantidad(): number {
-    return this.filas.reduce((s, f) => s + f.cantidad, 0);
+    return this.filas.filter((f) => !this.noSuma(f)).reduce((s, f) => s + f.cantidad, 0);
   }
 
   /**
