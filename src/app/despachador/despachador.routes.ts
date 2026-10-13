@@ -43,9 +43,16 @@ export const DESPACHADOR_ROUTES: Routes = [
       },
       {
         path: 'ventas-del-local',
-        data: { rutaNueva: '/despachador/venta-local' },
+        data: { rutaNueva: '/despachador/venta-local', rutaEditar: '/despachador/ventas-del-local' },
         loadComponent: () =>
           import('../admin/ventas-local/ventas-local.page').then((m) => m.VentasLocalPage),
+      },
+      {
+        // Corregir una venta del local (producto, cantidad, precio o pago)
+        path: 'ventas-del-local/:id/editar',
+        data: { volverA: '/despachador/ventas-del-local' },
+        loadComponent: () =>
+          import('../vendedor/nuevo-pedido/nuevo-pedido.page').then((m) => m.NuevoPedidoPage),
       },
       {
         path: 'cuadres',

@@ -95,6 +95,10 @@
               </span>
             </ng-template>
           </ng-container>
+          <a class="vl-editar" *ngIf="editable(v)" [routerLink]="[rutaEditar, v.id, 'editar']" [attr.aria-label]="'Editar venta #' + v.numero">
+            <ion-icon name="create-outline" aria-hidden="true"></ion-icon>
+            Editar
+          </a>
         </div>
       </li>
     </ul>

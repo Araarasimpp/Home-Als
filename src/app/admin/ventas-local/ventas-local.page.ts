@@ -5,7 +5,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { IonIcon } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, receiptOutline, cashOutline, phonePortraitOutline, swapHorizontalOutline, alertCircleOutline } from 'ionicons/icons';
+import { add, receiptOutline, cashOutline, phonePortraitOutline, swapHorizontalOutline, alertCircleOutline, createOutline } from 'ionicons/icons';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { EstadoPedido, MetodoPago, efectivoDePedido, etiquetaMetodo, transferenciaDePedido } from '../../shared/models/models';
 import { finDiaColombia, formatoFechaCO, formatoHoraCO, hoyColombiaISO, inicioDiaColombia } from '../../shared/fecha-colombia';
@@ -51,6 +51,8 @@ export class VentasLocalPage implements OnInit, OnDestroy {
   fecha = hoyColombiaISO();
   filtroMetodo: FiltroMetodo = 'todos';
   readonly rutaNueva: string;
+  /** Base para editar una venta (solo admin y despachador; el vendedor no edita). */
+  readonly rutaEditar: string | null;
 
   previewUrl: string | null = null;
   abriendoId: string | null = null;
@@ -60,7 +62,8 @@ export class VentasLocalPage implements OnInit, OnDestroy {
 
   constructor(private supabase: SupabaseService, private cdr: ChangeDetectorRef, route: ActivatedRoute) {
     this.rutaNueva = (route.snapshot.data['rutaNueva'] as string) ?? '../venta-local';
-    addIcons({ add, receiptOutline, cashOutline, phonePortraitOutline, swapHorizontalOutline, alertCircleOutline });
+    this.rutaEditar = (route.snapshot.data['rutaEditar'] as string) ?? null;
+    addIcons({ add, receiptOutline, cashOutline, phonePortraitOutline, swapHorizontalOutline, alertCircleOutline, createOutline });
   }
 
   async ngOnInit(): Promise<void> {
@@ -161,6 +164,11 @@ export class VentasLocalPage implements OnInit, OnDestroy {
 
   conteo(m: FiltroMetodo): number {
     return m === 'todos' ? this.ventas.length : this.ventas.filter((v) => v.metodo_pago === m).length;
+  }
+
+  /** Se puede corregir si quien mira es admin/despachador y la venta no está cancelada. */
+  editable(v: VentaLocal): boolean {
+    return !!this.rutaEditar && v.estado !== 'cancelado';
   }
 
   pideComprobante(v: VentaLocal): boolean {

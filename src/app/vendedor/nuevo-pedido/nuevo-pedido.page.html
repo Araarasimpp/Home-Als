@@ -25,6 +25,10 @@
 
   <ng-template #formulario>
     <div class="aviso-edicion" *ngIf="pedidoEditado" role="note">
+      <span *ngIf="esLocal; else avisoDomicilio">
+        Venta del local: puedes corregir productos, cantidades, precios y la forma de pago. El stock se ajusta al guardar.
+      </span>
+      <ng-template #avisoDomicilio>
       <ng-container [ngSwitch]="pedidoEditado.estado">
         <span *ngSwitchCase="'entregado'">
           Este pedido ya está entregado.
@@ -34,6 +38,7 @@
         <span *ngSwitchCase="'en_ruta'">Este pedido va en camino: avísale al domiciliario si cambias productos o el valor.</span>
         <span *ngSwitchDefault>Puedes cambiar productos, cantidades, precios y datos del cliente. El stock se ajusta al guardar.</span>
       </ng-container>
+      </ng-template>
     </div>
     <app-esqueleto *ngIf="cargandoPedido" tipo="formulario" [cantidad]="6" etiqueta="Cargando pedido"></app-esqueleto>
     <div class="np-grid" [hidden]="cargandoPedido">

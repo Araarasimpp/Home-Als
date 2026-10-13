@@ -46,9 +46,16 @@ export const ADMIN_ROUTES: Routes = [
       },
       {
         path: 'ventas-del-local',
-        data: { rutaNueva: '/admin/venta-local' },
+        data: { rutaNueva: '/admin/venta-local', rutaEditar: '/admin/ventas-del-local' },
         loadComponent: () =>
           import('./ventas-local/ventas-local.page').then((m) => m.VentasLocalPage),
+      },
+      {
+        // Corregir una venta del local (producto, cantidad, precio o pago)
+        path: 'ventas-del-local/:id/editar',
+        data: { volverA: '/admin/ventas-del-local' },
+        loadComponent: () =>
+          import('../vendedor/nuevo-pedido/nuevo-pedido.page').then((m) => m.NuevoPedidoPage),
       },
       {
         path: 'cuadres',
