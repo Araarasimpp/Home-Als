@@ -104,8 +104,10 @@ import { NotificacionesService, Aviso } from '../../core/services/notificaciones
       @keyframes subir { from { opacity: 0; transform: translateY(6px); } }
       header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--border-soft); }
       h2 { margin: 0; font-size: 15px; font-weight: 600; }
-      .estado-avisos { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 10px 14px 0; }
-      .estado-avisos .permiso-ok { margin: 0; }
+      .estado-avisos { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 10px 14px 0; }
+      /* el texto se acomoda en varias líneas y el botón nunca se sale del recuadro */
+      .estado-avisos .permiso-ok { margin: 0; flex: 1 1 auto; min-width: 0; line-height: 1.35; }
+      .estado-avisos .link-off { flex: 0 0 auto; }
       .permiso-ok { flex-shrink: 0; margin: 10px 14px 0; font-size: 12px; color: var(--st-entregado); }
       .link-off { color: var(--text-soft); white-space: nowrap; text-decoration: underline; }
       .link-off:disabled, .permiso button:disabled { opacity: .6; cursor: progress; }
