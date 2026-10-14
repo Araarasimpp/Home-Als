@@ -14,7 +14,7 @@
 //
 // Con "Todos los vendedores" se arma en cambio la planilla "VENTA DIARIA": una
 // hoja por día con todos los pedidos agrupados por vendedor (CANT, PRODUCTO,
-// COSTO, VENTA, GANANCIA TIENDA, GANANCIA VENDEDOR, DOMICILIO, TOTAL RECOGIDA,
+// COSTO, VENTA, GANANCIA TIENDA, GANANCIA VENDEDOR, DOMICILIO (pago al domiciliario), TOTAL RECOGIDA,
 // MENSAJERO, VENDEDOR, ESTADO) y una hoja "Resumen" por día cuando hay varios
 // días. Ahí se listan todos los pedidos, pero los totales solo suman los
 // ENTREGADOS; los demás (pendientes, en ruta, cancelados) se ven tachados.
@@ -143,8 +143,12 @@ async function cargarGrupos(db: SupabaseClient, o: OpcionesExcel, incluirCancela
       venta += q * Number(i.precio_unitario);
     }
 
-    const domicilio = Number(p.valor_domicilio || 0);
-    const esLocal = p.canal === 'local' || (!p.domiciliario_id && domicilio === 0);
+    const cobradoDomicilio = Number(p.valor_domicilio || 0);
+    const esLocal = p.canal === 'local' || (!p.domiciliario_id && cobradoDomicilio === 0);
+    // DOMICILIO = lo que recibe el domiciliario (en barrios normales al cliente se le
+    // cobran 9.000 y la tienda pone 1.000 para pagarle 10.000). TOTAL RECOGIDA sigue
+    // siendo lo que se le cobró al cliente.
+    const domicilio = esLocal ? 0 : Number(p.pago_domiciliario ?? cobradoDomicilio);
     let mensajero: string;
     if (esLocal) {
       mensajero = 'LOCAL';
