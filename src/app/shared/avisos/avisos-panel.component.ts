@@ -41,7 +41,19 @@ import { NotificacionesService, Aviso } from '../../core/services/notificaciones
             <button (click)="avisos.pedirPermiso()">Intentar de nuevo</button>
           </div>
         } @else if (avisos.push() === 'activo') {
-          <p class="permiso-ok">Avisos activos en este dispositivo, también con la app cerrada.</p>
+          <div class="estado-avisos">
+            <p class="permiso-ok">Avisos activos en este dispositivo, también con la app cerrada.</p>
+            <button class="link link-off" (click)="avisos.desactivar()" [disabled]="avisos.cambiando()">
+              {{ avisos.cambiando() ? 'Desactivando…' : 'Desactivar' }}
+            </button>
+          </div>
+        } @else if (avisos.push() === 'desactivado') {
+          <div class="permiso permiso-off">
+            <p>Avisos desactivados en este dispositivo: no llegan con la app cerrada ni suenan. Aquí en la campana los sigues viendo.</p>
+            <button (click)="avisos.reactivar()" [disabled]="avisos.cambiando()">
+              {{ avisos.cambiando() ? 'Activando…' : 'Volver a activar' }}
+            </button>
+          </div>
         }
 
         <div class="lista">
@@ -92,7 +104,11 @@ import { NotificacionesService, Aviso } from '../../core/services/notificaciones
       @keyframes subir { from { opacity: 0; transform: translateY(6px); } }
       header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--border-soft); }
       h2 { margin: 0; font-size: 15px; font-weight: 600; }
+      .estado-avisos { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 10px 14px 0; }
+      .estado-avisos .permiso-ok { margin: 0; }
       .permiso-ok { flex-shrink: 0; margin: 10px 14px 0; font-size: 12px; color: var(--st-entregado); }
+      .link-off { color: var(--text-soft); white-space: nowrap; text-decoration: underline; }
+      .link-off:disabled, .permiso button:disabled { opacity: .6; cursor: progress; }
       .link { border: none; background: none; padding: 4px 0; color: var(--accent); font-size: 12px; font-weight: 500; cursor: pointer; }
       .permiso { flex-shrink: 0; margin: 10px 12px 0; padding: 10px 12px; border-radius: var(--radius); background: var(--accent-wash); font-size: 13px; line-height: 1.45; }
       .permiso p { margin: 0 0 8px; }
