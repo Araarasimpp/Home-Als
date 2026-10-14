@@ -57,6 +57,10 @@ export class NuevoPedidoPage implements OnInit, OnDestroy {
   barrio = '';
   zonas: Zona[] = [];
   valorDomicilio: number = 0;
+  /** Domicilio que se cobra cuando el barrio no está en la lista (Configuración). */
+  domicilioDefecto = 10000;
+  /** true si el vendedor escribió el domicilio a mano (entonces no se cambia solo). */
+  private domicilioManual = false;
   observaciones = '';
 
   guardando = false;
@@ -142,15 +146,37 @@ export class NuevoPedidoPage implements OnInit, OnDestroy {
   }
 
   async cargarZonas(): Promise<void> {
-    const { data, error } = await this.supabase.client
-      .from('zonas_domicilio')
-      .select('*')
-      .order('nombre');
+    const [{ data, error }, { data: conf }] = await Promise.all([
+      this.supabase.client.from('zonas_domicilio').select('*').order('nombre'),
+      this.supabase.client.from('configuracion').select('*').eq('id', true).maybeSingle(),
+    ]);
 
     if (!error && data) {
       this.zonas = data;
     }
+    const defecto = Number((conf as any)?.valor_domicilio);
+    if (defecto >= 0 && (conf as any)?.valor_domicilio != null) this.domicilioDefecto = defecto;
+    // Pedido nuevo a domicilio: arranca con el valor por defecto
+    if (!this.esLocal && !this.esEdicion && !this.domicilioManual) this.aplicarDomicilioDelBarrio();
     this.cdr.detectChanges();
+  }
+
+  /** Tarifa del barrio si está en la lista; si no, el domicilio por defecto. */
+  private aplicarDomicilioDelBarrio(): void {
+    const b = this.barrio.trim().toLowerCase();
+    const zona = b ? this.zonas.find((z) => z.nombre.trim().toLowerCase() === b) : undefined;
+    this.valorDomicilio = zona ? Number(zona.valor) : this.domicilioDefecto;
+  }
+
+  /** Al escribir el barrio se actualiza el domicilio, salvo que lo hayan cambiado a mano. */
+  onBarrio(valor: string): void {
+    this.barrio = valor;
+    if (!this.esEdicion && !this.domicilioManual) this.aplicarDomicilioDelBarrio();
+  }
+
+  onDomicilioManual(valor: number): void {
+    this.valorDomicilio = valor;
+    this.domicilioManual = true;
   }
 
   get esEdicion(): boolean {
@@ -280,8 +306,7 @@ export class NuevoPedidoPage implements OnInit, OnDestroy {
     this.direccion = c.direccion ?? this.direccion;
     if (c.barrio) {
       this.barrio = c.barrio;
-      const zona = this.zonas.find((z) => z.nombre.trim().toLowerCase() === c.barrio!.trim().toLowerCase());
-      if (zona) this.valorDomicilio = zona.valor;
+      if (!this.domicilioManual) this.aplicarDomicilioDelBarrio();
     }
     this.datosClienteUsados = true;
   }
@@ -301,6 +326,7 @@ export class NuevoPedidoPage implements OnInit, OnDestroy {
   seleccionarZona(zona: Zona): void {
     this.barrio = zona.nombre;
     this.valorDomicilio = zona.valor;
+    this.domicilioManual = false;
     if (this.esEdicion && zona.pago_domiciliario != null) {
       this.pagoDomiciliario = Number(zona.pago_domiciliario);
     }
@@ -620,7 +646,8 @@ export class NuevoPedidoPage implements OnInit, OnDestroy {
     this.clienteTelefono = '';
     this.direccion = '';
     this.barrio = '';
-    this.valorDomicilio = 0;
+    this.domicilioManual = false;
+    this.valorDomicilio = this.domicilioDefecto;
     this.observaciones = '';
     this.metodoPago = null;
     this.montoEfectivo = null;

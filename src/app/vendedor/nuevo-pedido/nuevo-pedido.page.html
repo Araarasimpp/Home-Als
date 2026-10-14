@@ -212,7 +212,8 @@
               <input
                 id="barrio"
                 type="text"
-                [(ngModel)]="barrio"
+                [ngModel]="barrio"
+                (ngModelChange)="onBarrio($event)"
                 (focus)="mostrarSugerenciasBarrio = true"
                 (blur)="cerrarSugerenciasBarrio()"
                 placeholder="Escribe o elige"
@@ -238,7 +239,7 @@
               <label for="domicilio">{{ esEdicion ? 'Domicilio cobrado al cliente' : 'Domicilio' }}</label>
               <span class="precio-input precio-input-lg">
                 <span aria-hidden="true">$</span>
-                <input id="domicilio" type="number" class="num" inputmode="numeric" min="0" [(ngModel)]="valorDomicilio" />
+                <input id="domicilio" type="number" class="num" inputmode="numeric" min="0" [ngModel]="valorDomicilio" (ngModelChange)="onDomicilioManual($event)" />
               </span>
             </div>
             </ng-container>
