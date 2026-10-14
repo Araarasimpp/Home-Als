@@ -31,6 +31,10 @@ export const VENDEDOR_ROUTES: Routes = [
         loadComponent: () => import('../shared/ranking/ranking.page').then((m) => m.RankingPage),
       },
       {
+        path: 'perfil',
+        loadComponent: () => import('../shared/perfil/mi-perfil.page').then((m) => m.MiPerfilPage),
+      },
+      {
         path: 'ventas-del-local',
         data: { rutaNueva: '/vendedor/venta-local' },
         loadComponent: () =>

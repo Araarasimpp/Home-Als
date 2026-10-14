@@ -16,6 +16,10 @@ export const DOMICILIARIO_ROUTES: Routes = [
           import('./inicio/inicio.page').then((m) => m.InicioDomiciliarioPage),
       },
       {
+        path: 'perfil',
+        loadComponent: () => import('../shared/perfil/mi-perfil.page').then((m) => m.MiPerfilPage),
+      },
+      {
         path: 'cuadres',
         loadComponent: () => import('./cuadres/cuadres.page').then((m) => m.CuadresPage),
       },

@@ -9,17 +9,18 @@ import { ThemeService } from '../../core/services/theme.service';
 import { NotificacionesService } from '../../core/services/notificaciones.service';
 import { AvisosPanelComponent } from '../../shared/avisos/avisos-panel.component';
 import { CambioRolComponent } from '../../shared/cambio-rol/cambio-rol.component';
+import { AvatarComponent } from '../../shared/avatar/avatar.component';
 
 @Component({
   selector: 'app-domiciliario-layout',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, IonIcon, AvisosPanelComponent, CambioRolComponent],
+  imports: [AvatarComponent, CommonModule, RouterLink, RouterLinkActive, RouterOutlet, IonIcon, AvisosPanelComponent, CambioRolComponent],
   templateUrl: './domiciliario-layout.component.html',
   styleUrls: ['../../shared/pill-nav.scss', './domiciliario-layout.component.scss'],
 })
 export class DomiciliarioLayoutComponent implements OnInit {
   constructor(
-    private supabase: SupabaseService,
+    public supabase: SupabaseService,
     private router: Router,
     public theme: ThemeService,
     public avisos: NotificacionesService

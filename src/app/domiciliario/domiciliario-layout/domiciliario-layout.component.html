@@ -23,14 +23,10 @@
       <ion-icon name="swap-horizontal-outline"></ion-icon>
       <span class="tab-label">Rol</span>
     </button>
-    <button class="pill-action" (click)="toggleTheme()">
-      <ion-icon [name]="theme.isDark() ? 'sunny-outline' : 'moon-outline'"></ion-icon>
-      <span class="tab-label">{{ theme.isDark() ? 'Claro' : 'Oscuro' }}</span>
-    </button>
-    <button class="pill-action" (click)="logout()">
-      <ion-icon name="log-out-outline"></ion-icon>
-      <span class="tab-label">Salir</span>
-    </button>
+    <a routerLink="/domiciliario/perfil" routerLinkActive="active" class="tab-perfil" (click)="avisos.cerrar()" aria-label="Mi perfil">
+      <app-avatar [nombre]="supabase.perfil()?.nombre" [url]="supabase.perfil()?.avatar_url" [size]="24"></app-avatar>
+      <span class="tab-label">Perfil</span>
+    </a>
   </nav>
 
   <app-avisos-panel posicion="barra"></app-avisos-panel>

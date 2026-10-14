@@ -1,0 +1,134 @@
+<div class="page pf">
+  <ng-container *ngIf="!loading; else cargando">
+    <!-- Identidad -->
+    <header class="pf-id">
+      <div class="pf-foto">
+        <app-avatar [nombre]="perfil?.nombre" [url]="perfil?.avatar_url" [size]="112"></app-avatar>
+        <label class="pf-camara" [class.ocupado]="guardandoFoto" aria-label="Cambiar foto de perfil">
+          <ion-icon name="camera-outline" aria-hidden="true"></ion-icon>
+          <input type="file" accept="image/*" (change)="elegirFoto($event)" [disabled]="guardandoFoto" />
+        </label>
+      </div>
+      <h1>{{ perfil?.nombre }}</h1>
+      <p class="pf-correo">{{ email }}</p>
+      <ul class="pf-roles" aria-label="Tus roles">
+        <li *ngFor="let r of roles">{{ r }}</li>
+      </ul>
+      <div class="pf-foto-acciones">
+        <label class="link">
+          {{ perfil?.avatar_url ? 'Cambiar foto' : 'Poner foto' }}
+          <input type="file" accept="image/*" (change)="elegirFoto($event)" [disabled]="guardandoFoto" />
+        </label>
+        <ng-container *ngIf="perfil?.avatar_url">
+          <span aria-hidden="true">·</span>
+          <button type="button" class="link link-suave" (click)="quitarFoto()" [disabled]="guardandoFoto">Quitar</button>
+        </ng-container>
+      </div>
+      <p class="pf-error" role="alert" *ngIf="errorFoto">{{ errorFoto }}</p>
+    </header>
+
+    <!-- Datos -->
+    <section class="pf-grupo" aria-labelledby="t-datos">
+      <h2 id="t-datos">Tus datos</h2>
+      <div class="pf-lista">
+        <div class="pf-fila">
+          <span class="pf-etq">Nombre</span>
+          <span class="pf-val">{{ perfil?.nombre }}</span>
+        </div>
+        <div class="pf-fila">
+          <span class="pf-etq">Correo</span>
+          <span class="pf-val pf-largo">{{ email }}</span>
+        </div>
+        <form class="pf-fila pf-editable" (ngSubmit)="guardarTelefono()">
+          <label class="pf-etq" for="pf-tel">Teléfono</label>
+          <input id="pf-tel" name="tel" type="tel" inputmode="tel" autocomplete="tel" [(ngModel)]="telefono" placeholder="300 123 4567" />
+          <button type="submit" class="pf-guardar" *ngIf="telefonoCambio" [disabled]="guardandoTel">{{ guardandoTel ? '…' : 'Guardar' }}</button>
+          <span class="pf-ok" *ngIf="avisoTel === 'Guardado'" role="status">Guardado ✓</span>
+        </form>
+      </div>
+      <p class="pf-nota" *ngIf="avisoTel && avisoTel !== 'Guardado'" role="alert">{{ avisoTel }}</p>
+      <p class="pf-nota">Para cambiar tu nombre o tu correo, pídeselo al administrador.</p>
+    </section>
+
+    <!-- Contraseña -->
+    <section class="pf-grupo" aria-labelledby="t-clave">
+      <h2 id="t-clave">Contraseña</h2>
+      <div class="pf-lista">
+        <button type="button" class="pf-fila pf-boton" (click)="alternarClave()" [attr.aria-expanded]="claveAbierta">
+          <ion-icon name="lock-closed-outline" aria-hidden="true"></ion-icon>
+          <span class="pf-val">Cambiar contraseña</span>
+          <ion-icon class="pf-flecha" [class.abierta]="claveAbierta" name="chevron-down-outline" aria-hidden="true"></ion-icon>
+        </button>
+        <form class="pf-clave" *ngIf="claveAbierta" (ngSubmit)="guardarClave()">
+          <label for="pf-nueva">Nueva contraseña</label>
+          <input id="pf-nueva" name="nueva" type="password" autocomplete="new-password" [(ngModel)]="clave" (ngModelChange)="evaluar()" />
+          <app-medidor-clave [evaluacion]="evaluacion"></app-medidor-clave>
+          <label for="pf-confirmar">Repítela</label>
+          <input id="pf-confirmar" name="confirmar" type="password" autocomplete="new-password" [(ngModel)]="confirmar" [attr.aria-invalid]="noCoinciden" />
+          <p class="pf-error" *ngIf="noCoinciden">No coinciden.</p>
+          <p class="pf-error" role="alert" *ngIf="errorClave">{{ errorClave }}</p>
+          <button type="submit" class="btn btn-primary" [disabled]="guardandoClave">{{ guardandoClave ? 'Guardando…' : 'Guardar contraseña' }}</button>
+        </form>
+      </div>
+      <p class="pf-nota pf-exito" *ngIf="claveOk" role="status">Contraseña cambiada. La próxima vez entra con la nueva.</p>
+    </section>
+
+    <!-- Preferencias -->
+    <section class="pf-grupo" aria-labelledby="t-pref">
+      <h2 id="t-pref">En este dispositivo</h2>
+      <div class="pf-lista">
+        <div class="pf-fila">
+          <span class="pf-etq">Apariencia</span>
+          <div class="segmented" role="group" aria-label="Apariencia">
+            <button type="button" [class.on]="!theme.isDark()" [attr.aria-pressed]="!theme.isDark()" (click)="ponerTema(false)">
+              <ion-icon name="sunny-outline" aria-hidden="true"></ion-icon> Claro
+            </button>
+            <button type="button" [class.on]="theme.isDark()" [attr.aria-pressed]="theme.isDark()" (click)="ponerTema(true)">
+              <ion-icon name="moon-outline" aria-hidden="true"></ion-icon> Oscuro
+            </button>
+          </div>
+        </div>
+        <div class="pf-fila">
+          <span class="pf-etq">Avisos</span>
+          <ng-container [ngSwitch]="avisos.push()">
+            <ng-container *ngSwitchCase="'activo'">
+              <span class="pf-val pf-estado-ok">Activos</span>
+              <button type="button" class="link link-suave" (click)="avisos.desactivar()" [disabled]="avisos.cambiando()">Desactivar</button>
+            </ng-container>
+            <ng-container *ngSwitchCase="'desactivado'">
+              <span class="pf-val">Desactivados</span>
+              <button type="button" class="link" (click)="avisos.reactivar()" [disabled]="avisos.cambiando()">Activar</button>
+            </ng-container>
+            <ng-container *ngSwitchCase="'instalar-ios'">
+              <span class="pf-val pf-largo">Agrega la app a tu pantalla de inicio para recibirlos</span>
+            </ng-container>
+            <ng-container *ngSwitchCase="'no-soportado'">
+              <span class="pf-val">No disponibles en este navegador</span>
+            </ng-container>
+            <ng-container *ngSwitchDefault>
+              <span class="pf-val">Apagados</span>
+              <button type="button" class="link" (click)="avisos.pedirPermiso()">Activar</button>
+            </ng-container>
+          </ng-container>
+        </div>
+      </div>
+    </section>
+
+    <button type="button" class="pf-salir" (click)="cerrarSesion()">
+      <ion-icon name="log-out-outline" aria-hidden="true"></ion-icon>
+      Cerrar sesión
+    </button>
+  </ng-container>
+
+  <ng-template #cargando>
+    <app-esqueleto tipo="formulario" [cantidad]="5" etiqueta="Cargando tu perfil"></app-esqueleto>
+  </ng-template>
+
+  <app-foto-editor
+    *ngIf="archivoFoto"
+    [archivo]="archivoFoto"
+    [guardando]="guardandoFoto"
+    (listo)="guardarFoto($event)"
+    (cancelar)="cancelarFoto()"
+  ></app-foto-editor>
+</div>

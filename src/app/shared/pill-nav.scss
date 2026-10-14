@@ -171,3 +171,13 @@
   max-height: calc(100dvh - var(--tabbar-h) - 40px);
   overflow-y: auto;
 }
+
+// Pestaña "Perfil": la foto de la persona en vez de un ícono; activa = aro azul
+.pill-nav .tab-perfil app-avatar {
+  box-shadow: 0 0 0 1.5px var(--border-strong);
+  transition: box-shadow var(--dur) var(--ease);
+}
+
+.pill-nav .tab-perfil.active app-avatar {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--accent);
+}

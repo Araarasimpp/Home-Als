@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 import { environment } from '../../../environments/environment';
 
@@ -16,6 +16,7 @@ export interface Profile {
   /** Todos los roles que el admin le dio. Puede cambiar de modo entre ellos. */
   roles?: UserRole[];
   activo: boolean;
+  avatar_url?: string | null;
   /** Solo aplica a vendedores. 'margen' = lo que cobre sobre el precio base. */
   comision_tipo?: ComisionTipo;
   /** Porcentaje de la ganancia (0-100) cuando comision_tipo = 'porcentaje'. */
@@ -28,6 +29,9 @@ export interface Profile {
 export class SupabaseService {
   public client: SupabaseClient;
   private currentProfile: Profile | null = null;
+
+  /** Perfil de la sesión, para mostrar nombre y foto en la navegación (se actualiza al cambiarlos). */
+  readonly perfil = signal<Profile | null>(null);
 
   /** true cuando el admin entró con contraseña pero le falta el código de 2 pasos. */
   public mfaPendiente = false;
@@ -78,6 +82,7 @@ export class SupabaseService {
     // (si no, en un celular compartido le llegarían a la siguiente persona)
     await this.quitarPushDeEsteDispositivo();
     this.currentProfile = null;
+    this.perfil.set(null);
     return this.client.auth.signOut();
   }
 
@@ -135,6 +140,7 @@ export class SupabaseService {
     this.mfaPendiente = false;
 
     this.currentProfile = perfil;
+    this.perfil.set(perfil);
     return this.currentProfile;
   }
 
@@ -196,5 +202,12 @@ export class SupabaseService {
 
   clearCachedProfile() {
     this.currentProfile = null;
+  }
+
+  /** Aplica cambios del propio perfil a la copia en memoria (sin volver a consultar). */
+  actualizarPerfilLocal(cambios: Partial<Profile>): void {
+    if (!this.currentProfile) return;
+    this.currentProfile = { ...this.currentProfile, ...cambios };
+    this.perfil.set(this.currentProfile);
   }
 }
