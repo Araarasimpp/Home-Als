@@ -937,3 +937,69 @@
     height: 36px;
   }
 }
+
+// ---------- Alistamiento ----------
+.btn-alistar,
+.chip-alistado,
+.btn-imprimir-alistados {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.btn-alistar {
+  height: 28px;
+  margin-top: 4px;
+  padding: 0 10px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.btn-alistar:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.chip-alistado {
+  height: 24px;
+  margin-top: 4px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--st-entregado) 14%, transparent);
+  color: var(--st-entregado);
+}
+
+.btn-alistar ion-icon,
+.chip-alistado ion-icon,
+.btn-imprimir-alistados ion-icon {
+  font-size: 14px;
+}
+
+.btn-imprimir-alistados {
+  flex-shrink: 0;
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--on-accent);
+  cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  .btn-alistar {
+    height: 34px;
+    padding: 0 14px;
+  }
+
+  .btn-imprimir-alistados {
+    height: 34px;
+  }
+}

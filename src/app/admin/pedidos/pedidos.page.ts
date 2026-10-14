@@ -5,7 +5,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { IonIcon } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, searchOutline, ellipsisHorizontal, printOutline, close } from 'ionicons/icons';
+import { add, searchOutline, ellipsisHorizontal, printOutline, close, cubeOutline, checkmarkCircle } from 'ionicons/icons';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { EstadoPedido } from '../../shared/models/models';
 import { EstadoIconComponent } from '../../shared/estado-icon/estado-icon.component';
@@ -28,6 +28,8 @@ interface PedidoFila {
   total: number;
   domiciliario_id: string | null;
   rotulo_impreso_at: string | null;
+  /** Cuándo se empacó (pendiente alistado, listo para despachar). */
+  alistado_at: string | null;
   created_at: string;
   productos: string;
   items: ItemPedido[];
@@ -46,18 +48,25 @@ interface Domiciliario {
 }
 
 interface GrupoPedidos {
+  clave: Grupo;
   estado: EstadoPedido;
   etiqueta: string;
   pedidos: PedidoFila[];
   subtotal: number;
 }
 
-type FiltroEstado = 'todos' | EstadoPedido;
+/**
+ * "alistado" no es un estado del pedido en la base de datos: es un pedido
+ * pendiente que ya se empacó (alistado_at). Tiene su propia pestaña para ver
+ * qué falta por alistar y para imprimir los rótulos en el orden en que se alistaron.
+ */
+type Grupo = EstadoPedido | 'alistado';
+type FiltroEstado = 'todos' | Grupo;
 type FiltroRotulo = 'todos' | 'pendiente' | 'impreso';
 type FiltroCanal = 'domicilio' | 'local' | 'todos';
 
 // Orden en que se muestran los grupos en la vista "Todos"
-const ORDEN_ESTADOS: EstadoPedido[] = ['pendiente', 'en_ruta', 'entregado', 'cancelado'];
+const ORDEN_GRUPOS: Grupo[] = ['pendiente', 'alistado', 'en_ruta', 'entregado', 'cancelado'];
 
 @Component({
   selector: 'app-pedidos',
@@ -85,6 +94,7 @@ export class PedidosPage implements OnInit, OnDestroy {
   seleccionados = new Set<string>();
   menuAbiertoId: string | null = null;
   imprimiendo = false;
+  alistando = false;
 
   // Esta misma página la usan admin y despachador (ver despachador.routes.ts)
   readonly rutaNuevo: string;
@@ -104,14 +114,16 @@ export class PedidosPage implements OnInit, OnDestroy {
 
   readonly estados: { valor: FiltroEstado; etiqueta: string }[] = [
     { valor: 'pendiente', etiqueta: 'Pendientes' },
+    { valor: 'alistado', etiqueta: 'Alistados' },
     { valor: 'en_ruta', etiqueta: 'En ruta' },
     { valor: 'entregado', etiqueta: 'Entregados' },
     { valor: 'cancelado', etiqueta: 'Cancelados' },
     { valor: 'todos', etiqueta: 'Todos' },
   ];
 
-  private readonly etiquetasGrupo: Record<EstadoPedido, string> = {
-    pendiente: 'Pendientes',
+  private readonly etiquetasGrupo: Record<Grupo, string> = {
+    pendiente: 'Por alistar',
+    alistado: 'Alistados',
     en_ruta: 'En ruta',
     entregado: 'Entregados',
     cancelado: 'Cancelados',
@@ -130,7 +142,7 @@ export class PedidosPage implements OnInit, OnDestroy {
       .join('/');
     this.rutaBase = ruta.startsWith('despachador') ? '/despachador' : '/admin';
     this.rutaNuevo = this.rutaBase + '/pedidos/nuevo';
-    addIcons({ add, searchOutline, ellipsisHorizontal, printOutline, close });
+    addIcons({ add, searchOutline, ellipsisHorizontal, printOutline, close, cubeOutline, checkmarkCircle });
   }
 
   async ngOnInit(): Promise<void> {
@@ -190,11 +202,18 @@ export class PedidosPage implements OnInit, OnDestroy {
     const { data, error } = await this.supabase.client
       .from('pedidos')
       .select(
-        'id, numero, vendedor_id, cliente_nombre, cliente_telefono, direccion, barrio, observaciones, canal, estado, total, domiciliario_id, rotulo_impreso_at, created_at'
+        'id, numero, vendedor_id, cliente_nombre, cliente_telefono, direccion, barrio, observaciones, canal, estado, total, domiciliario_id, rotulo_impreso_at, alistado_at, created_at'
       )
       .order('created_at', { ascending: false });
 
     let pedidos = (data as any[]) ?? [];
+    // Los alistados se numeran (1°, 2°...) en el orden en que se empacaron
+    this.ordenAlistado = new Map(
+      pedidos
+        .filter((p) => p.estado === 'pendiente' && p.alistado_at)
+        .sort((a, b) => a.alistado_at.localeCompare(b.alistado_at))
+        .map((p, i) => [p.id, i + 1])
+    );
 
     if (!error && pedidos.length) {
       const { data: items } = await this.supabase.client
@@ -279,27 +298,125 @@ export class PedidosPage implements OnInit, OnDestroy {
     return lista;
   }
 
+  /** Posición (1°, 2°, ...) de cada pedido alistado según el orden en que se alistó. */
+  ordenAlistado = new Map<string, number>();
+
+  /** Grupo de cada pedido: los pendientes se separan en "por alistar" y "alistados". */
+  grupoDe(p: PedidoFila): Grupo {
+    return p.estado === 'pendiente' && p.alistado_at ? 'alistado' : p.estado;
+  }
+
   get filtrados(): PedidoFila[] {
     const base = this.base;
-    return this.filtroEstado === 'todos' ? base : base.filter((p) => p.estado === this.filtroEstado);
+    return this.filtroEstado === 'todos' ? base : base.filter((p) => this.grupoDe(p) === this.filtroEstado);
   }
 
   conteo(valor: FiltroEstado): number {
     const base = this.base;
-    return valor === 'todos' ? base.length : base.filter((p) => p.estado === valor).length;
+    return valor === 'todos' ? base.length : base.filter((p) => this.grupoDe(p) === valor).length;
   }
 
   get grupos(): GrupoPedidos[] {
     const lista = this.filtrados;
-    return ORDEN_ESTADOS.map((estado) => {
-      const pedidos = lista.filter((p) => p.estado === estado);
+    return ORDEN_GRUPOS.map((clave) => {
+      let pedidos = lista.filter((p) => this.grupoDe(p) === clave);
+      // Los alistados van en el orden en que se empacaron (el primero arriba)
+      if (clave === 'alistado') pedidos = [...pedidos].sort((a, b) => this.puestoAlistado(a) - this.puestoAlistado(b));
       return {
-        estado,
-        etiqueta: this.etiquetasGrupo[estado],
+        clave,
+        estado: clave === 'alistado' ? 'pendiente' : clave,
+        etiqueta: this.etiquetasGrupo[clave],
         pedidos,
         subtotal: pedidos.reduce((s, p) => s + Number(p.total || 0), 0),
       };
     }).filter((g) => g.pedidos.length);
+  }
+
+  // ---------- Alistamiento ----------
+  esAlistado(p: PedidoFila): boolean {
+    return p.estado === 'pendiente' && !!p.alistado_at;
+  }
+
+  puedeAlistar(p: PedidoFila): boolean {
+    return p.estado === 'pendiente' && !p.alistado_at && p.canal !== 'local';
+  }
+
+  private puestoAlistado(p: PedidoFila): number {
+    return (this.esAlistado(p) && this.ordenAlistado.get(p.id)) || Number.MAX_SAFE_INTEGER;
+  }
+
+  /** "1°", "2°"... según el orden en que se alistó; vacío si no está alistado. */
+  ordinalAlistado(p: PedidoFila): string {
+    const n = this.esAlistado(p) ? this.ordenAlistado.get(p.id) : undefined;
+    return n ? `${n}°` : '';
+  }
+
+  /** Pedidos seleccionados que todavía se pueden alistar (pendientes sin alistar). */
+  get seleccionadosPorAlistar(): PedidoFila[] {
+    return this.pedidos.filter((p) => this.seleccionados.has(p.id) && this.puedeAlistar(p));
+  }
+
+  /** Alistados a los que todavía no se les imprime el rótulo. */
+  get alistadosSinRotulo(): PedidoFila[] {
+    return this.pedidos
+      .filter((p) => this.esAlistado(p) && !p.rotulo_impreso_at)
+      .sort((a, b) => this.puestoAlistado(a) - this.puestoAlistado(b));
+  }
+
+  /**
+   * Marca pedidos como alistados. Van uno por uno, del más viejo al más nuevo,
+   * para que el orden de alistamiento (lo pone el servidor) quede igual que el
+   * orden en que se tomaron los pedidos.
+   */
+  async alistar(pedidos: PedidoFila[]): Promise<void> {
+    if (!pedidos.length || this.alistando) return;
+    this.alistando = true;
+    this.menuAbiertoId = null;
+    this.cdr.detectChanges();
+
+    const enOrden = [...pedidos].sort((a, b) => a.created_at.localeCompare(b.created_at));
+    let error: string | null = null;
+    for (const p of enOrden) {
+      const res = await this.supabase.client
+        .from('pedidos')
+        .update({ alistado_at: new Date().toISOString() })
+        .eq('id', p.id)
+        .eq('estado', 'pendiente')
+        .is('alistado_at', null);
+      if (res.error) {
+        error = res.error.message;
+        break;
+      }
+      this.seleccionados.delete(p.id);
+    }
+
+    this.alistando = false;
+    if (error) {
+      alert(
+        /alistado_at|column/i.test(error)
+          ? 'El alistamiento todavía no está activado en el sistema.'
+          : 'No se pudo alistar. ' + error
+      );
+    }
+    await this.cargarPedidos();
+  }
+
+  async quitarAlistado(pedido: PedidoFila): Promise<void> {
+    this.menuAbiertoId = null;
+    const { error } = await this.supabase.client
+      .from('pedidos')
+      .update({ alistado_at: null })
+      .eq('id', pedido.id)
+      .eq('estado', 'pendiente');
+    if (error) alert('No se pudo quitar de alistados. ' + error.message);
+    await this.cargarPedidos();
+  }
+
+  /** Imprime los rótulos de TODOS los alistados que no lo tienen, en el orden en que se alistaron. */
+  async imprimirAlistados(): Promise<void> {
+    const lista = this.alistadosSinRotulo;
+    if (this.imprimiendo || !lista.length) return;
+    await this.imprimirEnOrden(lista);
   }
 
   /** Productos que se muestran con foto; el resto se resume como "+N más". */
@@ -468,7 +585,7 @@ export class PedidosPage implements OnInit, OnDestroy {
     return this.domiciliarios.find((d) => d.id === id)?.avatar_url ?? null;
   }
 
-  etiquetaEstado(estado: EstadoPedido): string {
+  etiquetaEstado(estado: Grupo): string {
     return this.etiquetasGrupo[estado] ?? estado;
   }
 
@@ -510,7 +627,16 @@ export class PedidosPage implements OnInit, OnDestroy {
   // --- Rótulos ---
   async imprimirRotulos(): Promise<void> {
     if (this.seleccionados.size === 0) return;
+    // Los alistados salen primero y en el orden en que se alistaron; el resto
+    // sigue en el orden de la lista (sort es estable).
+    const pedidos = this.pedidos
+      .filter((p) => this.seleccionados.has(p.id))
+      .sort((a, b) => this.puestoAlistado(a) - this.puestoAlistado(b));
+    await this.imprimirEnOrden(pedidos);
+  }
 
+  /** Imprime los rótulos de esos pedidos tal cual vienen ordenados y los marca como impresos. */
+  private async imprimirEnOrden(pedidos: PedidoFila[]): Promise<void> {
     // La ventana se abre antes de cualquier await: si se abre después, el
     // navegador la trata como ventana emergente y la bloquea.
     const ventana = window.open('', '_blank');
@@ -522,7 +648,7 @@ export class PedidosPage implements OnInit, OnDestroy {
 
     this.imprimiendo = true;
     this.cdr.detectChanges();
-    const ids = Array.from(this.seleccionados);
+    const ids = pedidos.map((p) => p.id);
 
     // Productos de cada pedido y datos del negocio (de Configuración), en paralelo
     const [{ data: items, error }, negocio] = await Promise.all([
@@ -541,8 +667,8 @@ export class PedidosPage implements OnInit, OnDestroy {
       return;
     }
 
-    const rotulos = this.pedidos
-      .filter((p) => this.seleccionados.has(p.id) && p.canal !== 'local')
+    const rotulos = pedidos
+      .filter((p) => p.canal !== 'local')
       .map((p) =>
         rotuloHtml(
           {
@@ -565,7 +691,7 @@ export class PedidosPage implements OnInit, OnDestroy {
       .update({ rotulo_impreso_at: new Date().toISOString() })
       .in('id', ids);
 
-    this.seleccionados.clear();
+    ids.forEach((id) => this.seleccionados.delete(id));
     this.imprimiendo = false;
     await this.cargarPedidos();
   }

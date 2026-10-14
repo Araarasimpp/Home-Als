@@ -32,6 +32,16 @@
         <span class="num count">{{ conteo(e.valor) }}</span>
       </button>
     </nav>
+    <button
+      class="btn-imprimir-alistados"
+      *ngIf="filtroEstado === 'alistado' && alistadosSinRotulo.length"
+      (click)="imprimirAlistados()"
+      [disabled]="imprimiendo"
+      title="Imprime los rótulos pendientes de los alistados, en el orden en que se alistaron"
+    >
+      <ion-icon name="print-outline" aria-hidden="true"></ion-icon>
+      {{ imprimiendo ? 'Preparando…' : 'Imprimir alistados (' + alistadosSinRotulo.length + ')' }}
+    </button>
     <select class="select-ghost" [(ngModel)]="filtroCanal" (change)="onCambioCanal()" aria-label="Filtrar por canal de venta">
       <option value="domicilio">Domicilios</option>
       <option value="local">Ventas en local</option>
@@ -101,6 +111,21 @@
               <span class="cliente">{{ p.cliente_nombre }}</span>
               <span class="meta-mobile num">#{{ p.numero }}<ng-container *ngIf="p.barrio">, {{ p.barrio }}</ng-container></span>
             </div>
+            <button
+              type="button"
+              class="btn-alistar"
+              *ngIf="puedeAlistar(p)"
+              (click)="alistar([p])"
+              [disabled]="alistando"
+              [attr.aria-label]="'Alistar pedido ' + p.numero"
+            >
+              <ion-icon name="cube-outline" aria-hidden="true"></ion-icon>
+              Alistar
+            </button>
+            <span class="chip-alistado" *ngIf="esAlistado(p)" [title]="'Alistado en el puesto ' + ordinalAlistado(p)">
+              <ion-icon name="checkmark-circle" aria-hidden="true"></ion-icon>
+              <span class="num">{{ ordinalAlistado(p) }}</span> alistado
+            </span>
           </div>
 
           <div class="c-prods">
@@ -191,6 +216,8 @@
                 <a role="menuitem" *ngIf="p.estado !== 'cancelado'" [routerLink]="rutaEditar(p)" (click)="menuAbiertoId = null">
                   Editar pedido
                 </a>
+                <button role="menuitem" *ngIf="puedeAlistar(p)" (click)="alistar([p])">Alistar</button>
+                <button role="menuitem" *ngIf="esAlistado(p)" (click)="quitarAlistado(p)">Quitar de alistados</button>
                 <button role="menuitem" *ngIf="editable(p)" (click)="cancelarPedido(p)">
                   Cancelar pedido
                 </button>
@@ -216,6 +243,15 @@
       <option value="" selected disabled>{{ asignandoLote ? 'Asignando…' : 'Asignar domiciliario' }}</option>
       <option *ngFor="let d of domiciliarios" [value]="d.id">{{ d.nombre }}</option>
     </select>
+    <button
+      class="bar-btn"
+      *ngIf="seleccionadosPorAlistar.length"
+      (click)="alistar(seleccionadosPorAlistar)"
+      [disabled]="alistando"
+    >
+      <ion-icon name="cube-outline" aria-hidden="true"></ion-icon>
+      {{ alistando ? 'Alistando…' : 'Alistar (' + seleccionadosPorAlistar.length + ')' }}
+    </button>
     <button class="bar-btn" (click)="imprimirRotulos()" [disabled]="imprimiendo">
       <ion-icon name="print-outline" aria-hidden="true"></ion-icon>
       {{ imprimiendo ? 'Preparando…' : 'Imprimir rótulos' }}
