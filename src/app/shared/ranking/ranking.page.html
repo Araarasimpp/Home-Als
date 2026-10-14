@@ -1,0 +1,87 @@
+<div class="page rk">
+  <header class="head">
+    <div>
+      <p class="fecha">{{ periodo === 'hoy' ? 'Hoy' : periodo === 'semana' ? 'Esta semana' : 'Este mes' }}</p>
+      <h1><ion-icon name="trophy-outline" aria-hidden="true"></ion-icon> Ranking</h1>
+    </div>
+  </header>
+
+  <div class="controles rk-controles">
+    <div class="segmented" role="group" aria-label="Quiénes">
+      <button [class.on]="tipo === 'vendedor'" [attr.aria-pressed]="tipo === 'vendedor'" (click)="cambiarTipo('vendedor')">Vendedores</button>
+      <button [class.on]="tipo === 'domiciliario'" [attr.aria-pressed]="tipo === 'domiciliario'" (click)="cambiarTipo('domiciliario')">Domiciliarios</button>
+    </div>
+    <div class="segmented" role="group" aria-label="Periodo">
+      <button [class.on]="periodo === 'hoy'" [attr.aria-pressed]="periodo === 'hoy'" (click)="cambiarPeriodo('hoy')">Hoy</button>
+      <button [class.on]="periodo === 'semana'" [attr.aria-pressed]="periodo === 'semana'" (click)="cambiarPeriodo('semana')">Semana</button>
+      <button [class.on]="periodo === 'mes'" [attr.aria-pressed]="periodo === 'mes'" (click)="cambiarPeriodo('mes')">Mes</button>
+    </div>
+  </div>
+
+  <p class="rk-nota">
+    {{ tipo === 'vendedor' ? 'Quién vendió más (solo pedidos entregados, sin domicilio).' : 'Quién hizo más entregas.' }}
+    <ng-container *ngIf="miPuesto"> Vas <strong>#{{ miPuesto }}</strong> de {{ lista.length }}.</ng-container>
+  </p>
+
+  <p class="rk-error" role="alert" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+  <ng-container *ngIf="!loading; else cargando">
+    <!-- Podio -->
+    <section class="podio" *ngIf="podio.length; else sinPodio" aria-label="Podio">
+      <div class="escalon" *ngFor="let p of podioVisual" [attr.data-puesto]="p.puesto" [class.yo]="esYo(p.f)">
+        <span class="medalla" aria-hidden="true">{{ medallas[p.puesto - 1] }}</span>
+        <app-avatar [nombre]="p.f.nombre" [url]="p.f.avatar_url" [size]="p.puesto === 1 ? 64 : 52"></app-avatar>
+        <strong class="podio-nombre">{{ p.f.nombre }}<span *ngIf="esYo(p.f)"> (tú)</span></strong>
+        <span class="podio-valor num">{{ valor(p.f) }}</span>
+        <div class="bloque"><span class="num">{{ p.puesto }}</span></div>
+      </div>
+    </section>
+    <ng-template #sinPodio>
+      <div class="vacio">
+        <p class="vacio-titulo">Todavía no hay {{ tipo === 'vendedor' ? 'ventas entregadas' : 'entregas' }} {{ periodo === 'hoy' ? 'hoy' : periodo === 'semana' ? 'esta semana' : 'este mes' }}</p>
+        <p>El primero en {{ tipo === 'vendedor' ? 'vender' : 'entregar' }} se lleva el oro 🥇</p>
+      </div>
+    </ng-template>
+
+    <!-- Lista completa -->
+    <ol class="rk-lista" *ngIf="lista.length">
+      <li *ngFor="let f of lista; let i = index; trackBy: track" class="rk-fila" [class.yo]="esYo(f)">
+        <span class="rk-puesto num">{{ i < 3 && podio.length > i ? medallas[i] : i + 1 }}</span>
+        <app-avatar [nombre]="f.nombre" [url]="f.avatar_url" [size]="36"></app-avatar>
+        <div class="rk-info">
+          <div class="rk-linea">
+            <strong>{{ f.nombre }}<span class="rk-tu" *ngIf="esYo(f)">tú</span></strong>
+            <span class="rk-valor num">{{ valor(f) }}</span>
+          </div>
+          <div class="rk-sub">
+            <span>{{ detalle(f) }}</span>
+            <span *ngIf="periodo === 'mes' && f.meta" class="num">{{ textoMeta(f) }} · {{ avance(f) }}%</span>
+          </div>
+          <div class="rk-barra" *ngIf="avance(f) !== null" [attr.aria-label]="'Avance de la meta: ' + avance(f) + '%'">
+            <span [style.width.%]="avance(f)" [class.lograda]="avance(f) === 100"></span>
+          </div>
+
+          <!-- Metas: solo admin -->
+          <ng-container *ngIf="puedeEditarMetas">
+            <button class="rk-meta-btn" *ngIf="editandoId !== f.usuario_id" (click)="editarMeta(f)">
+              <ion-icon name="flag-outline" aria-hidden="true"></ion-icon>
+              {{ f.meta ? 'Cambiar meta del mes' : 'Poner meta del mes' }}
+            </button>
+            <form class="rk-meta-form" *ngIf="editandoId === f.usuario_id" (ngSubmit)="guardarMeta(f)">
+              <label [attr.for]="'meta-' + f.usuario_id">{{ f.tipo === 'vendedor' ? 'Meta de ventas ($)' : 'Meta de entregas' }}</label>
+              <input [id]="'meta-' + f.usuario_id" name="meta" type="text" inputmode="numeric" class="num"
+                     [(ngModel)]="metaTexto" [placeholder]="f.tipo === 'vendedor' ? '3000000' : '120'" />
+              <button type="submit" class="btn btn-primary" [disabled]="guardandoMeta">{{ guardandoMeta ? 'Guardando…' : 'Guardar' }}</button>
+              <button type="button" class="btn" (click)="cancelarMeta()">Cancelar</button>
+            </form>
+          </ng-container>
+        </div>
+      </li>
+    </ol>
+    <p class="rk-pie" *ngIf="periodo !== 'mes' && lista.length">Las metas son del mes: cámbiate a <button class="link" (click)="cambiarPeriodo('mes')">Mes</button> para ver el avance.</p>
+  </ng-container>
+
+  <ng-template #cargando>
+    <app-esqueleto tipo="lista" [cantidad]="6" etiqueta="Cargando ranking"></app-esqueleto>
+  </ng-template>
+</div>

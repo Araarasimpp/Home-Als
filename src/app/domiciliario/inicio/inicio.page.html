@@ -19,6 +19,8 @@
       </a>
     </section>
 
+    <app-mi-puesto tipo="domiciliario" ruta="/domiciliario/ranking"></app-mi-puesto>
+
     <div class="lista" *ngIf="pedidos.length; else vacio">
       <article class="entrega" *ngFor="let p of pedidos; let i = index" [attr.aria-label]="'Pedido ' + p.numero">
         <div class="entrega-top">

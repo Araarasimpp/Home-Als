@@ -25,6 +25,7 @@ import {
   timeOutline,
   shieldCheckmarkOutline,
   listOutline,
+  trophyOutline,
 } from 'ionicons/icons';
 import { ThemeService } from '../../core/services/theme.service';
 import { SupabaseService } from '../../core/services/supabase.service';
@@ -70,6 +71,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     { label: 'Venta en local', path: '/admin/venta-local', icon: 'storefront-outline' },
     { label: 'Ventas del local', path: '/admin/ventas-del-local', icon: 'list-outline' },
     { label: 'Cuadres', path: '/admin/cuadres', icon: 'wallet-outline' },
+    { label: 'Ranking', path: '/admin/ranking', icon: 'trophy-outline' },
     { label: 'Clientes', path: '/admin/clientes', icon: 'people-circle-outline' },
     { label: 'Productos', path: '/admin/productos', icon: 'cube-outline' },
     { label: 'Usuarios', path: '/admin/usuarios', icon: 'people-outline' },
@@ -93,6 +95,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
   ) {
     addIcons({
       homeOutline,
+      trophyOutline,
       listOutline,
       swapHorizontalOutline,
       receiptOutline,

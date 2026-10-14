@@ -17,6 +17,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { EstadoPedido } from '../../shared/models/models';
 import { diaColombiaDe, hoyColombiaISO, inicioDiaColombia } from '../../shared/fecha-colombia';
 import { EstadoIconComponent } from '../../shared/estado-icon/estado-icon.component';
+import { MiPuestoComponent } from '../../shared/ranking/mi-puesto.component';
 
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip);
 
@@ -53,7 +54,7 @@ const ETIQUETAS: Record<EstadoPedido, string> = {
 @Component({
   selector: 'app-inicio-vendedor',
   standalone: true,
-  imports: [CommonModule, RouterLink, IonIcon, EstadoIconComponent],
+  imports: [MiPuestoComponent, CommonModule, RouterLink, IonIcon, EstadoIconComponent],
   templateUrl: './inicio.page.html',
   styleUrls: ['../../shared/ui.scss', './inicio.page.scss'],
 })

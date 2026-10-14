@@ -11,6 +11,7 @@ import { efectivoDePedido } from '../../shared/models/models';
 import { EstadoIconComponent } from '../../shared/estado-icon/estado-icon.component';
 import { EntregarPedidoComponent } from '../entregar-pedido/entregar-pedido.component';
 import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
+import { MiPuestoComponent } from '../../shared/ranking/mi-puesto.component';
 
 interface PedidoRuta {
   id: string;
@@ -29,7 +30,7 @@ interface PedidoRuta {
 @Component({
   selector: 'app-inicio-domiciliario',
   standalone: true,
-  imports: [EsqueletoComponent, CommonModule, RouterLink, IonIcon, EstadoIconComponent, EntregarPedidoComponent],
+  imports: [MiPuestoComponent, EsqueletoComponent, CommonModule, RouterLink, IonIcon, EstadoIconComponent, EntregarPedidoComponent],
   templateUrl: './inicio.page.html',
   styleUrls: ['../../shared/ui.scss', './inicio.page.scss'],
 })

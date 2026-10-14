@@ -18,6 +18,7 @@ import {
   logOutOutline,
   ellipsisHorizontal,
   notificationsOutline,
+  trophyOutline,
 } from 'ionicons/icons';
 import { ThemeService } from '../../core/services/theme.service';
 import { SupabaseService } from '../../core/services/supabase.service';
@@ -62,6 +63,7 @@ export class DespachadorLayoutComponent implements OnInit, OnDestroy {
     { label: 'Venta en local', path: '/despachador/venta-local', icon: 'storefront-outline' },
     { label: 'Ventas del local', path: '/despachador/ventas-del-local', icon: 'list-outline' },
     { label: 'Cuadres', path: '/despachador/cuadres', icon: 'wallet-outline' },
+    { label: 'Ranking', path: '/despachador/ranking', icon: 'trophy-outline' },
   ];
 
   constructor(
@@ -73,6 +75,7 @@ export class DespachadorLayoutComponent implements OnInit, OnDestroy {
   ) {
     addIcons({
       homeOutline,
+      trophyOutline,
       listOutline,
       swapHorizontalOutline,
       receiptOutline,
