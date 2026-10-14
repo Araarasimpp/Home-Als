@@ -19,9 +19,14 @@ export interface FilaRanking {
   avatar_url: string | null;
   tipo: TipoRanking;
   pedidos: number;
-  ventas: number;
+  /** null cuando quien mira no puede ver pesos (vendedores y domiciliarios) */
+  ventas: number | null;
   entregas: number;
   meta: number | null;
+  /** Puesto que calcula la base (así se ordena aunque no se vean los pesos) */
+  orden?: number | null;
+  /** % de la meta del mes; a quien no ve pesos solo le llega el suyo */
+  avance?: number | null;
 }
 
 /** Rango de fechas (Colombia) de cada periodo. La semana empieza el lunes. */
@@ -38,12 +43,20 @@ export function rangoPeriodo(p: Periodo): { desde: string; hasta: string } {
 }
 
 /** Puntaje con el que se ordena: ventas para vendedores, entregas para domiciliarios. */
-export const puntaje = (f: FilaRanking) => (f.tipo === 'vendedor' ? Number(f.ventas) : Number(f.entregas));
+export const puntaje = (f: FilaRanking) =>
+  f.tipo === 'vendedor' ? Number(f.ventas ?? f.pedidos) : Number(f.entregas);
 
-/** Ordena: más puntaje primero; a igual puntaje, más pedidos y luego por nombre. */
+/** Ordena por el puesto de la base; si no viene: más puntaje, más pedidos y por nombre. */
 export function ordenarRanking(filas: FilaRanking[]): FilaRanking[] {
-  return [...filas].sort((a, b) => puntaje(b) - puntaje(a) || b.pedidos - a.pedidos || a.nombre.localeCompare(b.nombre));
+  return [...filas].sort((a, b) =>
+    a.orden != null && b.orden != null
+      ? a.orden - b.orden
+      : puntaje(b) - puntaje(a) || b.pedidos - a.pedidos || a.nombre.localeCompare(b.nombre)
+  );
 }
+
+/** "9 ventas": lo que ve quien no puede ver los pesos. */
+export const textoVentas = (n: number) => `${n} ${n === 1 ? 'venta' : 'ventas'}`;
 
 /**
  * Ranking de vendedores (quién vendió más, solo pedidos entregados) y de
@@ -99,9 +112,11 @@ export class RankingPage implements OnInit {
       this.filas = ((data ?? []) as any[]).map((f) => ({
         ...f,
         pedidos: Number(f.pedidos) || 0,
-        ventas: Number(f.ventas) || 0,
+        ventas: f.ventas == null ? null : Number(f.ventas) || 0,
         entregas: Number(f.entregas) || 0,
         meta: f.meta == null ? null : Number(f.meta),
+        orden: f.orden == null ? null : Number(f.orden),
+        avance: f.avance == null ? null : Number(f.avance),
       }));
     }
     this.loading = false;
@@ -143,21 +158,26 @@ export class RankingPage implements OnInit {
   }
 
   valor(f: FilaRanking): string {
-    return f.tipo === 'vendedor' ? this.pesos(f.ventas) : `${f.entregas} ${f.entregas === 1 ? 'entrega' : 'entregas'}`;
+    if (f.tipo === 'domiciliario') return `${f.entregas} ${f.entregas === 1 ? 'entrega' : 'entregas'}`;
+    // Vendedores y domiciliarios no ven cuánto vende cada uno, solo la cantidad
+    return f.ventas == null ? textoVentas(f.pedidos) : this.pesos(f.ventas);
   }
 
   detalle(f: FilaRanking): string {
-    return f.tipo === 'vendedor' ? `${f.pedidos} ${f.pedidos === 1 ? 'pedido entregado' : 'pedidos entregados'}` : '';
+    if (f.tipo !== 'vendedor' || f.ventas == null) return '';
+    return `${f.pedidos} ${f.pedidos === 1 ? 'pedido entregado' : 'pedidos entregados'}`;
   }
 
   /** Avance hacia la meta (las metas son del mes). */
   avance(f: FilaRanking): number | null {
-    if (this.periodo !== 'mes' || !f.meta) return null;
+    if (this.periodo !== 'mes') return null;
+    if (f.avance != null) return f.avance;
+    if (!f.meta) return null;
     return Math.min(100, Math.round((puntaje(f) / f.meta) * 100));
   }
 
   textoMeta(f: FilaRanking): string {
-    if (!f.meta) return '';
+    if (!f.meta) return this.esYo(f) ? 'Tu meta' : 'Meta';
     return f.tipo === 'vendedor' ? `Meta ${this.pesos(f.meta)}` : `Meta ${f.meta} entregas`;
   }
 

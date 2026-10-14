@@ -55,7 +55,7 @@
           </div>
           <div class="rk-sub">
             <span>{{ detalle(f) }}</span>
-            <span *ngIf="periodo === 'mes' && f.meta" class="num">{{ textoMeta(f) }} · {{ avance(f) }}%</span>
+            <span *ngIf="avance(f) !== null" class="num">{{ textoMeta(f) }} · {{ avance(f) }}%</span>
           </div>
           <div class="rk-barra" *ngIf="avance(f) !== null" [attr.aria-label]="'Avance de la meta: ' + avance(f) + '%'">
             <span [style.width.%]="avance(f)" [class.lograda]="avance(f) === 100"></span>

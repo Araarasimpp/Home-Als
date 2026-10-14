@@ -4,7 +4,7 @@ import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
-import { FilaRanking, TipoRanking, ordenarRanking, puntaje, rangoPeriodo } from './ranking.page';
+import { FilaRanking, TipoRanking, ordenarRanking, puntaje, rangoPeriodo, textoVentas } from './ranking.page';
 
 @Component({
   selector: 'app-mi-puesto',
@@ -106,11 +106,14 @@ export class MiPuestoComponent implements OnInit {
       const p = puntaje(yo);
       this.puesto = p > 0 ? i + 1 : null;
       this.medalla = p > 0 ? (['🥇', '🥈', '🥉'][i] ?? '🏆') : '🏁';
-      const valor = this.tipo === 'vendedor'
-        ? Number(p).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) + ' vendidos'
-        : `${p} ${p === 1 ? 'entrega' : 'entregas'}`;
-      if (yo.meta) {
-        this.avance = Math.min(100, Math.round((p / Number(yo.meta)) * 100));
+      const valor = this.tipo === 'domiciliario'
+        ? `${p} ${p === 1 ? 'entrega' : 'entregas'}`
+        : yo.ventas == null
+          ? textoVentas(Number(yo.pedidos))
+          : Number(p).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) + ' vendidos';
+      const avance = yo.avance != null ? Number(yo.avance) : yo.meta ? Math.min(100, Math.round((p / Number(yo.meta)) * 100)) : null;
+      if (avance !== null) {
+        this.avance = avance;
         this.detalle = `${valor} · ${this.avance}% de tu meta`;
       } else {
         this.detalle = p > 0 ? valor : '¡Arranca el mes y súbete al podio!';
