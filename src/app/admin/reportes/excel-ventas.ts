@@ -49,6 +49,18 @@ interface FilaPedido {
   creado: string;
   estado: string;
   sinCosto: boolean;
+  items: ItemFila[];
+}
+
+/** Un producto dentro del pedido (la planilla general va producto por producto). */
+interface ItemFila {
+  cantidad: number;
+  producto: string;
+  costo: number;
+  venta: number;
+  /** Parte de la comisión del vendedor que corresponde a este producto. */
+  comision: number;
+  sinCosto: boolean;
 }
 
 interface Grupo {
@@ -164,6 +176,24 @@ async function cargarGrupos(db: SupabaseClient, o: OpcionesExcel, incluirCancela
 
     const porcentaje = p.comision_tipo === 'porcentaje' ? Number(p.comision_porcentaje ?? 50) : null;
     const vendedor = (nombre.get(p.vendedor_id) ?? 'Vendedor').toUpperCase();
+
+    // Detalle por producto. La comisión del pedido se reparte entre sus productos:
+    // por margen, lo cobrado sobre el precio base; por %, el % de la ganancia de cada
+    // uno. El último producto absorbe la diferencia de redondeo para que la suma
+    // dé exactamente la comisión del pedido.
+    const comisionPedido = Number(p.comision || 0);
+    const detalle: ItemFila[] = propios.map((i) => {
+      const q = Number(i.cantidad), pu = Number(i.precio_unitario), pb = Number(i.precio_base);
+      const c = i.producto?.costo;
+      const costoItem = q * (c != null ? Number(c) : pb);
+      const ventaItem = q * pu;
+      const comisionItem = porcentaje !== null ? Math.round(((ventaItem - costoItem) * porcentaje) / 100) : q * (pu - pb);
+      return { cantidad: q, producto: String(i.producto?.nombre ?? 'Producto').toUpperCase(), costo: costoItem, venta: ventaItem, comision: comisionItem, sinCosto: c == null };
+    });
+    if (detalle.length) {
+      const suma = detalle.reduce((t, d) => t + d.comision, 0);
+      detalle[detalle.length - 1].comision += comisionPedido - suma;
+    }
     const llave = `${p.vendedor_id}|${porcentaje ?? 'margen'}`;
     if (!grupos.has(llave)) grupos.set(llave, { vendedor, porcentaje, filas: [] });
 
@@ -186,6 +216,7 @@ async function cargarGrupos(db: SupabaseClient, o: OpcionesExcel, incluirCancela
       creado: p.created_at,
       estado: p.estado,
       sinCosto,
+      items: detalle.length ? detalle : [{ cantidad, producto: 'SIN PRODUCTOS', costo, venta, comision: comisionPedido, sinCosto }],
     });
   }
 
@@ -480,51 +511,55 @@ function hojaDiaria(ws: Worksheet, dia: string, filas: FilaPedido[], colores: Ma
 
   let r = 3;
   ordenadas.forEach((f, idx) => {
-    const fila = ws.getRow(r);
-    const valores: Record<string, string | number | null> = {
-      cantidad: f.cantidad,
-      productos: f.productos,
-      costo: f.costo,
-      venta: f.venta,
-      gananciaTienda: gananciaTiendaDe(f),
-      gananciaVendedor: gananciaVendedorDe(f),
-      domicilio: f.domicilio || null,
-      total: f.total,
-      mensajero: f.mensajero,
-      vendedor: f.vendedor,
-      estado: ETIQUETA_ESTADO[f.estado] ?? f.estado.toUpperCase(),
-    };
     const colorM = colorMensajero(f.mensajeroId, colores);
     const cancelado = !vigente(f);
     const noSuma = !entregado(f);
-    COLS_DIARIA.forEach((c, i) => {
-      const cel = fila.getCell(i + 1);
-      cel.value = valores[c.k] ?? null;
-      estilarCelda(cel, {
-        num: 'num' in c && c.num,
-        izquierda: c.k === 'productos',
-        fill:
-          c.k === 'gananciaTienda' ? ROSA_GANANCIA
-          : c.k === 'gananciaVendedor' ? AZUL_COMISION
-          : c.k === 'total' || c.k === 'mensajero' ? colorM
-          : c.k === 'estado' ? COLOR_ESTADO[f.estado]
-          : undefined,
+    // Una fila por producto. Domicilio y total recogido son del pedido: van solo en
+    // la primera fila del pedido para que las sumas no se repitan.
+    f.items.forEach((it, j) => {
+      const fila = ws.getRow(r);
+      const valores: Record<string, string | number | null> = {
+        cantidad: it.cantidad,
+        productos: it.producto,
+        costo: it.costo,
+        venta: it.venta,
+        gananciaTienda: it.venta - it.costo - it.comision,
+        gananciaVendedor: it.comision,
+        domicilio: j === 0 ? f.domicilio || null : null,
+        total: j === 0 ? f.total : null,
+        mensajero: f.mensajero,
+        vendedor: f.vendedor,
+        estado: ETIQUETA_ESTADO[f.estado] ?? f.estado.toUpperCase(),
+      };
+      COLS_DIARIA.forEach((c, i) => {
+        const cel = fila.getCell(i + 1);
+        cel.value = valores[c.k] ?? null;
+        estilarCelda(cel, {
+          num: 'num' in c && c.num,
+          izquierda: c.k === 'productos',
+          fill:
+            c.k === 'gananciaTienda' ? ROSA_GANANCIA
+            : c.k === 'gananciaVendedor' ? AZUL_COMISION
+            : c.k === 'total' || c.k === 'mensajero' ? colorM
+            : c.k === 'estado' ? COLOR_ESTADO[f.estado]
+            : undefined,
+        });
+        // No entregado (pendiente, en ruta o cancelado): tachado y en gris, no entra en los totales
+        if (noSuma && c.k !== 'estado') cel.font = { name: 'Calibri', size: 10, strike: true, color: { argb: 'FF8C8C8C' } };
+        if (c.k === 'estado') cel.font = { name: 'Calibri', size: 10, bold: true, color: { argb: cancelado ? 'FF9C0006' : 'FF000000' } };
       });
-      // No entregado (pendiente, en ruta o cancelado): tachado y en gris, no entra en los totales
-      if (noSuma && c.k !== 'estado') cel.font = { name: 'Calibri', size: 10, strike: true, color: { argb: 'FF8C8C8C' } };
-      if (c.k === 'estado') cel.font = { name: 'Calibri', size: 10, bold: true, color: { argb: cancelado ? 'FF9C0006' : 'FF000000' } };
-    });
-    if (f.sinCosto) fila.getCell(col('costo')).note = 'Algún producto no tiene costo registrado: se usó su precio base.';
+      if (it.sinCosto) fila.getCell(col('costo')).note = 'Este producto no tiene costo registrado: se usó su precio base.';
 
-    // Línea doble al cambiar de vendedor (separa los grupos como en la planilla)
-    const siguiente = ordenadas[idx + 1];
-    if (siguiente && siguiente.vendedorId !== f.vendedorId) {
-      for (let i = 1; i <= n; i++) {
-        const c = fila.getCell(i);
-        c.border = { ...BORDE, bottom: { style: 'double', color: { argb: 'FF7F3F98' } } };
+      // Línea doble al cambiar de vendedor (separa los grupos como en la planilla)
+      const ultimoDelPedido = j === f.items.length - 1;
+      const siguiente = ordenadas[idx + 1];
+      if (ultimoDelPedido && siguiente && siguiente.vendedorId !== f.vendedorId) {
+        for (let i = 1; i <= n; i++) {
+          fila.getCell(i).border = { ...BORDE, bottom: { style: 'double', color: { argb: 'FF7F3F98' } } };
+        }
       }
-    }
-    r++;
+      r++;
+    });
   });
 
   // Totales del día
