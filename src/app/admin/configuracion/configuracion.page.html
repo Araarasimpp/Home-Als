@@ -207,25 +207,6 @@
               </button>
             </form>
           </div>
-          <div class="card field-inline" style="margin-top: 12px" *ngIf="valorDomicilioDisponible">
-            <div>
-              <label for="valor-defecto">Domicilio que se cobra en otros barrios</label>
-              <p class="hint">Valor con el que arranca el domicilio de un pedido nuevo cuando el barrio no está en la lista.</p>
-            </div>
-            <div class="money input-corto">
-              <span aria-hidden="true">$</span>
-              <input
-                id="valor-defecto"
-                type="number"
-                class="num"
-                min="0"
-                inputmode="numeric"
-                [(ngModel)]="valorDomicilioDefecto"
-                (change)="guardarValorDefecto()"
-                [disabled]="guardandoValorDefecto"
-              />
-            </div>
-          </div>
           <div class="card field-inline" style="margin-top: 12px">
             <div>
               <label for="pago-defecto">Pago al domiciliario en otros barrios</label>

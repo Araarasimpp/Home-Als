@@ -77,10 +77,6 @@ export class ConfiguracionPage implements OnInit {
   /** Pago al domiciliario cuando el barrio no está en la lista. */
   pagoDomiciliarioDefecto = 10000;
   guardandoPagoDefecto = false;
-  /** Domicilio que se le cobra al cliente cuando el barrio no está en la lista. */
-  valorDomicilioDefecto = 10000;
-  valorDomicilioDisponible = false;
-  guardandoValorDefecto = false;
   guardandoZona = false;
   errorZona = '';
 
@@ -116,8 +112,6 @@ export class ConfiguracionPage implements OnInit {
     this.inactividadDisponible = v !== undefined;
     this.inactividadMinutos = Number(v ?? 30);
     this.pagoDomiciliarioDefecto = Number((data as any)?.pago_domiciliario ?? 10000);
-    this.valorDomicilioDisponible = (data as any)?.valor_domicilio !== undefined;
-    this.valorDomicilioDefecto = Number((data as any)?.valor_domicilio ?? 10000);
     this.cdr.detectChanges();
   }
 
@@ -144,19 +138,6 @@ export class ConfiguracionPage implements OnInit {
       .eq('id', true);
     this.guardandoPagoDefecto = false;
     if (error) this.errorZona = 'No se pudo guardar el pago por defecto. ' + error.message;
-    this.cdr.detectChanges();
-  }
-
-  async guardarValorDefecto(): Promise<void> {
-    const valor = Math.max(0, Number(this.valorDomicilioDefecto) || 0);
-    this.guardandoValorDefecto = true;
-    this.cdr.detectChanges();
-    const { error } = await this.supabase.client
-      .from('configuracion')
-      .update({ valor_domicilio: valor })
-      .eq('id', true);
-    this.guardandoValorDefecto = false;
-    if (error) this.errorZona = 'No se pudo guardar el domicilio por defecto. ' + error.message;
     this.cdr.detectChanges();
   }
 
