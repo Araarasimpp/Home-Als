@@ -1,8 +1,6 @@
 -- Solo totales (sin datos de clientes): de dónde salen los valores de domicilio.
 \pset format unaligned
-select '==== CONFIG ' || row_to_json(c)::text from (
-  select * from public.configuracion
-) c;
+select '==== CONFIG pago_domiciliario=' || pago_domiciliario from public.configuracion;
 select '==== ZONA ' || coalesce(nombre,'?') || ' | cobra=' || valor || ' | paga=' || pago_domiciliario
   from public.zonas_domicilio order by valor, nombre;
 select '==== PEDIDOS canal=' || canal || ' cobra=' || valor_domicilio || ' paga=' || pago_domiciliario || ' estado=' || estado || ' -> ' || count(*)
