@@ -115,6 +115,7 @@
 }
 
 .catalogo {
+  max-height: calc(100vh - 220px);
   max-height: calc(100dvh - 220px);
   overflow-y: auto;
   border: 1px solid var(--border);
@@ -211,7 +212,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px 16px;
+  padding: calc(24px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
   background: rgba(10, 12, 16, 0.78);
 }
 
@@ -246,7 +247,7 @@
 
 .visor-cerrar {
   position: absolute;
-  top: 12px;
+  top: calc(12px + env(safe-area-inset-top));
   right: 12px;
   width: 40px;
   height: 40px;

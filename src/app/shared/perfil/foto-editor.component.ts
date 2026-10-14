@@ -78,8 +78,12 @@ const SALIDA = 384; // px de la foto final (se ve nítida en pantallas retina)
         display: flex; flex-direction: column; align-items: center; gap: 14px;
         background: var(--surface); color: var(--text);
         border-radius: 22px 22px 0 0; box-shadow: 0 -18px 50px -20px rgba(10, 12, 20, 0.45);
+        max-height: calc(100vh - env(safe-area-inset-top) - 12px);
+        max-height: calc(100dvh - env(safe-area-inset-top) - 12px);
+        overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box;
         animation: subir 320ms cubic-bezier(0.16, 1, 0.3, 1);
       }
+      .fe-hoja > * { flex-shrink: 0; }
       @media (min-width: 720px) {
         .fe-hoja { top: 50%; bottom: auto; transform: translateY(-50%); border-radius: 22px; padding-bottom: 20px; animation: aparecer 220ms ease-out; }
       }

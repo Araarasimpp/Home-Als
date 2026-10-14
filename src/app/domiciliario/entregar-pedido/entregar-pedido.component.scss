@@ -19,7 +19,9 @@
 .hoja {
   width: 100%;
   max-width: 480px;
-  max-height: calc(100dvh - 24px);
+  max-height: calc(100vh - 12px - env(safe-area-inset-top));
+  max-height: calc(100dvh - 12px - env(safe-area-inset-top));
+  overscroll-behavior: contain;
   overflow-y: auto;
   display: flex;
   flex-direction: column;

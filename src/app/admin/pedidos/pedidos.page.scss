@@ -262,7 +262,8 @@
 
 .group-head {
   position: sticky;
-  top: 0;
+  // En iPhone queda justo debajo de la barra de estado, no detrás
+  top: env(safe-area-inset-top);
   z-index: 2;
   display: flex;
   align-items: center;

@@ -166,10 +166,45 @@
   box-shadow: 0 0 0 2px var(--surface);
 }
 
-// La hoja "Más" puede tener muchas opciones: que se desplace si no caben
+// La hoja "Más" puede tener muchas opciones: que se desplace si no caben.
+// En iPhone el alto incluye la barra de estado (viewport-fit=cover), por eso se
+// restan las zonas seguras de arriba y de abajo; si no, la hoja se mete debajo
+// de la hora y la batería.
 .more-sheet {
-  max-height: calc(100dvh - var(--tabbar-h) - 40px);
+  --more-max: calc(100vh - var(--tabbar-h) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
+  max-height: var(--more-max);
+  max-height: calc(100dvh - var(--tabbar-h) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.more-sheet a,
+.more-sheet button {
+  flex-shrink: 0;
+}
+
+// Franja detrás de la barra de estado del iPhone (app instalada, estilo
+// black-translucent): sin ella el contenido se ve pasar por debajo de la hora.
+.shell::before,
+.layout::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  // Debajo del fondo oscuro de las hojas (99), encima del contenido
+  z-index: 98;
+  pointer-events: none;
+}
+
+.shell::before {
+  background: var(--surface);
+}
+
+.layout::before {
+  background: var(--bg);
 }
 
 // Pestaña "Perfil": la foto de la persona en vez de un ícono; activa = aro azul

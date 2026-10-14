@@ -66,9 +66,12 @@ const DESCRIPCION_ROL: Record<UserRole, string> = {
         position: fixed;
         z-index: 1001;
         left: 50%;
-        bottom: 24px;
+        bottom: calc(24px + env(safe-area-inset-bottom));
         transform: translateX(-50%);
         width: min(420px, calc(100vw - 32px));
+        max-height: calc(100vh - 48px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        overflow-y: auto;
+        overscroll-behavior: contain;
         padding: 8px;
         box-sizing: border-box;
         border: 1px solid var(--border);
