@@ -4,7 +4,7 @@ import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
-import { FilaRanking, TipoRanking, logro, ordenarRanking, puntaje, rangoPeriodo, textoVentas } from './ranking.page';
+import { FilaRanking, TipoRanking, ordenarRanking, puntaje, rangoPeriodo, textoVentas } from './ranking.page';
 
 @Component({
   selector: 'app-mi-puesto',
@@ -111,7 +111,7 @@ export class MiPuestoComponent implements OnInit {
         : yo.ventas == null
           ? textoVentas(Number(yo.pedidos))
           : Number(yo.ventas).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }) + ' vendidos';
-      const avance = yo.avance != null ? Number(yo.avance) : yo.meta ? Math.min(100, Math.round((logro(yo) / Number(yo.meta)) * 100)) : null;
+      const avance = yo.avance != null ? Number(yo.avance) : yo.meta ? Math.min(100, Math.round((p / Number(yo.meta)) * 100)) : null;
       if (avance !== null) {
         this.avance = avance;
         this.detalle = `${valor} · ${this.avance}% de tu meta`;

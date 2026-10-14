@@ -45,8 +45,6 @@ export function rangoPeriodo(p: Periodo): { desde: string; hasta: string } {
 /** Puntaje con el que se ordena: cantidad de ventas (vendedores) o de entregas (domiciliarios). */
 export const puntaje = (f: FilaRanking) => (f.tipo === 'vendedor' ? Number(f.pedidos) : Number(f.entregas));
 
-/** Lo que cuenta para la meta: pesos vendidos (vendedores) o entregas (domiciliarios). */
-export const logro = (f: FilaRanking) => (f.tipo === 'vendedor' ? Number(f.ventas ?? 0) : Number(f.entregas));
 
 /** Ordena por el puesto de la base; si no viene: más ventas (cantidad), más pesos y por nombre. */
 export function ordenarRanking(filas: FilaRanking[]): FilaRanking[] {
@@ -175,12 +173,12 @@ export class RankingPage implements OnInit {
     if (this.periodo !== 'mes') return null;
     if (f.avance != null) return f.avance;
     if (!f.meta) return null;
-    return Math.min(100, Math.round((logro(f) / f.meta) * 100));
+    return Math.min(100, Math.round((puntaje(f) / f.meta) * 100));
   }
 
   textoMeta(f: FilaRanking): string {
     if (!f.meta) return this.esYo(f) ? 'Tu meta' : 'Meta';
-    return f.tipo === 'vendedor' ? `Meta ${this.pesos(f.meta)}` : `Meta ${f.meta} entregas`;
+    return f.tipo === 'vendedor' ? `Meta ${textoVentas(f.meta)}` : `Meta ${f.meta} entregas`;
   }
 
   esYo(f: FilaRanking): boolean {
@@ -202,7 +200,7 @@ export class RankingPage implements OnInit {
     const texto = this.metaTexto.replace(/[^\d]/g, '');
     const valor = texto ? Number(texto) : null;
     this.guardandoMeta = true;
-    const cambio = f.tipo === 'vendedor' ? { meta_ventas: valor } : { meta_entregas: valor };
+    const cambio = f.tipo === 'vendedor' ? { meta_cantidad: valor } : { meta_entregas: valor };
     const { error } = await this.supabase.client
       .from('metas')
       .upsert({ usuario_id: f.usuario_id, ...cambio, updated_at: new Date().toISOString() }, { onConflict: 'usuario_id' });

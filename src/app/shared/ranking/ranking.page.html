@@ -68,9 +68,9 @@
               {{ f.meta ? 'Cambiar meta del mes' : 'Poner meta del mes' }}
             </button>
             <form class="rk-meta-form" *ngIf="editandoId === f.usuario_id" (ngSubmit)="guardarMeta(f)">
-              <label [attr.for]="'meta-' + f.usuario_id">{{ f.tipo === 'vendedor' ? 'Meta de ventas ($)' : 'Meta de entregas' }}</label>
+              <label [attr.for]="'meta-' + f.usuario_id">{{ f.tipo === 'vendedor' ? 'Meta de ventas (cantidad)' : 'Meta de entregas' }}</label>
               <input [id]="'meta-' + f.usuario_id" name="meta" type="text" inputmode="numeric" class="num"
-                     [(ngModel)]="metaTexto" [placeholder]="f.tipo === 'vendedor' ? '3000000' : '120'" />
+                     [(ngModel)]="metaTexto" [placeholder]="f.tipo === 'vendedor' ? '40' : '120'" />
               <button type="submit" class="btn btn-primary" [disabled]="guardandoMeta">{{ guardandoMeta ? 'Guardando…' : 'Guardar' }}</button>
               <button type="button" class="btn" (click)="cancelarMeta()">Cancelar</button>
             </form>
