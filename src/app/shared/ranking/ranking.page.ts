@@ -42,16 +42,18 @@ export function rangoPeriodo(p: Periodo): { desde: string; hasta: string } {
   return { desde: hoy.slice(0, 8) + '01', hasta: hoy };
 }
 
-/** Puntaje con el que se ordena: ventas para vendedores, entregas para domiciliarios. */
-export const puntaje = (f: FilaRanking) =>
-  f.tipo === 'vendedor' ? Number(f.ventas ?? f.pedidos) : Number(f.entregas);
+/** Puntaje con el que se ordena: cantidad de ventas (vendedores) o de entregas (domiciliarios). */
+export const puntaje = (f: FilaRanking) => (f.tipo === 'vendedor' ? Number(f.pedidos) : Number(f.entregas));
 
-/** Ordena por el puesto de la base; si no viene: más puntaje, más pedidos y por nombre. */
+/** Lo que cuenta para la meta: pesos vendidos (vendedores) o entregas (domiciliarios). */
+export const logro = (f: FilaRanking) => (f.tipo === 'vendedor' ? Number(f.ventas ?? 0) : Number(f.entregas));
+
+/** Ordena por el puesto de la base; si no viene: más ventas (cantidad), más pesos y por nombre. */
 export function ordenarRanking(filas: FilaRanking[]): FilaRanking[] {
   return [...filas].sort((a, b) =>
     a.orden != null && b.orden != null
       ? a.orden - b.orden
-      : puntaje(b) - puntaje(a) || b.pedidos - a.pedidos || a.nombre.localeCompare(b.nombre)
+      : puntaje(b) - puntaje(a) || Number(b.ventas ?? 0) - Number(a.ventas ?? 0) || a.nombre.localeCompare(b.nombre)
   );
 }
 
@@ -159,13 +161,13 @@ export class RankingPage implements OnInit {
 
   valor(f: FilaRanking): string {
     if (f.tipo === 'domiciliario') return `${f.entregas} ${f.entregas === 1 ? 'entrega' : 'entregas'}`;
-    // Vendedores y domiciliarios no ven cuánto vende cada uno, solo la cantidad
-    return f.ventas == null ? textoVentas(f.pedidos) : this.pesos(f.ventas);
+    // El ranking va por cantidad de ventas; los pesos solo los ven admin y despachador (en el detalle)
+    return textoVentas(f.pedidos);
   }
 
   detalle(f: FilaRanking): string {
     if (f.tipo !== 'vendedor' || f.ventas == null) return '';
-    return `${f.pedidos} ${f.pedidos === 1 ? 'pedido entregado' : 'pedidos entregados'}`;
+    return `${this.pesos(f.ventas)} vendidos`;
   }
 
   /** Avance hacia la meta (las metas son del mes). */
@@ -173,7 +175,7 @@ export class RankingPage implements OnInit {
     if (this.periodo !== 'mes') return null;
     if (f.avance != null) return f.avance;
     if (!f.meta) return null;
-    return Math.min(100, Math.round((puntaje(f) / f.meta) * 100));
+    return Math.min(100, Math.round((logro(f) / f.meta) * 100));
   }
 
   textoMeta(f: FilaRanking): string {

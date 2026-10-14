@@ -19,7 +19,7 @@
   </div>
 
   <p class="rk-nota">
-    {{ tipo === 'vendedor' ? 'Quién vendió más (solo pedidos entregados, sin domicilio).' : 'Quién hizo más entregas.' }}
+    {{ tipo === 'vendedor' ? 'Quién hizo más ventas (pedidos entregados).' : 'Quién hizo más entregas.' }}
     <ng-container *ngIf="miPuesto"> Vas <strong>#{{ miPuesto }}</strong> de {{ lista.length }}.</ng-container>
   </p>
 
