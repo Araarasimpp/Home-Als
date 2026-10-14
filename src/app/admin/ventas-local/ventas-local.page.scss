@@ -229,4 +229,35 @@
     gap: 8px;
     grid-column: 1 / -1;
   }
+
+  // El pago va en su propia línea debajo: si no, le quita casi todo el ancho
+  // a los productos
+  .vl-pago {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    margin-top: 4px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+    text-align: left;
+  }
+
+  .vl-total {
+    margin-right: auto;
+    font-size: 16px;
+  }
+
+  .vl-desglose {
+    flex-basis: 100%;
+  }
+
+  .vl-editar {
+    margin-top: 0;
+  }
+
+  .vl-comprobante {
+    min-height: 32px;
+  }
 }

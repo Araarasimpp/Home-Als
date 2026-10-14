@@ -909,3 +909,31 @@
   font-size: 12px;
   font-weight: 500;
 }
+
+// iPhone: el nombre largo del cliente baja a otra línea en vez de taparse con
+// el total, y los controles quedan de un tamaño cómodo para el dedo
+@media (max-width: 720px) {
+  .row-grid {
+    column-gap: 10px;
+  }
+
+  .cliente-linea {
+    flex-wrap: wrap;
+    row-gap: 0;
+    max-width: 100%;
+  }
+
+  .cliente {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .tab {
+    height: 34px;
+  }
+
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+}

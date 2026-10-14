@@ -187,3 +187,10 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+// Área de toque más grande en el celular sin mover el diseño
+.ver-todos {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  margin-top: -8px;
+  margin-bottom: -8px;
+}

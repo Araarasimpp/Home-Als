@@ -315,3 +315,65 @@ tbody tr:last-child td {
   padding: 5px 10px;
   font-size: 12px;
 }
+
+// Celular: cada persona es una tarjeta (la tabla obligaba a deslizar de lado
+// y cortaba el correo)
+@media (max-width: 720px) {
+  table {
+    min-width: 0;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--k-border);
+  }
+
+  tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  tbody td {
+    display: block;
+    padding: 0;
+    border: none;
+    grid-column: 1 / -1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  tbody td:nth-child(1) {
+    grid-column: 1;
+  }
+
+  tbody td:nth-child(5) {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+  }
+
+  tbody td:nth-child(2),
+  tbody td:nth-child(3) {
+    padding-left: 44px;
+    font-size: 13px;
+  }
+
+  tbody td:nth-child(4) {
+    padding-top: 6px;
+  }
+
+  .rol-chip {
+    height: 34px;
+    padding: 0 12px;
+  }
+
+  .btn-toggle {
+    min-height: 36px;
+  }
+}

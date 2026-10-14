@@ -349,3 +349,11 @@
 .pf-salir:active {
   background: var(--danger-wash);
 }
+
+// Área de toque más grande en el celular sin mover el diseño
+.pf-foto-acciones .link {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  margin-top: -8px;
+  margin-bottom: -8px;
+}

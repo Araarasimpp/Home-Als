@@ -332,3 +332,92 @@ tbody tr:last-child td {
     white-space: nowrap;
   }
 }
+// Celular: cada producto es una tarjeta en vez de una tabla de 9 columnas
+// que obligaba a deslizar de lado
+@media (max-width: 720px) {
+  .table-card {
+    overflow: visible;
+  }
+
+  table {
+    min-width: 0;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    padding: 12px 12px 12px 14px;
+    border-bottom: 1px solid var(--k-border);
+  }
+
+  tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  tbody td {
+    padding: 0;
+    border: none;
+    font-size: 13px;
+  }
+
+  tbody td.col-check:first-child {
+    width: 22px;
+  }
+
+  tbody td:nth-child(2) {
+    flex: 1 1 calc(100% - 100px);
+    min-width: 0;
+    font-size: 15px;
+  }
+
+  tbody td.menu-cell {
+    order: 1;
+    flex: 0 0 auto;
+    width: auto;
+  }
+
+  // Datos secundarios en una línea debajo del nombre
+  tbody td:nth-child(n + 3):nth-child(-n + 8) {
+    order: 2;
+  }
+
+  tbody td:nth-child(3) {
+    margin-left: 32px;
+  }
+
+  tbody td:nth-child(5)::before {
+    content: 'Base ';
+  }
+
+  tbody td:nth-child(6)::before {
+    content: 'Sugerido ';
+    color: var(--k-text-soft);
+  }
+
+  tbody td:nth-child(7)::before {
+    content: 'Disp. ';
+    color: var(--k-text-soft);
+  }
+
+  .menu-btn {
+    min-width: 40px;
+    min-height: 40px;
+    font-size: 20px;
+  }
+
+  .pager button {
+    width: 40px;
+    height: 40px;
+  }
+
+  input[type='checkbox'] {
+    width: 20px;
+    height: 20px;
+  }
+}

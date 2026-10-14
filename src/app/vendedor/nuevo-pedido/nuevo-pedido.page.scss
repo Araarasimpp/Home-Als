@@ -451,6 +451,11 @@
   font-size: 15px;
 }
 
+// Dentro de .campo el padding general tapaba el "$" con el número
+.campo .precio-input input {
+  padding-left: 24px;
+}
+
 .item-subtotal {
   min-width: 84px;
   text-align: right;

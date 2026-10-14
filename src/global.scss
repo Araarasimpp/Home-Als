@@ -72,3 +72,34 @@ a {
     animation-duration: 0.01ms !important;
   }
 }
+
+// ---------- iPhone ----------
+// Sin el destello gris al tocar botones y enlaces, y sin que Safari agrande el
+// texto al girar el teléfono
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  -webkit-tap-highlight-color: transparent;
+}
+
+// Solo Safari de iPhone/iPad: las fechas salían centradas, y vacías se encogían
+// o se salían de su caja
+@supports (-webkit-touch-callout: none) {
+  input[type='date'],
+  input[type='time'] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-height: 1.6em;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  input[type='date']::-webkit-date-and-time-value,
+  input[type='time']::-webkit-date-and-time-value {
+    margin: 0;
+    text-align: left;
+  }
+}
