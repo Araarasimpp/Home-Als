@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, Output } from '@angular/core';
+import { SobreTodoDirective } from '../../shared/sobre-todo.directive';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonIcon } from '@ionic/angular';
@@ -18,6 +19,8 @@ interface PedidoResumen {
 @Component({
   selector: 'app-entregar-pedido',
   standalone: true,
+  // Encima de la barra de navegación también en iPhone
+  hostDirectives: [SobreTodoDirective],
   imports: [CommonModule, FormsModule, IonIcon],
   templateUrl: './entregar-pedido.component.html',
   styleUrls: ['./entregar-pedido.component.scss'],

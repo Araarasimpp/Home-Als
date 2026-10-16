@@ -10,6 +10,7 @@ import { MetodoPago, Producto } from '../../shared/models/models';
 import { urlImagen } from '../../shared/imagenes/url-imagen';
 import { comprimirImagen, extensionDe } from '../../shared/imagenes/comprimir';
 import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
+import { SobreTodoDirective } from '../../shared/sobre-todo.directive';
 
 interface ItemCarrito {
   producto: Producto;
@@ -40,7 +41,7 @@ interface PedidoEditado {
 @Component({
   selector: 'app-nuevo-pedido',
   standalone: true,
-  imports: [EsqueletoComponent, CommonModule, FormsModule, IonIcon, RouterLink],
+  imports: [EsqueletoComponent, CommonModule, FormsModule, IonIcon, RouterLink, SobreTodoDirective],
   templateUrl: './nuevo-pedido.page.html',
   styleUrls: ['../../shared/ui.scss', './nuevo-pedido.page.scss'],
 })

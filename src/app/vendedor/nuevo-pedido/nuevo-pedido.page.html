@@ -327,7 +327,7 @@
   </ng-template>
 </div>
 
-<div class="visor-foto" *ngIf="fotoAbierta" (click)="cerrarFoto()" role="dialog" aria-modal="true" [attr.aria-label]="fotoAbierta.nombre">
+<div class="visor-foto" appSobreTodo *ngIf="fotoAbierta" (click)="cerrarFoto()" role="dialog" aria-modal="true" [attr.aria-label]="fotoAbierta.nombre">
   <figure (click)="$event.stopPropagation()">
     <img [src]="fotoAbierta.src" [alt]="fotoAbierta.nombre" />
     <figcaption>

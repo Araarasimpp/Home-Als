@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, NgZone, Output, OnChanges } from '@angular/core';
+import { SobreTodoDirective } from '../../../shared/sobre-todo.directive';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../../core/services/supabase.service';
@@ -15,6 +16,8 @@ type ProductoForm = Omit<Producto, 'id'> & { id?: string };
 @Component({
   selector: 'app-producto-form',
   standalone: true,
+  // Encima de la barra de navegación también en iPhone
+  hostDirectives: [SobreTodoDirective],
   imports: [CommonModule, FormsModule],
   templateUrl: './producto-form.component.html',
   styleUrls: ['./producto-form.component.scss'],

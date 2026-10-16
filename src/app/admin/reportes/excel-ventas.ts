@@ -13,7 +13,7 @@
 // hoja "Resumen" cuando hay más de una. Necesita: npm install exceljs
 //
 // Con "Todos los vendedores" se arma en cambio la planilla "VENTA DIARIA": una
-// hoja por día con todos los pedidos agrupados por vendedor (CANT, PRODUCTO,
+// hoja por día con todos los pedidos agrupados por vendedor (# PEDIDO, CANT, PRODUCTO,
 // COSTO, VENTA, GANANCIA TIENDA, GANANCIA VENDEDOR, DOMICILIO (pago al domiciliario), TOTAL RECOGIDA,
 // MENSAJERO, VENDEDOR, ESTADO) y una hoja "Resumen" por día cuando hay varios
 // días. Ahí se listan todos los pedidos, pero los totales solo suman los
@@ -30,6 +30,8 @@ export interface OpcionesExcel {
 }
 
 interface FilaPedido {
+  /** Número del pedido (#1500), el mismo que se ve en la app */
+  numero: number;
   fecha: string;
   cantidad: number;
   productos: string;
@@ -198,6 +200,7 @@ async function cargarGrupos(db: SupabaseClient, o: OpcionesExcel, incluirCancela
     if (!grupos.has(llave)) grupos.set(llave, { vendedor, porcentaje, filas: [] });
 
     grupos.get(llave)!.filas.push({
+      numero: Number(p.numero) || 0,
       fecha: fechaPlanilla(p.created_at),
       cantidad,
       productos: propios.map((i) => String(i.producto?.nombre ?? 'Producto').toUpperCase()).join(', '),
@@ -437,6 +440,7 @@ function hojaResumen(ws: Worksheet, grupos: Grupo[]): void {
 
 // ---------- Planilla general: VENTA DIARIA ----------
 const COLS_DIARIA = [
+  { k: 'pedido', t: '# PEDIDO', w: 10 },
   { k: 'cantidad', t: 'CANT', w: 7 },
   { k: 'productos', t: 'PRODUCTO', w: 46 },
   { k: 'costo', t: 'COSTO', w: 12, num: true },
@@ -519,6 +523,8 @@ function hojaDiaria(ws: Worksheet, dia: string, filas: FilaPedido[], colores: Ma
     f.items.forEach((it, j) => {
       const fila = ws.getRow(r);
       const valores: Record<string, string | number | null> = {
+        // En cada fila de producto, para saber cuáles son del mismo pedido y poder filtrar
+        pedido: f.numero || null,
         cantidad: it.cantidad,
         productos: it.producto,
         costo: it.costo,
@@ -577,6 +583,7 @@ function hojaDiaria(ws: Worksheet, dia: string, filas: FilaPedido[], colores: Ma
   const nEntregados = filas.filter(entregado).length;
   const nSinSumar = filas.length - nEntregados;
   const totales: Record<string, unknown> = {
+    pedido: null,
     cantidad: suma('cantidad', tot((f) => f.cantidad)),
     productos: 'TOTAL',
     costo: suma('costo', tot((f) => f.costo)),

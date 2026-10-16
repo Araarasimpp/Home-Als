@@ -12,6 +12,7 @@ import {
   Output,
   ViewChild,
 } from '@angular/core';
+import { SobreTodoDirective } from '../sobre-todo.directive';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -21,6 +22,8 @@ const SALIDA = 384; // px de la foto final (se ve nítida en pantallas retina)
 @Component({
   selector: 'app-foto-editor',
   standalone: true,
+  // Encima de la barra de navegación también en iPhone
+  hostDirectives: [SobreTodoDirective],
   imports: [CommonModule, FormsModule],
   template: `
     <div class="fe-fondo" (click)="cancelar.emit()"></div>
