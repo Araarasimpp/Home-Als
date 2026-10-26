@@ -39,6 +39,12 @@ export class MiPerfilPage implements OnInit {
   guardandoFoto = false;
   errorFoto = '';
 
+  // Nombre
+  nombre = '';
+  private nombreOriginal = '';
+  guardandoNombre = false;
+  avisoNombre = '';
+
   // Teléfono
   telefono = '';
   private telefonoOriginal = '';
@@ -69,6 +75,7 @@ export class MiPerfilPage implements OnInit {
     this.perfil = perfil;
     this.email = perfil?.email || user?.email || '';
     this.telefono = this.telefonoOriginal = perfil?.telefono ?? '';
+    this.nombre = this.nombreOriginal = perfil?.nombre ?? '';
     this.loading = false;
     this.cdr.detectChanges();
   }
@@ -142,6 +149,43 @@ export class MiPerfilPage implements OnInit {
       this.errorFoto = 'No se pudo quitar la foto. Intenta de nuevo.';
     }
     this.guardandoFoto = false;
+    this.cdr.detectChanges();
+  }
+
+  // ---------- Nombre ----------
+  get nombreCambio(): boolean {
+    return this.nombre.trim().replace(/\s+/g, ' ') !== this.nombreOriginal.trim();
+  }
+
+  async guardarNombre(): Promise<void> {
+    if (!this.perfil || this.guardandoNombre || !this.nombreCambio) return;
+    const nombre = this.nombre.trim().replace(/\s+/g, ' ');
+    if (nombre.length < 2) {
+      this.avisoNombre = 'Escribe tu nombre (mínimo 2 letras).';
+      return;
+    }
+    this.guardandoNombre = true;
+    this.avisoNombre = '';
+    this.cdr.detectChanges();
+    const { data, error } = await this.supabase.client
+      .from('profiles')
+      .update({ nombre })
+      .eq('id', this.perfil.id)
+      .select('nombre');
+    this.guardandoNombre = false;
+    // Sin error pero sin fila devuelta = la base no dejó cambiarlo (permisos)
+    if (error || !data?.length) {
+      this.avisoNombre = 'No se pudo cambiar el nombre. Intenta de nuevo.';
+    } else {
+      this.nombre = this.nombreOriginal = nombre;
+      this.perfil = { ...this.perfil, nombre };
+      this.supabase.actualizarPerfilLocal({ nombre });
+      this.avisoNombre = 'Guardado';
+      setTimeout(() => {
+        if (this.avisoNombre === 'Guardado') this.avisoNombre = '';
+        this.cdr.detectChanges();
+      }, 2200);
+    }
     this.cdr.detectChanges();
   }
 

@@ -31,10 +31,12 @@
     <section class="pf-grupo" aria-labelledby="t-datos">
       <h2 id="t-datos">Tus datos</h2>
       <div class="pf-lista">
-        <div class="pf-fila">
-          <span class="pf-etq">Nombre</span>
-          <span class="pf-val">{{ perfil?.nombre }}</span>
-        </div>
+        <form class="pf-fila pf-editable" (ngSubmit)="guardarNombre()">
+          <label class="pf-etq" for="pf-nombre">Nombre</label>
+          <input id="pf-nombre" name="nombre" type="text" autocomplete="name" autocapitalize="words" maxlength="60" [(ngModel)]="nombre" />
+          <button type="submit" class="pf-guardar" *ngIf="nombreCambio" [disabled]="guardandoNombre">{{ guardandoNombre ? '…' : 'Guardar' }}</button>
+          <span class="pf-ok" *ngIf="avisoNombre === 'Guardado'" role="status">Guardado ✓</span>
+        </form>
         <div class="pf-fila">
           <span class="pf-etq">Correo</span>
           <span class="pf-val pf-largo">{{ email }}</span>
@@ -46,8 +48,9 @@
           <span class="pf-ok" *ngIf="avisoTel === 'Guardado'" role="status">Guardado ✓</span>
         </form>
       </div>
+      <p class="pf-nota" *ngIf="avisoNombre && avisoNombre !== 'Guardado'" role="alert">{{ avisoNombre }}</p>
       <p class="pf-nota" *ngIf="avisoTel && avisoTel !== 'Guardado'" role="alert">{{ avisoTel }}</p>
-      <p class="pf-nota">Para cambiar tu nombre o tu correo, pídeselo al administrador.</p>
+      <p class="pf-nota">Para cambiar tu correo, pídeselo al administrador.</p>
     </section>
 
     <!-- Contraseña -->
