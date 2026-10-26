@@ -208,6 +208,32 @@
   color: var(--accent);
 }
 
+.vl-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+button.vl-editar {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.vl-eliminar {
+  color: var(--danger);
+}
+
+.vl-eliminar:hover:not(:disabled) {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: var(--danger-wash);
+}
+
+.vl-eliminar:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
 @media (max-width: 640px) {
   .vl-controles .tabs {
     margin-left: 0;

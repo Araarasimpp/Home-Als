@@ -21,6 +21,7 @@
 import type { Borders, Cell, Fill, Worksheet } from 'exceljs';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { diaColombiaDe, finDiaColombia, inicioDiaColombia } from '../../shared/fecha-colombia';
+import { repartoEnvio } from './envio';
 
 export interface OpcionesExcel {
   desde: string; // YYYY-MM-DD
@@ -51,6 +52,9 @@ interface FilaPedido {
   creado: string;
   estado: string;
   sinCosto: boolean;
+  /** Envío que se pone sobre lo cobrado (ej. 1.000): parte de la tienda y del vendedor por %. */
+  envioTienda: number;
+  envioVendedor: number;
   items: ItemFila[];
 }
 
@@ -219,6 +223,8 @@ async function cargarGrupos(db: SupabaseClient, o: OpcionesExcel, incluirCancela
       creado: p.created_at,
       estado: p.estado,
       sinCosto,
+      envioTienda: repartoEnvio(p).tienda,
+      envioVendedor: repartoEnvio(p).vendedor,
       items: detalle.length ? detalle : [{ cantidad, producto: 'SIN PRODUCTOS', costo, venta, comision: comisionPedido, sinCosto }],
     });
   }
@@ -483,8 +489,10 @@ function hojaDiaNombre(dia: string): string {
   return sinTildes(t).replace(/[.,]/g, '').toUpperCase();
 }
 
-const gananciaVendedorDe = (f: FilaPedido) => f.comision;
-const gananciaTiendaDe = (f: FilaPedido) => f.venta - f.costo - f.comision;
+// Planilla general: el envío que se pone sobre lo cobrado se descuenta (todo de la
+// tienda, o mitad y mitad si el vendedor es por %)
+const gananciaVendedorDe = (f: FilaPedido) => f.comision - f.envioVendedor;
+const gananciaTiendaDe = (f: FilaPedido) => f.venta - f.costo - f.comision - f.envioTienda;
 
 function hojaDiaria(ws: Worksheet, dia: string, filas: FilaPedido[], colores: Map<string, string>): void {
   const n = COLS_DIARIA.length;
@@ -529,8 +537,9 @@ function hojaDiaria(ws: Worksheet, dia: string, filas: FilaPedido[], colores: Ma
         productos: it.producto,
         costo: it.costo,
         venta: it.venta,
-        gananciaTienda: it.venta - it.costo - it.comision,
-        gananciaVendedor: it.comision,
+        // El envío se descuenta una vez por pedido, en su primera fila
+        gananciaTienda: it.venta - it.costo - it.comision - (j === 0 ? f.envioTienda : 0),
+        gananciaVendedor: it.comision - (j === 0 ? f.envioVendedor : 0),
         domicilio: j === 0 ? f.domicilio || null : null,
         total: j === 0 ? f.total : null,
         mensajero: f.mensajero,

@@ -95,10 +95,23 @@
               </span>
             </ng-template>
           </ng-container>
-          <a class="vl-editar" *ngIf="editable(v)" [routerLink]="[rutaEditar, v.id, 'editar']" [attr.aria-label]="'Editar venta #' + v.numero">
-            <ion-icon name="create-outline" aria-hidden="true"></ion-icon>
-            Editar
-          </a>
+          <div class="vl-botones" *ngIf="editable(v) || puedeEliminar">
+            <a class="vl-editar" *ngIf="editable(v)" [routerLink]="[rutaEditar, v.id, 'editar']" [attr.aria-label]="'Editar venta #' + v.numero">
+              <ion-icon name="create-outline" aria-hidden="true"></ion-icon>
+              Editar
+            </a>
+            <button
+              type="button"
+              class="vl-editar vl-eliminar"
+              *ngIf="puedeEliminar"
+              (click)="eliminar(v)"
+              [disabled]="eliminandoId === v.id"
+              [attr.aria-label]="'Eliminar venta #' + v.numero"
+            >
+              <ion-icon name="trash-outline" aria-hidden="true"></ion-icon>
+              {{ eliminandoId === v.id ? 'Eliminando…' : 'Eliminar' }}
+            </button>
+          </div>
         </div>
       </li>
     </ul>

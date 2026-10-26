@@ -69,11 +69,15 @@
             <td class="text-soft">{{ f.costo != null ? formatoMoneda(f.costo) : '—' }}</td>
             <td class="text-soft">{{ formatoMoneda(f.precioVenta) }}</td>
             <td class="text-soft">{{ f.cantidad }}</td>
-            <td class="ganancia">{{ formatoMoneda(f.gananciaItem) }}</td>
+            <td class="ganancia" [attr.title]="f.envioTienda ? 'Ya descontado el envío que pone la tienda: ' + formatoMoneda(f.envioTienda) : null">
+              {{ formatoMoneda(f.gananciaItem) }}<small class="envio" *ngIf="f.envioTienda">−{{ formatoMoneda(f.envioTienda) }} envío</small>
+            </td>
             <td>{{ formatoMoneda(f.total) }}</td>
             <td class="text-soft">{{ f.canal === 'local' ? 'En local' : formatoMoneda(f.valorDomicilio) }}</td>
             <td class="text-soft">{{ f.canal === 'local' ? '—' : formatoMoneda(f.pagoDomiciliario) }}</td>
-            <td class="comision">{{ formatoMoneda(f.comision) }}</td>
+            <td class="comision" [attr.title]="f.envioVendedor ? 'Ya descontada su parte del envío: ' + formatoMoneda(f.envioVendedor) : null">
+              {{ formatoMoneda(f.comision) }}<small class="envio" *ngIf="f.envioVendedor">−{{ formatoMoneda(f.envioVendedor) }} envío</small>
+            </td>
           </tr>
         </tbody>
         <tfoot>
@@ -91,11 +95,11 @@
       <p class="nota-tachados" *ngIf="hayNoSumados">
         Los pedidos <s>tachados</s> (pendientes, en ruta o cancelados) se muestran pero no suman en los totales.
       </p>
-      <p class="nota-envio" *ngIf="filas.length && totalEnvioAsumido !== 0">
-        Envíos que pone la tienda (pago al domiciliario − domicilio cobrado):
-        <strong>{{ formatoMoneda(totalEnvioAsumido) }}</strong>.
-        Ganancia de la tienda después de envíos:
-        <strong>{{ formatoMoneda(totalGananciaTienda - totalEnvioAsumido) }}</strong>.
+      <p class="nota-envio" *ngIf="filas.length && (totalEnvioTienda || totalEnvioVendedor)">
+        Ya se descontaron los {{ formatoMoneda(totalEnvioTienda + totalEnvioVendedor) }} que se ponen en envíos
+        (pago al domiciliario − domicilio cobrado):
+        <strong>{{ formatoMoneda(totalEnvioTienda) }}</strong> de la ganancia de la tienda<ng-container *ngIf="totalEnvioVendedor">
+        y <strong>{{ formatoMoneda(totalEnvioVendedor) }}</strong> de la comisión de los vendedores por %</ng-container>.
       </p>
 
       <ng-template #vacio>

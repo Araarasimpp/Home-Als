@@ -5,7 +5,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { IonIcon } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, receiptOutline, cashOutline, phonePortraitOutline, swapHorizontalOutline, alertCircleOutline, createOutline } from 'ionicons/icons';
+import { add, receiptOutline, cashOutline, phonePortraitOutline, swapHorizontalOutline, alertCircleOutline, createOutline, trashOutline } from 'ionicons/icons';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { EstadoPedido, MetodoPago, efectivoDePedido, etiquetaMetodo, transferenciaDePedido } from '../../shared/models/models';
 import { finDiaColombia, formatoFechaCO, formatoHoraCO, hoyColombiaISO, inicioDiaColombia } from '../../shared/fecha-colombia';
@@ -53,6 +53,9 @@ export class VentasLocalPage implements OnInit, OnDestroy {
   readonly rutaNueva: string;
   /** Base para editar una venta (solo admin y despachador; el vendedor no edita). */
   readonly rutaEditar: string | null;
+  /** Solo el admin puede eliminar ventas del local. */
+  readonly puedeEliminar: boolean;
+  eliminandoId: string | null = null;
 
   previewUrl: string | null = null;
   abriendoId: string | null = null;
@@ -63,7 +66,8 @@ export class VentasLocalPage implements OnInit, OnDestroy {
   constructor(private supabase: SupabaseService, private cdr: ChangeDetectorRef, route: ActivatedRoute) {
     this.rutaNueva = (route.snapshot.data['rutaNueva'] as string) ?? '../venta-local';
     this.rutaEditar = (route.snapshot.data['rutaEditar'] as string) ?? null;
-    addIcons({ add, receiptOutline, cashOutline, phonePortraitOutline, swapHorizontalOutline, alertCircleOutline, createOutline });
+    this.puedeEliminar = !!route.snapshot.data['puedeEliminar'];
+    addIcons({ add, receiptOutline, cashOutline, phonePortraitOutline, swapHorizontalOutline, alertCircleOutline, createOutline, trashOutline });
   }
 
   async ngOnInit(): Promise<void> {
@@ -198,6 +202,33 @@ export class VentasLocalPage implements OnInit, OnDestroy {
 
   transferencia(v: VentaLocal): number {
     return transferenciaDePedido(v);
+  }
+
+  /** Elimina la venta (solo admin): devuelve el stock y borra la foto del comprobante. */
+  async eliminar(v: VentaLocal): Promise<void> {
+    if (!this.puedeEliminar || this.eliminandoId) return;
+    const ok = confirm(
+      `¿Eliminar la venta #${v.numero} de ${this.formatoMoneda(v.total)}?\n\n` +
+        'Se devuelve el stock de los productos y deja de contar en reportes. No se puede deshacer.'
+    );
+    if (!ok) return;
+    this.eliminandoId = v.id;
+    this.errorMsg = '';
+    this.cdr.detectChanges();
+    const { error } = await this.supabase.client.rpc('eliminar_venta_local', { p_pedido_id: v.id });
+    if (error) {
+      this.eliminandoId = null;
+      this.errorMsg = /eliminar_venta_local|function/i.test(error.message)
+        ? 'Eliminar ventas todavía no está activado en el sistema.'
+        : 'No se pudo eliminar la venta. ' + error.message;
+      this.cdr.detectChanges();
+      return;
+    }
+    // La foto ya no sirve: se borra (si falla, solo queda el archivo suelto)
+    if (v.comprobante_url) await this.supabase.client.storage.from('comprobantes').remove([v.comprobante_url]);
+    this.ventas = this.ventas.filter((x) => x.id !== v.id);
+    this.eliminandoId = null;
+    this.cdr.detectChanges();
   }
 
   async verComprobante(v: VentaLocal): Promise<void> {

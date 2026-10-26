@@ -46,7 +46,7 @@ export const ADMIN_ROUTES: Routes = [
       },
       {
         path: 'ventas-del-local',
-        data: { rutaNueva: '/admin/venta-local', rutaEditar: '/admin/ventas-del-local' },
+        data: { rutaNueva: '/admin/venta-local', rutaEditar: '/admin/ventas-del-local', puedeEliminar: true },
         loadComponent: () =>
           import('./ventas-local/ventas-local.page').then((m) => m.VentasLocalPage),
       },

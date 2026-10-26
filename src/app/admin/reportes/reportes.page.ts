@@ -6,6 +6,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { EstadoPedido } from '../../shared/models/models';
 import { hoyColombiaISO, inicioDiaColombia, finDiaColombia, formatoFechaCO } from '../../shared/fecha-colombia';
 import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
+import { repartoEnvio } from './envio';
 
 interface FilaReporte {
   pedidoId: string;
@@ -19,7 +20,11 @@ interface FilaReporte {
   valorDomicilio: number;
   pagoDomiciliario: number;
   canal: 'domicilio' | 'local';
+  /** Comisión del vendedor ya descontada su parte del envío (vendedores por %). */
   comision: number;
+  /** Parte del envío que se descuenta en esta fila (solo la primera del pedido). */
+  envioTienda: number;
+  envioVendedor: number;
   productoNombre: string;
   costo: number | null;
   precioVenta: number;
@@ -54,7 +59,16 @@ export class ReportesPage implements OnInit {
   filas: FilaReporte[] = [];
 
   // Totales a nivel de PEDIDO (no se duplican aunque el pedido tenga varias filas de producto)
-  private pedidosUnicos: { total: number; valorDomicilio: number; pagoDomiciliario: number; comision: number; cancelado: boolean; entregado: boolean }[] = [];
+  private pedidosUnicos: {
+    total: number;
+    valorDomicilio: number;
+    pagoDomiciliario: number;
+    comision: number;
+    envioTienda: number;
+    envioVendedor: number;
+    cancelado: boolean;
+    entregado: boolean;
+  }[] = [];
 
   readonly estados: { valor: FiltroEstado; etiqueta: string }[] = [
     { valor: 'todos', etiqueta: 'Todos' },
@@ -142,14 +156,19 @@ export class ReportesPage implements OnInit {
     const pedidos = (pedidosRes.data ?? []) as any[];
     const nombresPorId = new Map((perfilesRes.data ?? []).map((p: any) => [p.id, p.nombre]));
 
-    this.pedidosUnicos = pedidos.map((p) => ({
-      total: Number(p.total ?? 0),
-      valorDomicilio: Number(p.valor_domicilio ?? 0),
-      pagoDomiciliario: Number(p.pago_domiciliario ?? p.valor_domicilio ?? 0),
-      comision: Number(p.comision ?? 0),
-      cancelado: p.estado === 'cancelado',
-      entregado: p.estado === 'entregado',
-    }));
+    this.pedidosUnicos = pedidos.map((p) => {
+      const envio = repartoEnvio(p);
+      return {
+        total: Number(p.total ?? 0),
+        valorDomicilio: Number(p.valor_domicilio ?? 0),
+        pagoDomiciliario: Number(p.pago_domiciliario ?? p.valor_domicilio ?? 0),
+        comision: Number(p.comision ?? 0) - envio.vendedor,
+        envioTienda: envio.tienda,
+        envioVendedor: envio.vendedor,
+        cancelado: p.estado === 'cancelado',
+        entregado: p.estado === 'entregado',
+      };
+    });
 
     const filasNuevas: FilaReporte[] = [];
 
@@ -163,6 +182,8 @@ export class ReportesPage implements OnInit {
         );
 
       const pedidosPorId = new Map(pedidos.map((p) => [p.id, p]));
+      // El envío que pone la tienda se descuenta una sola vez, en la primera fila del pedido
+      const yaDescontado = new Set<string>();
 
       for (const item of items ?? []) {
         const p = pedidosPorId.get((item as any).pedido_id);
@@ -180,9 +201,12 @@ export class ReportesPage implements OnInit {
         // Ganancia de la TIENDA en este producto, ya descontada la parte del vendedor:
         //  - Por margen: precio base − costo (lo que cobre por encima del base es del vendedor).
         //  - Por porcentaje: (precio de venta − costo) menos el % que se lleva el vendedor.
-        const gananciaItem = porPorcentaje
-          ? Math.round(cantidad * (precioVenta - costoEfectivo) * (1 - pct / 100))
-          : cantidad * (precioBase - costoEfectivo);
+        const envio = yaDescontado.has(p.id) ? { tienda: 0, vendedor: 0 } : repartoEnvio(p);
+        yaDescontado.add(p.id);
+        const gananciaItem =
+          (porPorcentaje
+            ? Math.round(cantidad * (precioVenta - costoEfectivo) * (1 - pct / 100))
+            : cantidad * (precioBase - costoEfectivo)) - envio.tienda;
 
         filasNuevas.push({
           pedidoId: p.id,
@@ -195,7 +219,9 @@ export class ReportesPage implements OnInit {
           valorDomicilio: Number(p.valor_domicilio ?? 0),
           pagoDomiciliario: Number(p.pago_domiciliario ?? p.valor_domicilio ?? 0),
           canal: p.canal ?? 'domicilio',
-          comision: Number(p.comision ?? 0),
+          comision: Number(p.comision ?? 0) - repartoEnvio(p).vendedor,
+          envioTienda: envio.tienda,
+          envioVendedor: envio.vendedor,
           productoNombre: (item as any).producto?.nombre ?? 'Producto',
           costo,
           precioVenta,
@@ -235,11 +261,14 @@ export class ReportesPage implements OnInit {
     return this.entregados.reduce((s, p) => s + p.pagoDomiciliario, 0);
   }
 
-  /** Lo que la tienda pone de su bolsillo en envíos (pago al domiciliario − cobro al cliente), solo entregados. */
-  get totalEnvioAsumido(): number {
-    return this.pedidosUnicos
-      .filter((p) => p.entregado)
-      .reduce((s, p) => s + (p.pagoDomiciliario - p.valorDomicilio), 0);
+  /** Lo que se puso en envíos (pago al domiciliario − cobro al cliente), solo entregados: parte de la tienda. */
+  get totalEnvioTienda(): number {
+    return this.entregados.reduce((s, p) => s + p.envioTienda, 0);
+  }
+
+  /** Parte del envío que pusieron los vendedores por % (ya restada de su comisión). */
+  get totalEnvioVendedor(): number {
+    return this.entregados.reduce((s, p) => s + p.envioVendedor, 0);
   }
 
   // Las ganancias solo cuentan pedidos entregados (pendientes, en ruta y cancelados no suman)
