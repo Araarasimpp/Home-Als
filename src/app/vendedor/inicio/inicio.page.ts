@@ -18,6 +18,18 @@ import { EstadoPedido } from '../../shared/models/models';
 import { diaColombiaDe, hoyColombiaISO, inicioDiaColombia } from '../../shared/fecha-colombia';
 import { EstadoIconComponent } from '../../shared/estado-icon/estado-icon.component';
 import { MiPuestoComponent } from '../../shared/ranking/mi-puesto.component';
+import { repartoEnvio } from '../../shared/envio';
+
+/** Campos que hacen falta para saber si el pedido tuvo envío extra. */
+const CAMPOS_ENVIO = 'canal, valor_domicilio, pago_domiciliario, comision_tipo';
+
+/**
+ * Comisión que de verdad le queda al vendedor: si es por % y en el domicilio se
+ * pusieron 1.000 sobre lo cobrado, la mitad (500) sale de su comisión.
+ */
+function conComisionNeta(filas: any[] | null): any[] {
+  return (filas ?? []).map((p) => ({ ...p, comision: Number(p.comision || 0) - repartoEnvio(p).vendedor }));
+}
 
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip);
 
@@ -146,18 +158,18 @@ export class InicioPage implements OnInit, OnDestroy {
     const [hoyRes, periodoRes, pedidosRes, entregadosRes] = await Promise.all([
       db
         .from('pedidos')
-        .select('total, comision, estado')
+        .select(`total, comision, estado, ${CAMPOS_ENVIO}`)
         .eq('vendedor_id', this.userId)
         .gte('created_at', inicioHoy),
       db
         .from('pedidos')
-        .select('total, comision, created_at')
+        .select(`total, comision, created_at, ${CAMPOS_ENVIO}`)
         .eq('vendedor_id', this.userId)
         .gte('created_at', inicioPeriodo.toISOString())
         .in('estado', ['en_ruta', 'entregado']),
       db
         .from('pedidos')
-        .select('id, numero, cliente_nombre, barrio, total, comision, estado, created_at')
+        .select(`id, numero, cliente_nombre, barrio, total, comision, estado, created_at, ${CAMPOS_ENVIO}`)
         .eq('vendedor_id', this.userId)
         .order('created_at', { ascending: false })
         .limit(40),
@@ -169,18 +181,18 @@ export class InicioPage implements OnInit, OnDestroy {
         .gte('entregado_at', inicioHoy),
     ]);
 
-    const hoy = (hoyRes.data ?? []) as { total: number; comision: number; estado: EstadoPedido }[];
+    const hoy = conComisionNeta(hoyRes.data) as { total: number; comision: number; estado: EstadoPedido }[];
     const vendidos = hoy.filter((p) => p.estado === 'en_ruta' || p.estado === 'entregado');
     this.ventasHoy = vendidos.reduce((s, p) => s + Number(p.total || 0), 0);
     this.comisionHoy = vendidos.reduce((s, p) => s + Number(p.comision || 0), 0);
     this.pedidosHoy = hoy.filter((p) => p.estado !== 'cancelado').length;
     this.entregadosHoy = entregadosRes.count ?? 0;
 
-    this.pedidos = (pedidosRes.data ?? []) as PedidoPropio[];
+    this.pedidos = conComisionNeta(pedidosRes.data) as PedidoPropio[];
     this.pedidosEnRuta = this.pedidos.filter((p) => p.estado === 'en_ruta').length;
     this.porAsignar = this.pedidos.filter((p) => p.estado === 'pendiente').length;
 
-    this.filasPeriodo = (periodoRes.data ?? []) as any[];
+    this.filasPeriodo = conComisionNeta(periodoRes.data) as any[];
     this.armarDias();
 
     this.loading = false;

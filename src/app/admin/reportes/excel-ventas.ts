@@ -21,7 +21,7 @@
 import type { Borders, Cell, Fill, Worksheet } from 'exceljs';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { diaColombiaDe, finDiaColombia, inicioDiaColombia } from '../../shared/fecha-colombia';
-import { repartoEnvio } from './envio';
+import { repartoEnvio } from '../../shared/envio';
 
 export interface OpcionesExcel {
   desde: string; // YYYY-MM-DD
@@ -365,19 +365,27 @@ function hojaVendedor(ws: Worksheet, g: Grupo, colores: Map<string, string>): vo
   const cM = ws.getColumn('mensajero').number;
   const cV = ws.getColumn('vendedor').number;
   const nombreCorto = g.vendedor.split(' ')[0];
+  // Envío que se pone sobre lo cobrado (1.000 por domicilio): por % sale mitad de
+  // la comisión del vendedor y mitad de ALS; por margen, todo de ALS
+  const envV = entregadas.reduce((s, f) => s + f.envioVendedor, 0);
+  const envT = entregadas.reduce((s, f) => s + f.envioTienda, 0);
+  const menos = (n: number) => (n ? `\n(−${n.toLocaleString('es-CO')} envíos)` : '');
+  const cM_ = ws.getColumn('mensajero').letter;
+  if (envV || envT) rt.height = 44; // una línea más en los títulos de las cajas
   const cajas = esPct
     ? [
-        { col: cM, titulo: `COMISIÓN ${nombreCorto}\n${pct}%`, formula: `ROUND(${colG}${filaTotal}*${pct}/100,0)` },
-        { col: cV, titulo: `COMISIÓN ALS\n${100 - pct!}%`, formula: `${colG}${filaTotal}-${ws.getColumn('mensajero').letter}${filaTotal + 1}` },
+        { col: cM, titulo: `COMISIÓN ${nombreCorto}\n${pct}%${menos(envV)}`, formula: `ROUND(${colG}${filaTotal}*${pct}/100,0)${envV ? `-${envV}` : ''}` },
+        { col: cV, titulo: `COMISIÓN ALS\n${100 - pct!}%${menos(envT)}`, formula: `${colG}${filaTotal}-${cM_}${filaTotal + 1}${envV + envT ? `-${envV + envT}` : ''}` },
       ]
     : [
         { col: cM, titulo: `COMISIÓN ${nombreCorto}`, formula: `${letra('comision')}${filaTotal}` },
-        { col: cV, titulo: 'GANANCIA ALS', formula: `${colG}${filaTotal}` },
+        { col: cV, titulo: `GANANCIA ALS${menos(envT)}`, formula: `${colG}${filaTotal}${envT ? `-${envT}` : ''}` },
       ];
   const totalBase = entregadas.reduce((s, f) => s + (esPct ? f.ganancia : f.base - f.costo), 0);
+  const comisionPct = esPct ? Math.round((totalBase * pct!) / 100) : 0;
   const resultados = esPct
-    ? [Math.round((totalBase * pct!) / 100), totalBase - Math.round((totalBase * pct!) / 100)]
-    : [entregadas.reduce((s, f) => s + f.comision, 0), totalBase];
+    ? [comisionPct - envV, totalBase - comisionPct - envT]
+    : [entregadas.reduce((s, f) => s + f.comision, 0), totalBase - envT];
 
   cajas.forEach((caja, i) => {
     const t = rt.getCell(caja.col);
@@ -411,10 +419,14 @@ function hojaResumen(ws: Worksheet, grupos: Grupo[]): void {
     const ent = g.filas.filter((f) => f.estado === 'entregado');
     const venta = ent.reduce((s, f) => s + f.venta, 0);
     const ganancia = ent.reduce((s, f) => s + f.ganancia, 0);
-    const comision =
+    // Ya descontado el envío que se pone sobre lo cobrado (mitad y mitad si es por %)
+    const envV = ent.reduce((s, f) => s + f.envioVendedor, 0);
+    const envT = ent.reduce((s, f) => s + f.envioTienda, 0);
+    const comisionBruta =
       g.porcentaje !== null
         ? Math.round((ganancia * g.porcentaje) / 100)
         : ent.reduce((s, f) => s + f.comision, 0);
+    const comision = comisionBruta - envV;
     const fila = [
       g.vendedor,
       g.porcentaje !== null ? `${g.porcentaje}% de la ganancia` : 'Margen sobre precio base',
@@ -422,7 +434,7 @@ function hojaResumen(ws: Worksheet, grupos: Grupo[]): void {
       venta,
       ganancia,
       comision,
-      ganancia - comision,
+      ganancia - comisionBruta - envT,
     ];
     fila.forEach((v, i) => {
       const c = ws.getRow(idx + 2).getCell(i + 1);

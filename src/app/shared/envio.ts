@@ -1,4 +1,4 @@
-// Regla del envío que se pone sobre lo cobrado al cliente (Reportes y su Excel).
+// Regla del envío que se pone sobre lo cobrado al cliente (Reportes, su Excel y la comisión que ve el vendedor).
 /**
  * Envío que se pone por encima de lo cobrado al cliente (en barrios normales el
  * cliente paga 9.000 y el domiciliario recibe 10.000: se ponen 1.000). Lo asume

@@ -6,7 +6,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { EstadoPedido } from '../../shared/models/models';
 import { hoyColombiaISO, inicioDiaColombia, finDiaColombia, formatoFechaCO } from '../../shared/fecha-colombia';
 import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
-import { repartoEnvio } from './envio';
+import { repartoEnvio } from '../../shared/envio';
 
 interface FilaReporte {
   pedidoId: string;
