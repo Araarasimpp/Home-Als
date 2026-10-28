@@ -1,0 +1,65 @@
+# Diagnóstico temporal: ¿Google Drive entrega las fotos de los productos?
+# Lee los ids de Drive de la base (no se imprimen) y prueba cada formato de
+# link. Solo muestra conteos. Se borra cuando termine el diagnóstico.
+name: Diagnóstico fotos Drive
+
+on:
+  push:
+    paths: ['.github/workflows/diagnostico-fotos.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  fotos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client >/dev/null
+      - name: Probar links de Drive
+        env:
+          DB_URL_CRUDA: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          DB_URL=$(python3 - <<'PY'
+          import os, re, sys
+          from urllib.parse import quote, unquote
+          url = os.environ["DB_URL_CRUDA"].strip().strip('"').strip("'")
+          m = re.match(r'^(postgres(?:ql)?://)([^:/@]+):(.*)@([^@]+)$', url, re.S)
+          esquema, usuario, clave, resto = m.groups()
+          clave = clave.strip()
+          if clave.startswith('[') and clave.endswith(']'): clave = clave[1:-1]
+          print(f"{esquema}{usuario}:{quote(unquote(clave), safe='')}@{resto.strip()}")
+          PY
+          )
+          echo "::add-mask::$DB_URL"
+          psql "$DB_URL" -X -At -c "select imagen_url from public.productos where imagen_url ilike '%drive.google%' or imagen_url ilike '%googleusercontent%'" > /tmp/links.txt
+          python3 - <<'PY'
+          import re, urllib.request, collections
+          pats = [r'drive\.google\.com/file/d/([\w-]{10,})', r'[?&]id=([\w-]{10,})', r'googleusercontent\.com/d/([\w-]{10,})']
+          ids = []
+          for l in open('/tmp/links.txt'):
+              for p in pats:
+                  m = re.search(p, l)
+                  if m: ids.append(m.group(1)); break
+          print(f"links de Drive: {sum(1 for _ in open('/tmp/links.txt'))}, ids reconocidos: {len(ids)}")
+          formatos = {
+            'thumbnail (el que usa la app)': 'https://drive.google.com/thumbnail?id={}&sz=w800',
+            'lh3.googleusercontent.com/d':   'https://lh3.googleusercontent.com/d/{}=w800',
+            'uc?export=view':                'https://drive.google.com/uc?export=view&id={}',
+          }
+          muestra = ids[:25]
+          for nombre, f in formatos.items():
+              res = collections.Counter(); cors = 0
+              for i in muestra:
+                  try:
+                      req = urllib.request.Request(f.format(i), headers={'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 Safari/604.1'})
+                      r = urllib.request.urlopen(req, timeout=20)
+                      ct = r.headers.get('content-type', '')
+                      if r.headers.get('access-control-allow-origin'): cors += 1
+                      res['imagen OK' if ct.startswith('image/') else 'NO es imagen: ' + ct.split(';')[0]] += 1
+                  except urllib.error.HTTPError as e:
+                      res[f'error {e.code}'] += 1
+                  except Exception as e:
+                      res['falla: ' + type(e).__name__] += 1
+              print(f"{nombre}: {dict(res)}  (con CORS: {cors}/{len(muestra)})")
+          PY
