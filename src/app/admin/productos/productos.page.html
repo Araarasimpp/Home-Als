@@ -25,6 +25,23 @@
     </div>
   </header>
 
+  <div class="aviso-drive" *ngIf="fotosEnDrive.length || traspaso || resultadoTraspaso" role="status">
+    <ng-container *ngIf="traspaso; else sinTraspaso">
+      <p><strong>Pasando fotos a la app…</strong> {{ traspaso.hechas }} de {{ traspaso.total }}. No cierres esta página.</p>
+      <div class="aviso-drive-barra"><span [style.width.%]="(traspaso.hechas / traspaso.total) * 100"></span></div>
+    </ng-container>
+    <ng-template #sinTraspaso>
+      <p *ngIf="resultadoTraspaso">{{ resultadoTraspaso }}</p>
+      <ng-container *ngIf="fotosEnDrive.length">
+        <p>
+          <strong>{{ fotosEnDrive.length }} productos tienen la foto en Google Drive</strong> y por eso a veces no se ven:
+          Google las bloquea cuando la app pide muchas a la vez. Pásalas a la app una sola vez y cargarán siempre.
+        </p>
+        <button class="btn-primary" (click)="pasarFotosDeDrive()">Pasar {{ fotosEnDrive.length }} fotos a la app</button>
+      </ng-container>
+    </ng-template>
+  </div>
+
   <div class="resumen-carga" *ngIf="resumenCarga">
     <p class="resumen-ok" *ngIf="resumenCarga.creados">
       {{ resumenCarga.creados }} producto(s) cargado(s)/actualizado(s) correctamente.

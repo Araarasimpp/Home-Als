@@ -7,6 +7,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { ProductoFormComponent } from './producto-form/producto-form.component';
 import { Producto } from '../../shared/models/models';
 import { urlImagen } from '../../shared/imagenes/url-imagen';
+import { copiarDeDrive, esDeDrive } from '../../shared/imagenes/drive-a-supabase';
 import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
 
 type TabFiltro = 'activos' | 'todos';
@@ -389,6 +390,48 @@ export class ProductosPage implements OnInit, OnDestroy {
 
     this.cargandoExcel = false;
     input.value = '';
+    this.cdr.detectChanges();
+  }
+
+  // ---------- Fotos en Google Drive ----------
+  /** Progreso del traspaso de fotos de Drive a la app (null = no está corriendo). */
+  traspaso: { hechas: number; total: number; fallidas: number } | null = null;
+  resultadoTraspaso = '';
+
+  get fotosEnDrive(): Producto[] {
+    return this.productos.filter((p) => esDeDrive(p.imagen_url));
+  }
+
+  /**
+   * Copia, una por una, las fotos que están en Google Drive a la app (Supabase)
+   * y actualiza cada producto. Drive bloquea cuando se piden muchas fotos a la
+   * vez; desde la app cargan siempre.
+   */
+  async pasarFotosDeDrive(): Promise<void> {
+    const lista = this.fotosEnDrive;
+    if (!lista.length || this.traspaso) return;
+    this.traspaso = { hechas: 0, total: lista.length, fallidas: 0 };
+    this.resultadoTraspaso = '';
+    this.cdr.detectChanges();
+    for (const p of lista) {
+      try {
+        const nueva = await copiarDeDrive(this.supabase.client, p.imagen_url!);
+        const { error } = await this.supabase.client.from('productos').update({ imagen_url: nueva }).eq('id', p.id);
+        if (error) throw error;
+        p.imagen_url = nueva;
+        this.fotosRotas.delete(p.id);
+      } catch {
+        this.traspaso.fallidas++;
+      }
+      this.traspaso.hechas++;
+      this.cdr.detectChanges();
+      await new Promise((ok) => setTimeout(ok, 250)); // sin afanar a Google
+    }
+    const { total, fallidas } = this.traspaso;
+    this.resultadoTraspaso = fallidas
+      ? `Listo: ${total - fallidas} fotos pasadas a la app. ${fallidas} no se pudieron: revisa en Drive que estén compartidas con "Cualquier persona con el enlace" y vuelve a intentar.`
+      : `Listo: las ${total} fotos ya están en la app.`;
+    this.traspaso = null;
     this.cdr.detectChanges();
   }
 

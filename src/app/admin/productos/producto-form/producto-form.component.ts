@@ -6,6 +6,7 @@ import { SupabaseService } from '../../../core/services/supabase.service';
 import { Producto } from '../../../shared/models/models';
 import { comprimirImagen, extensionDe } from '../../../shared/imagenes/comprimir';
 import { urlImagen } from '../../../shared/imagenes/url-imagen';
+import { copiarDeDrive, esDeDrive } from '../../../shared/imagenes/drive-a-supabase';
 
 // Para un producto nuevo aún no existe el id, así que lo hacemos opcional
 // solo dentro de este formulario (el resto de los campos usan el mismo
@@ -80,6 +81,10 @@ export class ProductoFormComponent implements OnChanges {
 
       if (this.archivoImagen) {
         imagenUrl = await this.subirImagen(this.archivoImagen);
+      } else if (esDeDrive(imagenUrl)) {
+        // Link de Drive: se copia la foto a la app para que cargue siempre.
+        // Si Drive no la entrega, se guarda el link tal cual.
+        imagenUrl = await copiarDeDrive(this.supabase.client, imagenUrl!).catch(() => imagenUrl);
       }
 
       const payload = {
