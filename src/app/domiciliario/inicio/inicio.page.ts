@@ -12,6 +12,7 @@ import { EstadoIconComponent } from '../../shared/estado-icon/estado-icon.compon
 import { EntregarPedidoComponent } from '../entregar-pedido/entregar-pedido.component';
 import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
 import { MiPuestoComponent } from '../../shared/ranking/mi-puesto.component';
+import { itemsDePedidos } from '../../shared/en-lotes';
 
 interface PedidoRuta {
   id: string;
@@ -104,13 +105,7 @@ export class InicioDomiciliarioPage implements OnInit, OnDestroy {
     let pedidos = (rutaRes.data as any[]) ?? [];
 
     if (!rutaRes.error && pedidos.length) {
-      const { data: items } = await this.supabase.client
-        .from('pedido_items')
-        .select('pedido_id, cantidad, producto:productos(nombre)')
-        .in(
-          'pedido_id',
-          pedidos.map((p) => p.id)
-        );
+      const { data: items } = await itemsDePedidos(this.supabase.client, 'pedido_id, cantidad, producto:productos(nombre)', pedidos.map((p) => p.id));
 
       pedidos = pedidos.map((p) => ({
         ...p,

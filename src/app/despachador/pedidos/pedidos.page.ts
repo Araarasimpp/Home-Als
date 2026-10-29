@@ -7,6 +7,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { EstadoPedido } from '../../shared/models/models';
 import { ROTULO_LOGO_BASE64 } from '../rotulo-logo';
 import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
+import { actualizarPedidos, itemsDePedidos } from '../../shared/en-lotes';
 
 // Datos del negocio para el rótulo. Edítalos aquí, o si más adelante quieres
 // cambiarlos desde la app sin tocar código, se puede mover a una tabla
@@ -110,13 +111,7 @@ export class PedidosPage implements OnInit, OnDestroy {
     let pedidos = (data as any[]) ?? [];
 
     if (!error && pedidos.length) {
-      const { data: items } = await this.supabase.client
-        .from('pedido_items')
-        .select('pedido_id, cantidad, producto:productos(nombre)')
-        .in(
-          'pedido_id',
-          pedidos.map((p) => p.id)
-        );
+      const { data: items } = await itemsDePedidos(this.supabase.client, 'pedido_id, cantidad, producto:productos(nombre)', pedidos.map((p) => p.id));
 
       pedidos = pedidos.map((p) => ({
         ...p,
@@ -284,10 +279,7 @@ export class PedidosPage implements OnInit, OnDestroy {
     const ids = Array.from(this.seleccionados);
 
     // Traemos los items de cada pedido con el nombre del producto para el rótulo
-    const { data: items, error } = await this.supabase.client
-      .from('pedido_items')
-      .select('pedido_id, cantidad, producto:productos(nombre)')
-      .in('pedido_id', ids);
+    const { data: items, error } = await itemsDePedidos(this.supabase.client, 'pedido_id, cantidad, producto:productos(nombre)', ids);
 
     if (error) {
       this.imprimiendo = false;
@@ -308,10 +300,7 @@ export class PedidosPage implements OnInit, OnDestroy {
 
     // Se marca como impreso apenas se abre la ventana de impresión
     // (no hay forma confiable de detectar si el usuario canceló el diálogo)
-    await this.supabase.client
-      .from('pedidos')
-      .update({ rotulo_impreso_at: new Date().toISOString() })
-      .in('id', ids);
+    await actualizarPedidos(this.supabase.client, { rotulo_impreso_at: new Date().toISOString() }, ids);
 
     this.seleccionados.clear();
     this.imprimiendo = false;

@@ -22,6 +22,7 @@ import type { Borders, Cell, Fill, Worksheet } from 'exceljs';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { diaColombiaDe, finDiaColombia, inicioDiaColombia } from '../../shared/fecha-colombia';
 import { repartoEnvio } from '../../shared/envio';
+import { itemsDePedidos } from '../../shared/en-lotes';
 
 export interface OpcionesExcel {
   desde: string; // YYYY-MM-DD
@@ -138,10 +139,7 @@ async function cargarGrupos(db: SupabaseClient, o: OpcionesExcel, incluirCancela
   if (error) throw error;
   if (!pedidos?.length) return [];
 
-  const { data: items, error: errItems } = await db
-    .from('pedido_items')
-    .select('pedido_id, cantidad, precio_unitario, precio_base, producto:productos(nombre, costo)')
-    .in('pedido_id', pedidos.map((p: any) => p.id));
+  const { data: items, error: errItems } = await itemsDePedidos(db, 'pedido_id, cantidad, precio_unitario, precio_base, producto:productos(nombre, costo)', pedidos.map((p: any) => p.id));
   if (errItems) throw errItems;
 
   const nombre = new Map<string, string>((perfiles ?? []).map((p: any) => [p.id, p.nombre]));

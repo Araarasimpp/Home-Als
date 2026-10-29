@@ -12,6 +12,7 @@ import {
   formatoFechaCO,
 } from '../../shared/fecha-colombia';
 import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
+import { itemsDePedidos } from '../../shared/en-lotes';
 
 interface PedidoSinCuadrar {
   id: string;
@@ -90,13 +91,7 @@ export class CuadresPage implements OnInit {
     let pedidos = (pedidosRes.data as any[]) ?? [];
 
     if (pedidos.length) {
-      const { data: items } = await this.supabase.client
-        .from('pedido_items')
-        .select('pedido_id, cantidad, producto:productos(nombre)')
-        .in(
-          'pedido_id',
-          pedidos.map((p) => p.id)
-        );
+      const { data: items } = await itemsDePedidos(this.supabase.client, 'pedido_id, cantidad, producto:productos(nombre)', pedidos.map((p) => p.id));
 
       pedidos = pedidos.map((p) => ({
         ...p,

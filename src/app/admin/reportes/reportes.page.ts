@@ -7,6 +7,7 @@ import { EstadoPedido } from '../../shared/models/models';
 import { hoyColombiaISO, inicioDiaColombia, finDiaColombia, formatoFechaCO } from '../../shared/fecha-colombia';
 import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
 import { repartoEnvio } from '../../shared/envio';
+import { itemsDePedidos } from '../../shared/en-lotes';
 
 interface FilaReporte {
   pedidoId: string;
@@ -173,13 +174,7 @@ export class ReportesPage implements OnInit {
     const filasNuevas: FilaReporte[] = [];
 
     if (pedidos.length) {
-      const { data: items } = await this.supabase.client
-        .from('pedido_items')
-        .select('pedido_id, cantidad, precio_unitario, precio_base, producto:productos(nombre, costo)')
-        .in(
-          'pedido_id',
-          pedidos.map((p) => p.id)
-        );
+      const { data: items } = await itemsDePedidos(this.supabase.client, 'pedido_id, cantidad, precio_unitario, precio_base, producto:productos(nombre, costo)', pedidos.map((p) => p.id));
 
       const pedidosPorId = new Map(pedidos.map((p) => [p.id, p]));
       // El envío que pone la tienda se descuenta una sola vez, en la primera fila del pedido

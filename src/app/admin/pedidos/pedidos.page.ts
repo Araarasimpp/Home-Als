@@ -13,6 +13,7 @@ import { AvatarComponent } from '../../shared/avatar/avatar.component';
 import { ImagenPreviewComponent } from '../../shared/imagen-preview/imagen-preview.component';
 import { urlImagen } from '../../shared/imagenes/url-imagen';
 import { cargarDatosNegocio, documentoRotulos, imprimirEnVentana, rotuloHtml } from '../../shared/rotulo/rotulo';
+import { actualizarPedidos, itemsDePedidos } from '../../shared/en-lotes';
 
 interface PedidoFila {
   id: string;
@@ -216,13 +217,7 @@ export class PedidosPage implements OnInit, OnDestroy {
     );
 
     if (!error && pedidos.length) {
-      const { data: items } = await this.supabase.client
-        .from('pedido_items')
-        .select('pedido_id, cantidad, producto:productos(nombre, imagen_url)')
-        .in(
-          'pedido_id',
-          pedidos.map((p) => p.id)
-        );
+      const { data: items } = await itemsDePedidos(this.supabase.client, 'pedido_id, cantidad, producto:productos(nombre, imagen_url)', pedidos.map((p) => p.id));
 
       pedidos = pedidos.map((p) => {
         const propios: ItemPedido[] = (items ?? [])
@@ -499,10 +494,7 @@ export class PedidosPage implements OnInit, OnDestroy {
 
     this.asignandoLote = true;
     this.cdr.detectChanges();
-    const { error } = await this.supabase.client
-      .from('pedidos')
-      .update({ domiciliario_id: domiciliarioId, estado: 'en_ruta' })
-      .in('id', ids);
+    const { error } = await actualizarPedidos(this.supabase.client, { domiciliario_id: domiciliarioId, estado: 'en_ruta' }, ids);
     this.asignandoLote = false;
 
     if (error) {
@@ -652,10 +644,7 @@ export class PedidosPage implements OnInit, OnDestroy {
 
     // Productos de cada pedido y datos del negocio (de Configuración), en paralelo
     const [{ data: items, error }, negocio] = await Promise.all([
-      this.supabase.client
-        .from('pedido_items')
-        .select('pedido_id, cantidad, producto:productos(nombre)')
-        .in('pedido_id', ids),
+      itemsDePedidos(this.supabase.client, 'pedido_id, cantidad, producto:productos(nombre)', ids),
       cargarDatosNegocio(this.supabase.client),
     ]);
 
@@ -686,10 +675,7 @@ export class PedidosPage implements OnInit, OnDestroy {
 
     // Se marca como impreso apenas se abre la ventana de impresión
     // (no hay forma confiable de detectar si el usuario canceló el diálogo)
-    await this.supabase.client
-      .from('pedidos')
-      .update({ rotulo_impreso_at: new Date().toISOString() })
-      .in('id', ids);
+    await actualizarPedidos(this.supabase.client, { rotulo_impreso_at: new Date().toISOString() }, ids);
 
     ids.forEach((id) => this.seleccionados.delete(id));
     this.imprimiendo = false;
