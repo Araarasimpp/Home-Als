@@ -9,13 +9,18 @@ import { Producto } from '../../shared/models/models';
 import { urlImagen } from '../../shared/imagenes/url-imagen';
 import { copiarDeDrive, esDeDrive } from '../../shared/imagenes/drive-a-supabase';
 import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
+import { IonIcon } from '@ionic/angular';
+import { addIcons } from 'ionicons';
+import { closeOutline, chevronBackOutline, chevronForwardOutline } from 'ionicons/icons';
+
+addIcons({ closeOutline, chevronBackOutline, chevronForwardOutline });
 
 type TabFiltro = 'activos' | 'todos';
 
 @Component({
   selector: 'app-productos',
   standalone: true,
-  imports: [EsqueletoComponent, CommonModule, FormsModule, ProductoFormComponent],
+  imports: [EsqueletoComponent, CommonModule, FormsModule, ProductoFormComponent, IonIcon],
   templateUrl: './productos.page.html',
   styleUrls: ['./productos.page.scss', './productos-eliminar.scss'],
 })

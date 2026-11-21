@@ -1,0 +1,25 @@
+<div class="layout">
+  <main class="content">
+    <router-outlet></router-outlet>
+  </main>
+
+  <nav class="pill-nav" aria-label="Secciones">
+    <a routerLink="/recolector" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="avisos.cerrar()">
+      <ion-icon name="bag-handle-outline"></ion-icon>
+      <span class="tab-label">Mi día</span>
+    </a>
+    <button class="tab" [class.active]="avisos.abierto()" (click)="avisos.toggle()" [attr.aria-expanded]="avisos.abierto()">
+      <span class="icono-badge">
+        <ion-icon name="notifications-outline"></ion-icon>
+        <span class="badge-num num" *ngIf="avisos.noLeidas()">{{ avisos.noLeidas() > 9 ? '9+' : avisos.noLeidas() }}</span>
+      </span>
+      <span class="tab-label">Avisos</span>
+    </button>
+    <a routerLink="/recolector/tu" routerLinkActive="active" class="tab-perfil" (click)="avisos.cerrar()" aria-label="Tú: tu perfil y más opciones">
+      <app-avatar [nombre]="supabase.perfil()?.nombre" [url]="supabase.perfil()?.avatar_url" [size]="24"></app-avatar>
+      <span class="tab-label">Tú</span>
+    </a>
+  </nav>
+
+  <app-avisos-panel posicion="barra"></app-avisos-panel>
+</div>

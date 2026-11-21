@@ -2,6 +2,9 @@
 // Toca la tarjeta para ver el ranking completo.
 import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { IonIcon } from '@ionic/angular';
+import { addIcons } from 'ionicons';
+import { chevronForwardOutline, flagOutline, medal, trophyOutline } from 'ionicons/icons';
 import { RouterLink } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { FilaRanking, TipoRanking, ordenarRanking, puntaje, rangoPeriodo, textoVentas } from './ranking.page';
@@ -9,17 +12,17 @@ import { FilaRanking, TipoRanking, ordenarRanking, puntaje, rangoPeriodo, textoV
 @Component({
   selector: 'app-mi-puesto',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, IonIcon],
   template: `
     <a class="mp" *ngIf="listo" [routerLink]="ruta" aria-label="Ver el ranking completo">
-      <span class="mp-ico" aria-hidden="true">{{ medalla }}</span>
+      <span class="mp-ico" [attr.data-tono]="tono" aria-hidden="true"><ion-icon [name]="medalla"></ion-icon></span>
       <span class="mp-txt">
         <strong *ngIf="puesto; else sinPuesto">Vas #{{ puesto }} de {{ total }} este mes</strong>
         <ng-template #sinPuesto><strong>Ranking del mes</strong></ng-template>
         <span>{{ detalle }}</span>
         <span class="mp-barra" *ngIf="avance !== null"><i [style.width.%]="avance" [class.ok]="avance === 100"></i></span>
       </span>
-      <span class="mp-ver" aria-hidden="true">Ver ›</span>
+      <span class="mp-ver" aria-hidden="true">Ver<ion-icon name="chevron-forward-outline"></ion-icon></span>
     </a>
   `,
   styles: [
@@ -36,8 +39,32 @@ import { FilaRanking, TipoRanking, ordenarRanking, puntaje, rangoPeriodo, textoV
         text-decoration: none;
       }
       .mp-ico {
-        font-size: 32px;
-        line-height: 1;
+        flex-shrink: 0;
+        width: 46px;
+        height: 46px;
+        display: grid;
+        place-items: center;
+        border-radius: 14px;
+        font-size: 24px;
+        background: color-mix(in srgb, var(--tono-medalla, var(--accent)) 16%, var(--surface));
+        color: var(--tono-medalla, var(--accent));
+      }
+      .mp-ico[data-tono='oro'] {
+        --tono-medalla: #c99a22;
+      }
+      .mp-ico[data-tono='plata'] {
+        --tono-medalla: #8a96a0;
+      }
+      .mp-ico[data-tono='bronce'] {
+        --tono-medalla: #b5733f;
+      }
+      .mp-ico[data-tono='nada'] {
+        --tono-medalla: var(--text-muted);
+      }
+      .mp-ver {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
       }
       .mp-txt {
         flex: 1;
@@ -87,11 +114,15 @@ export class MiPuestoComponent implements OnInit {
   listo = false;
   puesto: number | null = null;
   total = 0;
-  medalla = '🏆';
+  /** Ícono y color de la medalla según el puesto */
+  medalla = 'trophy-outline';
+  tono = '';
   detalle = '';
   avance: number | null = null;
 
-  constructor(private supabase: SupabaseService, private cdr: ChangeDetectorRef) {}
+  constructor(private supabase: SupabaseService, private cdr: ChangeDetectorRef) {
+    addIcons({ chevronForwardOutline, flagOutline, medal, trophyOutline });
+  }
 
   async ngOnInit(): Promise<void> {
     const user = await this.supabase.getCurrentUser();
@@ -105,7 +136,8 @@ export class MiPuestoComponent implements OnInit {
       const yo = lista[i];
       const p = puntaje(yo);
       this.puesto = p > 0 ? i + 1 : null;
-      this.medalla = p > 0 ? (['🥇', '🥈', '🥉'][i] ?? '🏆') : '🏁';
+      this.medalla = p > 0 ? (i < 3 ? 'medal' : 'trophy-outline') : 'flag-outline';
+      this.tono = p > 0 ? (['oro', 'plata', 'bronce'][i] ?? '') : 'nada';
       const valor = this.tipo === 'domiciliario'
         ? `${p} ${p === 1 ? 'entrega' : 'entregas'}`
         : yo.ventas == null

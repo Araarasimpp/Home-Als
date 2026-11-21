@@ -21,16 +21,16 @@
 
   <!-- Celular -->
   <nav class="pill-nav mobile-only" aria-label="Secciones">
-    <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="masAbierto = false; avisos.cerrar()">
+    <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="avisos.cerrar()">
       <ion-icon name="home-outline"></ion-icon>
       <span class="tab-label">Inicio</span>
     </a>
-    <a routerLink="/admin/pedidos" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="masAbierto = false; avisos.cerrar()">
+    <a routerLink="/admin/pedidos" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="avisos.cerrar()">
       <ion-icon name="receipt-outline"></ion-icon>
       <span class="tab-label">Pedidos</span>
     </a>
     <div class="pill-center">
-      <a routerLink="/admin/pedidos/nuevo" class="pill-action" (click)="masAbierto = false; avisos.cerrar()">
+      <a routerLink="/admin/pedidos/nuevo" class="pill-action" (click)="avisos.cerrar()">
         <ion-icon name="add"></ion-icon>
         <span class="tab-label">Nuevo</span>
       </a>
@@ -42,34 +42,12 @@
       </span>
       <span class="tab-label">Avisos</span>
     </button>
-    <button class="tab" [class.active]="masAbierto" (click)="masAbierto = !masAbierto; avisos.cerrar()" [attr.aria-expanded]="masAbierto">
-      <ion-icon name="ellipsis-horizontal"></ion-icon>
-      <span class="tab-label">Más</span>
-    </button>
+    <a routerLink="/admin/tu" routerLinkActive="active" class="tab-perfil" (click)="avisos.cerrar()" aria-label="Tú: tu perfil, todas las páginas y más opciones">
+      <app-avatar [nombre]="supabase.perfil()?.nombre" [url]="supabase.perfil()?.avatar_url" [size]="24"></app-avatar>
+      <span class="tab-label">Tú</span>
+    </a>
   </nav>
 
-  <ng-container *ngIf="masAbierto">
-    <button class="more-backdrop" aria-label="Cerrar menú" (click)="masAbierto = false"></button>
-    <div class="more-sheet">
-      <ng-container *ngFor="let s of seccionesMas">
-        <p class="more-titulo">{{ s.label }}</p>
-        <a *ngFor="let item of s.paginas" [routerLink]="item.path" routerLinkActive="active" (click)="masAbierto = false">
-          <ion-icon [name]="item.icon"></ion-icon>{{ item.label }}
-        </a>
-      </ng-container>
-      <hr />
-      <button *ngIf="cr.disponible" (click)="masAbierto = false; cr.abrir()">
-        <ion-icon name="swap-horizontal-outline"></ion-icon>Cambiar rol ({{ cr.etiquetaActual }})
-      </button>
-      <button (click)="toggleTheme()">
-        <ion-icon [name]="theme.isDark() ? 'sunny-outline' : 'moon-outline'"></ion-icon>
-        {{ theme.isDark() ? 'Modo claro' : 'Modo oscuro' }}
-      </button>
-      <button (click)="logout()">
-        <ion-icon name="log-out-outline"></ion-icon>Cerrar sesión
-      </button>
-    </div>
-  </ng-container>
 
   <app-avisos-panel posicion="sidebar"></app-avisos-panel>
   <app-aviso-inactividad></app-aviso-inactividad>

@@ -2,6 +2,7 @@
 import { Routes } from '@angular/router';
 import { RoleGuard } from '../core/guards/role.guard';
 import { VendedorLayoutComponent } from './vendedor-layout/vendedor-layout.component';
+import { SECCIONES_VENDEDOR } from '../shared/escritorio/secciones';
 
 export const VENDEDOR_ROUTES: Routes = [
   {
@@ -33,6 +34,16 @@ export const VENDEDOR_ROUTES: Routes = [
       {
         path: 'perfil',
         loadComponent: () => import('../shared/perfil/mi-perfil.page').then((m) => m.MiPerfilPage),
+      },
+      {
+        path: 'pagos',
+        loadComponent: () => import('../shared/pagos/pagos.page').then((m) => m.PagosPage),
+      },
+      {
+        // "Tú" en el celular: perfil, todas las páginas, rol, tema y salir
+        path: 'tu',
+        data: { base: '/vendedor', secciones: SECCIONES_VENDEDOR, ocultar: ['/vendedor', '/vendedor/venta-local', '/vendedor/nuevo-pedido'] },
+        loadComponent: () => import('../shared/tu/tu.page').then((m) => m.TuPage),
       },
       {
         path: 'ventas-del-local',

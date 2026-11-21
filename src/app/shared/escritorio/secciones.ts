@@ -32,9 +32,11 @@ export const SECCIONES_ADMIN: SeccionNav[] = [
     ],
   },
   {
-    id: 'dinero', label: 'Dinero', icon: 'wallet-outline', subtitulo: 'Cuadres de los domiciliarios y reportes',
+    id: 'dinero', label: 'Dinero', icon: 'wallet-outline', subtitulo: 'Cuadres, pagos de comisiones, recolector y reportes',
     paginas: [
       { label: 'Cuadres', path: '/admin/cuadres', icon: 'wallet-outline', conteo: 'cuadres' },
+      { label: 'Pagos', path: '/admin/pagos', icon: 'card-outline' },
+      { label: 'Recolector', path: '/admin/recolector', icon: 'bag-handle-outline' },
       { label: 'Reportes', path: '/admin/reportes', icon: 'bar-chart-outline' },
     ],
   },
@@ -78,8 +80,11 @@ export const SECCIONES_DESPACHADOR: SeccionNav[] = [
     ],
   },
   {
-    id: 'dinero', label: 'Dinero', icon: 'wallet-outline', subtitulo: 'Cuadres de los domiciliarios',
-    paginas: [{ label: 'Cuadres', path: '/despachador/cuadres', icon: 'wallet-outline', conteo: 'cuadres' }],
+    id: 'dinero', label: 'Dinero', icon: 'wallet-outline', subtitulo: 'Cuadres de los domiciliarios y el recolector',
+    paginas: [
+      { label: 'Cuadres', path: '/despachador/cuadres', icon: 'wallet-outline', conteo: 'cuadres' },
+      { label: 'Recolector', path: '/despachador/recolector', icon: 'bag-handle-outline' },
+    ],
   },
   {
     id: 'equipo', label: 'Equipo', icon: 'people-outline', subtitulo: 'Cómo van los domiciliarios',
@@ -88,5 +93,59 @@ export const SECCIONES_DESPACHADOR: SeccionNav[] = [
   {
     id: 'ajustes', label: 'Ajustes', icon: 'settings-outline', subtitulo: 'Tu cuenta', abajo: true,
     paginas: [{ label: 'Mi perfil', path: '/despachador/perfil', icon: 'person-circle-outline' }],
+  },
+];
+
+// Roles sin riel de escritorio: solo se usan en la página "Tú" del celular.
+export const SECCIONES_VENDEDOR: SeccionNav[] = [
+  {
+    id: 'ventas', label: 'Ventas', icon: 'receipt-outline', subtitulo: 'Pedidos y ventas en el local',
+    paginas: [
+      { label: 'Inicio', path: '/vendedor', icon: 'home-outline' },
+      { label: 'Nuevo pedido', path: '/vendedor/nuevo-pedido', icon: 'add-circle-outline' },
+      { label: 'Venta en local', path: '/vendedor/venta-local', icon: 'storefront-outline' },
+      { label: 'Ventas del local', path: '/vendedor/ventas-del-local', icon: 'list-outline' },
+    ],
+  },
+  {
+    id: 'dinero', label: 'Dinero', icon: 'wallet-outline', subtitulo: 'Tus comisiones',
+    paginas: [{ label: 'Pagos', path: '/vendedor/pagos', icon: 'card-outline' }],
+  },
+  {
+    id: 'equipo', label: 'Equipo', icon: 'people-outline', subtitulo: 'Cómo vas',
+    paginas: [{ label: 'Ranking', path: '/vendedor/ranking', icon: 'trophy-outline' }],
+  },
+  {
+    id: 'ajustes', label: 'Cuenta', icon: 'settings-outline', subtitulo: 'Tu cuenta', abajo: true,
+    paginas: [{ label: 'Mi perfil', path: '/vendedor/perfil', icon: 'person-circle-outline' }],
+  },
+];
+
+export const SECCIONES_DOMICILIARIO: SeccionNav[] = [
+  {
+    id: 'ruta', label: 'Entregas', icon: 'bicycle-outline', subtitulo: 'Tu ruta y tu cuadre',
+    paginas: [
+      { label: 'Mi ruta', path: '/domiciliario', icon: 'bicycle-outline' },
+      { label: 'Cuadre', path: '/domiciliario/cuadres', icon: 'wallet-outline' },
+    ],
+  },
+  {
+    id: 'equipo', label: 'Equipo', icon: 'people-outline', subtitulo: 'Cómo vas',
+    paginas: [{ label: 'Ranking', path: '/domiciliario/ranking', icon: 'trophy-outline' }],
+  },
+  {
+    id: 'ajustes', label: 'Cuenta', icon: 'settings-outline', subtitulo: 'Tu cuenta', abajo: true,
+    paginas: [{ label: 'Mi perfil', path: '/domiciliario/perfil', icon: 'person-circle-outline' }],
+  },
+];
+
+export const SECCIONES_RECOLECTOR: SeccionNav[] = [
+  {
+    id: 'dinero', label: 'Dinero', icon: 'wallet-outline', subtitulo: 'Bases, compras y facturas',
+    paginas: [{ label: 'Recolector', path: '/recolector', icon: 'bag-handle-outline' }],
+  },
+  {
+    id: 'ajustes', label: 'Cuenta', icon: 'settings-outline', subtitulo: 'Tu cuenta', abajo: true,
+    paginas: [{ label: 'Mi perfil', path: '/recolector/perfil', icon: 'person-circle-outline' }],
   },
 ];

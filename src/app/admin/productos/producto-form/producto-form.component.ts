@@ -7,6 +7,11 @@ import { Producto } from '../../../shared/models/models';
 import { comprimirImagen, extensionDe } from '../../../shared/imagenes/comprimir';
 import { urlImagen } from '../../../shared/imagenes/url-imagen';
 import { copiarDeDrive, esDeDrive } from '../../../shared/imagenes/drive-a-supabase';
+import { IonIcon } from '@ionic/angular';
+import { addIcons } from 'ionicons';
+import { closeOutline } from 'ionicons/icons';
+
+addIcons({ closeOutline });
 
 // Para un producto nuevo aún no existe el id, así que lo hacemos opcional
 // solo dentro de este formulario (el resto de los campos usan el mismo
@@ -19,7 +24,7 @@ type ProductoForm = Omit<Producto, 'id'> & { id?: string };
   standalone: true,
   // Encima de la barra de navegación también en iPhone
   hostDirectives: [SobreTodoDirective],
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, IonIcon],
   templateUrl: './producto-form.component.html',
   styleUrls: ['./producto-form.component.scss'],
 })

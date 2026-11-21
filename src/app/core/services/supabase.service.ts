@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 import { environment } from '../../../environments/environment';
 
-export type UserRole = 'admin' | 'vendedor' | 'domiciliario' | 'despachador';
+export type UserRole = 'admin' | 'vendedor' | 'domiciliario' | 'despachador' | 'recolector';
 
 export type ComisionTipo = 'margen' | 'porcentaje';
 

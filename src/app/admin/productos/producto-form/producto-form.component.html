@@ -2,7 +2,7 @@
   <div class="modal-card" (click)="$event.stopPropagation()">
     <header class="modal-header">
       <h2>{{ esEdicion ? 'Editar producto' : 'Nuevo producto' }}</h2>
-      <button class="close-btn" (click)="onCerrar()">✕</button>
+      <button class="close-btn" (click)="onCerrar()" aria-label="Cerrar"><ion-icon name="close-outline"></ion-icon></button>
     </header>
 
     <div class="modal-body">

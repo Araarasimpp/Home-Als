@@ -37,6 +37,7 @@ import { CambioRolComponent } from '../../shared/cambio-rol/cambio-rol.component
 import { BarraSuperiorComponent, NavEscritorioComponent, SeccionNav } from '../../shared/escritorio/nav-escritorio.component';
 import { SECCIONES_ADMIN } from '../../shared/escritorio/secciones';
 import { AvisoInactividadComponent } from '../../shared/avisos/aviso-inactividad.component';
+import { AvatarComponent } from '../../shared/avatar/avatar.component';
 
 interface MenuItem {
   label: string;
@@ -62,24 +63,17 @@ const MINUTOS_INACTIVIDAD = 30;
     IonIcon,
     AvisosPanelComponent,
     AvisoInactividadComponent,
+    AvatarComponent,
   ],
   templateUrl: './admin-layout.component.html',
   styleUrls: ['../../shared/pill-nav.scss', './admin-layout.component.scss'],
 })
 export class AdminLayoutComponent implements OnInit, OnDestroy {
   collapsed = localStorage.getItem('sidebar-colapsado') === '1';
-  masAbierto = false;
 
   /** Secciones del riel de escritorio */
   readonly secciones: SeccionNav[] = SECCIONES_ADMIN;
 
-  /** Celular: lo que no está en la barra inferior, agrupado como en el riel */
-  readonly seccionesMas = this.secciones
-    .map((s) => ({
-      ...s,
-      paginas: s.paginas.filter((p) => !p.atajo && !['/admin', '/admin/pedidos'].includes(p.path)),
-    }))
-    .filter((s) => s.paginas.length);
 
   menuItems: MenuItem[] = [
     { label: 'Inicio', path: '/admin', icon: 'home-outline' },
@@ -107,7 +101,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     public theme: ThemeService,
     public avisos: NotificacionesService,
     private inactividad: InactividadService,
-    private supabase: SupabaseService,
+    public supabase: SupabaseService,
     private router: Router
   ) {
     addIcons({
@@ -152,7 +146,6 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
   }
 
   toggleAvisos(): void {
-    this.masAbierto = false;
     this.avisos.toggle();
   }
 
@@ -161,7 +154,6 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
   }
 
   async logout(): Promise<void> {
-    this.masAbierto = false;
     this.inactividad.detener();
     this.avisos.detener();
     await this.supabase.logout();

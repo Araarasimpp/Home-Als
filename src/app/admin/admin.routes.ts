@@ -2,6 +2,7 @@
 import { Routes } from '@angular/router';
 import { RoleGuard } from '../core/guards/role.guard';
 import { AdminLayoutComponent } from './admin-layout/admin-layout.component';
+import { SECCIONES_ADMIN } from '../shared/escritorio/secciones';
 
 export const ADMIN_ROUTES: Routes = [
   {
@@ -73,6 +74,20 @@ export const ADMIN_ROUTES: Routes = [
       {
         path: 'cuadres',
         loadComponent: () => import('./cuadres/cuadres.page').then((m) => m.AdminCuadresPage),
+      },
+      {
+        path: 'pagos',
+        loadComponent: () => import('../shared/pagos/pagos.page').then((m) => m.PagosPage),
+      },
+      {
+        path: 'recolector',
+        loadComponent: () => import('../shared/recolector/recolector.page').then((m) => m.RecolectorPage),
+      },
+      {
+        // "Tú" en el celular: perfil, todas las páginas, rol, tema y salir
+        path: 'tu',
+        data: { base: '/admin', secciones: SECCIONES_ADMIN, ocultar: ['/admin', '/admin/pedidos'] },
+        loadComponent: () => import('../shared/tu/tu.page').then((m) => m.TuPage),
       },
       {
         path: 'clientes',

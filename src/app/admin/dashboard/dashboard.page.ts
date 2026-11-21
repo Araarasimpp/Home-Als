@@ -29,6 +29,11 @@ import { BarraEstadoComponent } from '../../shared/graficas/barra-estado.compone
 import { itemsDePedidos } from '../../shared/en-lotes';
 import { gananciaTiendaPedido } from '../../shared/ganancia';
 import { FormsModule } from '@angular/forms';
+import { IonIcon } from '@ionic/angular';
+import { addIcons } from 'ionicons';
+import { trendingUpOutline, trendingDownOutline } from 'ionicons/icons';
+
+addIcons({ trendingUpOutline, trendingDownOutline });
 
 // Solo lo que usamos de Chart.js, para no cargar la librería entera
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, DoughnutController, ArcElement);
@@ -84,7 +89,7 @@ const ETIQUETAS: Record<EstadoPedido, string> = {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, EstadoIconComponent, AvatarComponent, DonaComponent, BarraEstadoComponent],
+  imports: [CommonModule, FormsModule, RouterLink, EstadoIconComponent, AvatarComponent, DonaComponent, BarraEstadoComponent, IonIcon],
   templateUrl: './dashboard.page.html',
   styleUrls: ['./dashboard.page.scss'],
 })

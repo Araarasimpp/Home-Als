@@ -229,6 +229,9 @@ export class LoginPage implements OnInit, OnDestroy {
       case 'despachador':
         this.router.navigateByUrl('/despachador');
         break;
+      case 'recolector':
+        this.router.navigateByUrl('/recolector');
+        break;
     }
   }
 }

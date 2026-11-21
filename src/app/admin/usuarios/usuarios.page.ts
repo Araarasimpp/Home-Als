@@ -23,7 +23,7 @@ interface UsuarioFila {
 }
 
 /** Orden en que se muestran (y se guardan) los roles. */
-const ORDEN_ROLES: UserRole[] = ['admin', 'despachador', 'vendedor', 'domiciliario'];
+const ORDEN_ROLES: UserRole[] = ['admin', 'despachador', 'vendedor', 'domiciliario', 'recolector'];
 
 const BUCKET_AVATARS = 'avatars';
 const TAMANO_FOTO = 256; // px, cuadrada
@@ -50,6 +50,7 @@ export class UsuariosPage implements OnInit, OnDestroy {
     { valor: 'despachador', etiqueta: 'Despachador' },
     { valor: 'vendedor', etiqueta: 'Vendedor' },
     { valor: 'domiciliario', etiqueta: 'Domiciliario' },
+    { valor: 'recolector', etiqueta: 'Recolector' },
   ];
 
   constructor(private supabase: SupabaseService, private cdr: ChangeDetectorRef) {}

@@ -12,6 +12,7 @@ export const INICIO_ROL: Record<UserRole, string> = {
   vendedor: '/vendedor',
   domiciliario: '/domiciliario',
   despachador: '/despachador',
+  recolector: '/recolector',
 };
 
 /** Recuerda el último rol para dibujar el esqueleto correcto la próxima vez. */

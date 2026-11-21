@@ -53,7 +53,8 @@
                 [class.baja]="variacion < 0"
                 [title]="'Comparado con los ' + (periodo === 90 ? '3 meses' : periodo + ' días') + ' anteriores'"
               >
-                {{ variacion > 0 ? '↑' : variacion < 0 ? '↓' : '' }} {{ variacion > 0 ? variacion : -variacion }}% vs. periodo anterior
+                <ion-icon *ngIf="variacion !== 0" [name]="variacion > 0 ? 'trending-up-outline' : 'trending-down-outline'" aria-hidden="true"></ion-icon>
+                {{ variacion > 0 ? variacion : -variacion }}% vs. periodo anterior
               </span>
             </p>
           </div>

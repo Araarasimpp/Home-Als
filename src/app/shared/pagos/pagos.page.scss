@@ -1,0 +1,364 @@
+.periodo-caja {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contar-desde {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-soft, var(--border));
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.contar-desde .inp {
+  width: 160px;
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: 14px;
+}
+
+// ---------- Resumen ----------
+.cuerpo-pagos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 14px;
+  align-items: start;
+}
+
+.dona-caja {
+  position: sticky;
+  top: 16px;
+}
+
+.dona-caja .caja-cab {
+  margin-bottom: 6px;
+}
+
+// ---------- Vendedores ----------
+.vendedores {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.vend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vend-cab {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vend-nombre {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.vend-nombre h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vend-nombre span {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.vend-monto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vend-monto strong {
+  font-family: var(--display-font);
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+
+.vend-monto span {
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.nota-aviso ion-icon {
+  vertical-align: -3px;
+  font-size: 15px;
+}
+
+.vend-acc {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.vend-acc .b-pri {
+  margin-left: auto;
+}
+
+// ---------- Lista de pedidos ----------
+.peds {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-2);
+  overflow: hidden;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.peds li {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 9px 12px;
+  font-size: 13px;
+}
+
+.peds li + li {
+  border-top: 1px solid var(--border-soft, var(--border));
+}
+
+.peds-dia {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.peds-cli {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.peds .num {
+  font-weight: 600;
+}
+
+.peds li.peds-vacio {
+  display: block;
+  color: var(--text-soft);
+  text-align: center;
+}
+
+// ---------- Vista del vendedor ----------
+.cobrar {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.cobrar-principal {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--chip-on);
+  color: var(--on-chip-on);
+  box-shadow: var(--shadow-card);
+}
+
+.cobrar-principal span {
+  font-size: 12.5px;
+  color: color-mix(in srgb, var(--on-chip-on) 70%, transparent);
+}
+
+.cobrar-principal strong {
+  font-family: var(--display-font);
+  font-size: 34px;
+  font-weight: 500;
+  color: var(--data-green-soft);
+}
+
+:host-context(body.dark) .cobrar-principal strong {
+  color: var(--on-chip-on);
+}
+
+.cobrar-principal small {
+  font-size: 12.5px;
+  color: color-mix(in srgb, var(--on-chip-on) 70%, transparent);
+}
+
+// ---------- Historial ----------
+.tabs-hist {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.tabs-hist button {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.tabs-hist button.on {
+  border-color: var(--chip-on);
+  background: var(--chip-on);
+  color: var(--on-chip-on);
+}
+
+.hist {
+  padding: 6px 18px;
+}
+
+.pago {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.pago + .pago {
+  border-top: 1px solid var(--border-soft, var(--border));
+}
+
+.pago-icono {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--data-green) 14%, transparent);
+  color: var(--accent);
+  font-size: 18px;
+}
+
+.pago-txt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pago-txt strong {
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pago-txt span {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.pago-der {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.pago-der strong {
+  font-size: 15px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.pago.anulado .pago-der strong,
+.pago.anulado .pago-txt strong {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.vacio-caja.sin-borde {
+  border: none;
+}
+
+// ---------- Detalle ----------
+.datos {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 14px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.datos dt {
+  color: var(--text-muted);
+}
+
+.datos dd {
+  margin: 0;
+}
+
+.fotos-det {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.miniatura.grande {
+  width: 76px;
+  height: 76px;
+  border-radius: 14px;
+}
+
+@media (max-width: 1100px) {
+  .cuerpo-pagos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dona-caja {
+    position: static;
+    order: -1;
+  }
+}
+
+@media (max-width: 860px) {
+  .cobrar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cobrar-principal {
+    grid-column: 1 / -1;
+  }
+
+  .vendedores {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .contar-desde .inp {
+    width: auto;
+    flex: 1;
+  }
+
+  .pago {
+    flex-wrap: wrap;
+  }
+
+  .pago-txt {
+    flex-basis: calc(100% - 140px);
+  }
+}

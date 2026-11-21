@@ -72,6 +72,32 @@
   line-height: 1;
 }
 
+// Medallas: oro, plata y bronce
+.medalla,
+.medalla-txt,
+.medalla-lista {
+  color: #c99a22;
+}
+
+[data-puesto='2'].medalla,
+[data-puesto='2'].medalla-lista {
+  color: #8a96a0;
+}
+
+[data-puesto='3'].medalla,
+[data-puesto='3'].medalla-lista {
+  color: #b5733f;
+}
+
+.medalla-txt {
+  vertical-align: -3px;
+  font-size: 17px;
+}
+
+.medalla-lista {
+  font-size: 20px;
+}
+
 .escalon[data-puesto='1'] .medalla {
   font-size: 40px;
 }

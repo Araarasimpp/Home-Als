@@ -2,6 +2,7 @@
 import { Routes } from '@angular/router';
 import { RoleGuard } from '../core/guards/role.guard';
 import { DespachadorLayoutComponent } from './despachador-layout/despachador-layout.component';
+import { SECCIONES_DESPACHADOR } from '../shared/escritorio/secciones';
 
 export const DESPACHADOR_ROUTES: Routes = [
   {
@@ -19,6 +20,17 @@ export const DESPACHADOR_ROUTES: Routes = [
         path: 'pedidos',
         loadComponent: () =>
           import('../admin/pedidos/pedidos.page').then((m) => m.PedidosPage),
+      },
+      {
+        // Solo mirar: el despachador no envía bases ni recibe la plata
+        path: 'recolector',
+        loadComponent: () => import('../shared/recolector/recolector.page').then((m) => m.RecolectorPage),
+      },
+      {
+        // "Tú" en el celular: perfil, todas las páginas, rol, tema y salir
+        path: 'tu',
+        data: { base: '/despachador', secciones: SECCIONES_DESPACHADOR, ocultar: ['/despachador', '/despachador/pedidos'] },
+        loadComponent: () => import('../shared/tu/tu.page').then((m) => m.TuPage),
       },
       {
         path: 'pedidos/nuevo',

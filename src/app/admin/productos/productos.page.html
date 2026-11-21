@@ -47,7 +47,7 @@
       {{ resumenCarga.creados }} producto(s) cargado(s)/actualizado(s) correctamente.
     </p>
     <p class="resumen-error" *ngFor="let e of resumenCarga.errores">{{ e }}</p>
-    <button class="cerrar-resumen" (click)="resumenCarga = null" aria-label="Cerrar resumen">✕</button>
+    <button class="cerrar-resumen" (click)="resumenCarga = null" aria-label="Cerrar resumen"><ion-icon name="close-outline"></ion-icon></button>
   </div>
 
   <div class="tabs">
@@ -142,9 +142,9 @@
         Mostrando {{ paginados.length }} de {{ filtrados.length }} productos
       </span>
       <div class="pager">
-        <button (click)="irAPagina(-1)" [disabled]="paginaActual === 1" aria-label="Página anterior">←</button>
+        <button (click)="irAPagina(-1)" [disabled]="paginaActual === 1" aria-label="Página anterior"><ion-icon name="chevron-back-outline"></ion-icon></button>
         <span>{{ paginaActual }} / {{ totalPaginas }}</span>
-        <button (click)="irAPagina(1)" [disabled]="paginaActual === totalPaginas" aria-label="Página siguiente">→</button>
+        <button (click)="irAPagina(1)" [disabled]="paginaActual === totalPaginas" aria-label="Página siguiente"><ion-icon name="chevron-forward-outline"></ion-icon></button>
       </div>
     </footer>
   </div>

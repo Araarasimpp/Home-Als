@@ -14,6 +14,7 @@ export const ETIQUETA_ROL: Record<UserRole, string> = {
   despachador: 'Despachador',
   vendedor: 'Vendedor',
   domiciliario: 'Domiciliario',
+  recolector: 'Recolector',
 };
 
 const DESCRIPCION_ROL: Record<UserRole, string> = {
@@ -21,6 +22,7 @@ const DESCRIPCION_ROL: Record<UserRole, string> = {
   despachador: 'Asignar pedidos, rótulos y cuadres',
   vendedor: 'Crear pedidos y ventas en local',
   domiciliario: 'Tu ruta, entregas y cuadre',
+  recolector: 'Bases, compras y facturas del día',
 };
 
 @Component({

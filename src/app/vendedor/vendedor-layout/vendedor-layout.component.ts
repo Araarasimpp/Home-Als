@@ -8,13 +8,12 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { NotificacionesService } from '../../core/services/notificaciones.service';
 import { AvisosPanelComponent } from '../../shared/avisos/avisos-panel.component';
-import { CambioRolComponent } from '../../shared/cambio-rol/cambio-rol.component';
 import { AvatarComponent } from '../../shared/avatar/avatar.component';
 
 @Component({
   selector: 'app-vendedor-layout',
   standalone: true,
-  imports: [AvatarComponent, CommonModule, RouterLink, RouterLinkActive, RouterOutlet, IonIcon, AvisosPanelComponent, CambioRolComponent],
+  imports: [AvatarComponent, CommonModule, RouterLink, RouterLinkActive, RouterOutlet, IonIcon, AvisosPanelComponent],
   templateUrl: './vendedor-layout.component.html',
   styleUrls: ['../../shared/pill-nav.scss', './vendedor-layout.component.scss'],
 })

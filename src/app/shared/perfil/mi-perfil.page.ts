@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonIcon } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { cameraOutline, logOutOutline, sunnyOutline, moonOutline, notificationsOutline, lockClosedOutline, chevronDownOutline } from 'ionicons/icons';
+import { cameraOutline, logOutOutline, sunnyOutline, moonOutline, notificationsOutline, lockClosedOutline, chevronDownOutline, checkmarkCircle } from 'ionicons/icons';
 import { Profile, SupabaseService, UserRole } from '../../core/services/supabase.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { NotificacionesService } from '../../core/services/notificaciones.service';
@@ -67,7 +67,7 @@ export class MiPerfilPage implements OnInit {
     private router: Router,
     private cdr: ChangeDetectorRef
   ) {
-    addIcons({ cameraOutline, logOutOutline, sunnyOutline, moonOutline, notificationsOutline, lockClosedOutline, chevronDownOutline });
+    addIcons({ cameraOutline, logOutOutline, sunnyOutline, moonOutline, notificationsOutline, lockClosedOutline, chevronDownOutline, checkmarkCircle });
   }
 
   async ngOnInit(): Promise<void> {

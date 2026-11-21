@@ -46,6 +46,10 @@ export const routes: Routes = [
       import('./despachador/despachador.routes').then((m) => m.DESPACHADOR_ROUTES),
   },
   {
+    path: 'recolector',
+    loadChildren: () => import('./recolector/recolector.routes').then((m) => m.RECOLECTOR_ROUTES),
+  },
+  {
     // Cualquier otra dirección vuelve al inicio
     path: '**',
     redirectTo: '',

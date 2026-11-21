@@ -29,7 +29,7 @@
     <!-- Podio -->
     <section class="podio" *ngIf="podio.length; else sinPodio" aria-label="Podio">
       <div class="escalon" *ngFor="let p of podioVisual" [attr.data-puesto]="p.puesto" [class.yo]="esYo(p.f)">
-        <span class="medalla" aria-hidden="true">{{ medallas[p.puesto - 1] }}</span>
+        <ion-icon class="medalla" name="medal" [attr.data-puesto]="p.puesto" aria-hidden="true"></ion-icon>
         <app-avatar [nombre]="p.f.nombre" [url]="p.f.avatar_url" [size]="p.puesto === 1 ? 64 : 52"></app-avatar>
         <strong class="podio-nombre">{{ p.f.nombre }}<span *ngIf="esYo(p.f)"> (tú)</span></strong>
         <span class="podio-valor num">{{ valor(p.f) }}</span>
@@ -39,14 +39,17 @@
     <ng-template #sinPodio>
       <div class="vacio">
         <p class="vacio-titulo">Todavía no hay {{ tipo === 'vendedor' ? 'ventas entregadas' : 'entregas' }} {{ periodo === 'hoy' ? 'hoy' : periodo === 'semana' ? 'esta semana' : 'este mes' }}</p>
-        <p>El primero en {{ tipo === 'vendedor' ? 'vender' : 'entregar' }} se lleva el oro 🥇</p>
+        <p>El primero en {{ tipo === 'vendedor' ? 'vender' : 'entregar' }} se lleva el oro <ion-icon class="medalla-txt" name="medal" data-puesto="1" aria-hidden="true"></ion-icon></p>
       </div>
     </ng-template>
 
     <!-- Lista completa -->
     <ol class="rk-lista" *ngIf="lista.length">
       <li *ngFor="let f of lista; let i = index; trackBy: track" class="rk-fila" [class.yo]="esYo(f)">
-        <span class="rk-puesto num">{{ i < 3 && podio.length > i ? medallas[i] : i + 1 }}</span>
+        <span class="rk-puesto num">
+          <ion-icon *ngIf="i < 3 && podio.length > i; else numPuesto" class="medalla-lista" name="medal" [attr.data-puesto]="i + 1" [attr.aria-label]="'Puesto ' + (i + 1)"></ion-icon>
+          <ng-template #numPuesto>{{ i + 1 }}</ng-template>
+        </span>
         <app-avatar [nombre]="f.nombre" [url]="f.avatar_url" [size]="36"></app-avatar>
         <div class="rk-info">
           <div class="rk-linea">

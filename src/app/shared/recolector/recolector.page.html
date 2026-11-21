@@ -1,0 +1,340 @@
+<div class="pg">
+  <header class="pg-cab con-acciones">
+    <div>
+      <h1>Recolector</h1>
+      <p class="pg-sub">{{ mayus(diaTexto(dia())) }}{{ filtroRec() ? ' · ' + nombreFiltro() : '' }} · {{ veTodos() ? 'bases, compras y lo que falta por entregar' : 'tus bases, compras y facturas' }}</p>
+    </div>
+    @if (!soloLectura()) {
+      <div class="pg-acciones">
+        <button type="button" class="b" (click)="abrirBase()"><ion-icon name="add-circle-outline"></ion-icon>{{ admin() ? 'Enviar base' : 'Agregar base' }}</button>
+        @if (esRecolector()) {
+          <button type="button" class="b b-pri" (click)="abrirCompra()"><ion-icon name="bag-handle-outline"></ion-icon>Registrar compra</button>
+        }
+      </div>
+    }
+  </header>
+
+  <!-- Día y recolector -->
+  <div class="filtros">
+    <div class="dia-nav" role="group" aria-label="Cambiar de día">
+      <button type="button" class="b b-icono" aria-label="Día anterior" (click)="moverDia(-1)"><ion-icon name="chevron-back-outline"></ion-icon></button>
+      <input class="inp" type="date" [value]="dia()" [max]="hoy()" (change)="ponerDia($any($event.target).value)" aria-label="Día" />
+      <button type="button" class="b b-icono" aria-label="Día siguiente" (click)="moverDia(1)" [disabled]="esHoy()"><ion-icon name="chevron-forward-outline"></ion-icon></button>
+      @if (!esHoy()) { <button type="button" class="b b-chico" (click)="ponerDia(hoy())">Hoy</button> }
+    </div>
+    @if (veTodos() && (r()?.recolectores?.length ?? 0) > 0) {
+      <div class="rec-chips" role="tablist" aria-label="Recolector">
+        <button type="button" role="tab" [class.on]="!filtroRec()" [attr.aria-selected]="!filtroRec()" (click)="verRecolector(null)">Todos</button>
+        @for (x of r()!.recolectores; track x.id) {
+          <button type="button" role="tab" [class.on]="filtroRec() === x.id" [attr.aria-selected]="filtroRec() === x.id" (click)="verRecolector(x.id)">{{ primerNombre(x.nombre) }}</button>
+        }
+      </div>
+    }
+  </div>
+
+  @if (errorMsg()) { <p class="error-txt" role="alert">{{ errorMsg() }}</p> }
+
+  <!-- Bases por aceptar -->
+  @if (r()?.pendientes?.length) {
+    <section class="pendientes" aria-label="Bases por aceptar">
+      @for (p of r()!.pendientes; track p.id) {
+        <div class="pend">
+          <span class="pend-icono" aria-hidden="true"><ion-icon name="arrow-down-circle-outline"></ion-icon></span>
+          <div class="pend-txt">
+            <strong class="num">{{ pesos(p.monto) }}</strong>
+            <span>{{ p.nombre }}</span>
+            <small>Enviada por {{ p.de || 'el admin' }} · {{ cuando(p.fecha) }}@if (veTodos()) { · para {{ p.recolector }} }</small>
+          </div>
+          @if (esRecolector()) {
+            <div class="pend-btns">
+              <button type="button" class="b" (click)="responder(p, false)" [disabled]="ocupado()"><ion-icon name="close-outline"></ion-icon>Rechazar</button>
+              <button type="button" class="b b-pri" (click)="responder(p, true)" [disabled]="ocupado()"><ion-icon name="checkmark-outline"></ion-icon>Aceptar</button>
+            </div>
+          } @else {
+            <span class="chip aviso">Esperando que la acepte</span>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  @if (vistaTodos()) {
+    <!-- Admin / despachador con "Todos": una tarjeta por recolector -->
+    <section class="recs" aria-label="Recolectores" [attr.aria-busy]="cargando()">
+      @for (x of r()?.por_recolector ?? []; track x.id) {
+        <article class="rec caja">
+          <div class="rec-cab">
+            <app-avatar [nombre]="x.nombre" [url]="x.avatar_url" [size]="40"></app-avatar>
+            <div class="rec-nombre"><strong>{{ x.nombre }}</strong><span>{{ mayus(diaTexto(dia())) }}</span></div>
+            @if (+x.pendientes) { <span class="chip aviso">{{ x.pendientes }} por aceptar</span> }
+          </div>
+          <dl class="rec-dl">
+            <dt>Base del día</dt><dd class="num">{{ pesos(x.base) }}</dd>
+            <dt>Compras del día</dt><dd class="num menos">− {{ pesos(x.compras) }}</dd>
+            @if (+x.entregado) { <dt>Ya entregó</dt><dd class="num">− {{ pesos(x.entregado) }}</dd> }
+          </dl>
+          <div class="debe" [class.neg]="+x.saldo < 0" [class.cero]="+x.saldo === 0">
+            <span>{{ +x.saldo < 0 ? 'Gastó de más este día' : +x.saldo === 0 ? 'Día cuadrado' : 'Falta por entregar' }}</span>
+            <strong class="num">{{ pesos(x.saldo) }}</strong>
+          </div>
+          <div class="rec-acc">
+            <button type="button" class="b b-chico" (click)="verRecolector(x.id)">Ver detalle</button>
+            @if (admin()) {
+              <button type="button" class="b b-chico b-pri" [disabled]="+x.saldo <= 0" (click)="abrirRecibir(x)"><ion-icon name="cash-outline"></ion-icon>Recibir</button>
+            }
+          </div>
+        </article>
+      }
+    </section>
+  } @else if (veTodos() && !filtroRec() && !cargando()) {
+    <div class="vacio-caja">
+      <ion-icon name="wallet-outline" aria-hidden="true"></ion-icon>
+      <p>Todavía nadie tiene el rol Recolector. Asígnalo en Usuarios: quien lo tenga recibe bases y registra las compras con su factura.</p>
+    </div>
+  } @else {
+    <!-- Resumen del día: tiquete -->
+    <section class="resumen-dia">
+      <div class="tiquete" aria-labelledby="t-res" [attr.aria-busy]="cargando()">
+        <h2 id="t-res">Cuadre del día</h2>
+        <div class="renglon"><span class="lbl">Base<small>{{ r()?.n_bases ?? 0 }} {{ r()?.n_bases === 1 ? 'base' : 'bases' }}</small></span><span class="punteado"></span>
+          <span class="val num">{{ pesos(r()?.base) }}</span></div>
+        <div class="renglon compras"><span class="lbl">Compras<small>{{ r()?.n_compras ?? 0 }}</small></span><span class="punteado"></span>
+          <span class="val num">− {{ pesos(r()?.compras) }}</span></div>
+        <div class="renglon total" [class.neg]="cuadre() < 0"><span class="lbl">Quedó del día<small>{{ cuadre() < 0 ? 'Gastó más de la base' : 'Base menos compras' }}</small></span>
+          <span class="punteado"></span><span class="val num">{{ pesos(cuadre()) }}</span></div>
+        @if (+(r()?.entregado ?? 0)) {
+          <div class="renglon entregado"><span class="lbl">Ya se le entregó al admin<small>De la plata de este día</small></span><span class="punteado"></span>
+            <span class="val num">− {{ pesos(r()?.entregado) }}</span></div>
+        }
+        @if (r()?.saldo !== null && r()?.saldo !== undefined) {
+          <div class="saldo" [class.neg]="+r()!.saldo! < 0" [class.cero]="+r()!.saldo! === 0">
+            <span>{{ +r()!.saldo! < 0 ? 'Entregó de más' : +r()!.saldo! === 0 ? 'Día cuadrado' : 'Falta por entregar' }}<small>Cada día cuadra por su cuenta</small></span>
+            <strong class="num">{{ pesos(r()!.saldo) }}</strong>
+          </div>
+        }
+        @if (admin() && filtroRec() && +(r()?.saldo ?? 0) > 0) {
+          <button type="button" class="b b-pri recibir-btn" (click)="abrirRecibirSel()"><ion-icon name="cash-outline"></ion-icon>Recibir {{ pesos(r()!.saldo) }}</button>
+        }
+      </div>
+      <div class="caja barra-caja">
+        <div class="caja-cab"><div><h2>En qué se fue la base</h2><p>{{ pesos(r()?.base) }} de base {{ diaTexto(dia()) }}</p></div></div>
+        <app-barra-estado [segmentos]="barraDia()" titulo="Base del día" [resumen]="pesos(r()?.base)" [alto]="14" [formato]="pesos"></app-barra-estado>
+      </div>
+    </section>
+  }
+
+  <!-- Días anteriores sin entregar -->
+  @if (r()?.dias_sin_entregar?.length) {
+    <section class="caja" aria-labelledby="t-atras">
+      <div class="caja-cab"><div><h2 id="t-atras">Días anteriores sin entregar</h2><p>Cada día cuadra solo: lo que quedó pendiente se recibe en su propio día</p></div></div>
+      <ul class="atras">
+        @for (a of r()!.dias_sin_entregar; track a.id + a.dia) {
+          <li>
+            <span class="atras-txt"><strong>{{ mayus(diaTexto(a.dia)) }}</strong>@if (veTodos() && !filtroRec()) { <small>{{ a.nombre }}</small> }</span>
+            <span class="atras-v num">{{ pesos(a.falta) }}</span>
+            <span class="atras-acc">
+              <button type="button" class="b b-chico" (click)="ponerDia(a.dia)">Ver día</button>
+              @if (admin()) {
+                <button type="button" class="b b-chico b-pri" (click)="abrirRecibir({ id: a.id, nombre: a.nombre, saldo: a.falta }, a.dia)"><ion-icon name="cash-outline"></ion-icon>Recibir</button>
+              }
+            </span>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  <!-- Movimientos -->
+  <section class="caja" aria-labelledby="t-movs">
+    <div class="caja-cab"><div><h2 id="t-movs">Movimientos del día</h2><p>Bases que entraron, compras y lo entregado</p></div></div>
+    @if (r()?.movimientos?.length) {
+      <ul class="movs">
+        @for (m of r()!.movimientos; track m.tipo + m.id) {
+          <li class="mov">
+            <span class="ico" [attr.data-tipo]="m.tipo" aria-hidden="true">
+              <ion-icon [name]="m.tipo === 'base' ? 'wallet-outline' : m.tipo === 'entrega' ? 'cash-outline' : 'bag-handle-outline'"></ion-icon>
+            </span>
+            <span class="mov-txt">
+              @if (m.tipo === 'base') {
+                <span class="t1">{{ m.nombre }}</span>
+                <span class="t2">Base · {{ m.quien || '—' }} · {{ hora(m.fecha) }}@if (veTodos() && !filtroRec()) { · {{ m.recolector }} }</span>
+              } @else if (m.tipo === 'entrega') {
+                <span class="t1">Le entregó al admin{{ m.nombre ? ' · ' + m.nombre : '' }}</span>
+                <span class="t2">Recibió {{ m.quien || 'el admin' }} · {{ m.dia && m.dia !== diaDe(m.fecha) ? 'registrado ' + diaTexto(diaDe(m.fecha)) : hora(m.fecha) }}@if (veTodos() && !filtroRec()) { · {{ m.recolector }} }</span>
+              } @else {
+                <span class="t1">{{ m.producto }}</span>
+                <span class="t2">{{ m.proveedor }} · {{ hora(m.fecha) }}@if (veTodos() && !filtroRec()) { · {{ m.recolector }} }</span>
+              }
+            </span>
+            <span class="mov-der">
+              <span class="monto num" [attr.data-tipo]="m.tipo" [class.tachado]="m.tipo === 'base' && m.estado !== 'aceptada'">{{ m.tipo === 'base' ? '+' : '−' }}{{ pesos(m.valor) }}</span>
+              @if (m.tipo === 'base' && m.estado !== 'aceptada') {
+                <span class="chip" [class.aviso]="m.estado === 'pendiente'" [class.mal]="m.estado === 'rechazada'">{{ m.estado === 'pendiente' ? 'Por aceptar' : 'Rechazada' }}</span>
+              }
+              @if (m.tipo === 'compra' && puedeQuitarCompra()) { <button type="button" class="link-borrar" (click)="borrarCompra(m)">Quitar</button> }
+              @if (m.tipo === 'entrega' && admin()) { <button type="button" class="link-borrar" (click)="borrarEntrega(m)">Borrar</button> }
+            </span>
+            @if (m.tipo === 'compra' && m.facturas?.length) {
+              <button type="button" class="miniatura" (click)="verFactura(m)" aria-label="Ver factura">
+                @if (fotos()[m.facturas![0]]; as u) { <img [src]="u" alt="" loading="lazy" /> } @else { <ion-icon name="receipt-outline"></ion-icon> }
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    } @else {
+      @if (cargando()) {
+        <app-esqueleto tipo="lista" [cantidad]="4"></app-esqueleto>
+      } @else {
+        <div class="vacio-caja sin-borde">
+          <ion-icon name="receipt-outline" aria-hidden="true"></ion-icon>
+          <p>Todavía no hay bases ni compras este día.</p>
+        </div>
+      }
+    }
+  </section>
+</div>
+
+<!-- Agregar o enviar base -->
+@if (formBase()) {
+  <button class="hoja-fondo" appSobreTodo aria-label="Cerrar" (click)="formBase.set(false)"></button>
+  <div class="hoja" appSobreTodo role="dialog" aria-modal="true" aria-labelledby="t-base">
+    <div class="hoja-cab">
+      <h2 id="t-base">{{ enviaBase() ? 'Enviar base' : 'Agregar base' }}</h2>
+      <button type="button" class="hoja-x" aria-label="Cerrar" (click)="formBase.set(false)"><ion-icon name="close-outline"></ion-icon></button>
+    </div>
+    <div class="hoja-cuerpo">
+      @if (admin()) {
+        <label class="campo">
+          <span>¿Para quién es la base?</span>
+          <select class="inp" [(ngModel)]="baseRec">
+            @for (x of r()?.recolectores ?? []; track x.id) { <option [ngValue]="x.id">{{ x.nombre }}</option> }
+          </select>
+        </label>
+        @if (!(r()?.recolectores?.length)) { <p class="nota-aviso">No hay usuarios con el rol Recolector. Asígnalo en Usuarios.</p> }
+      }
+      <label class="campo">
+        <span>Valor</span>
+        <input class="inp num" type="number" inputmode="numeric" min="0" step="1000" [(ngModel)]="baseMonto" placeholder="0" />
+      </label>
+      <label class="campo">
+        <span>Nombre de la base</span>
+        <input class="inp" maxlength="120" [(ngModel)]="baseNombre" placeholder="¿De dónde viene? Ej: caja del local, ventas de la mañana" />
+      </label>
+      @if (enviaBase()) { <p class="ayuda">Le llega un aviso al recolector; se suma cuando la acepte.</p> }
+      @if (errorForm()) { <p class="error-txt" role="alert">{{ errorForm() }}</p> }
+    </div>
+    <div class="hoja-pie">
+      <button type="button" class="b" (click)="formBase.set(false)">Cancelar</button>
+      <button type="button" class="b b-pri" (click)="guardarBase()" [disabled]="ocupado()">{{ ocupado() ? 'Guardando…' : enviaBase() ? 'Enviar base' : 'Agregar base' }}</button>
+    </div>
+  </div>
+}
+
+<!-- Recibir la plata del recolector -->
+@if (recibirDe(); as x) {
+  <button class="hoja-fondo" appSobreTodo aria-label="Cerrar" (click)="recibirDe.set(null)"></button>
+  <div class="hoja" appSobreTodo role="dialog" aria-modal="true" aria-labelledby="t-rec">
+    <div class="hoja-cab">
+      <h2 id="t-rec">Recibir de {{ primerNombre(x.nombre) }}<small>{{ mayus(diaTexto(recibirDia)) }}</small></h2>
+      <button type="button" class="hoja-x" aria-label="Cerrar" (click)="recibirDe.set(null)"><ion-icon name="close-outline"></ion-icon></button>
+    </div>
+    <div class="hoja-cuerpo">
+      <div class="resalte"><span>Le falta entregar</span><strong class="num">{{ pesos(x.saldo) }}</strong></div>
+      <p class="ayuda">Plata del <strong>{{ diaTexto(recibirDia) }}</strong>: base − compras − lo que ya te entregó de ese día.</p>
+      <label class="campo">
+        <span>¿Cuánto recibiste?</span>
+        <input class="inp num" type="number" inputmode="numeric" min="0" step="1000" [(ngModel)]="recibirValor" />
+      </label>
+      <button type="button" class="b b-chico todo-btn" (click)="recibirValor = +x.saldo">Todo · {{ pesos(x.saldo) }}</button>
+      @if ((recibirValor || 0) > 0 && +recibirValor! !== +x.saldo) {
+        <p class="nota-aviso">{{ +recibirValor! < +x.saldo ? 'Le quedan ' + pesos(+x.saldo - +recibirValor!) + ' por entregar.' : 'Te entregó ' + pesos(+recibirValor! - +x.saldo) + ' de más.' }}</p>
+      }
+      <label class="campo">
+        <span>Nota (opcional)</span>
+        <input class="inp" maxlength="300" [(ngModel)]="recibirNota" placeholder="Ej: en efectivo, al final del día" />
+      </label>
+      @if (errorForm()) { <p class="error-txt" role="alert">{{ errorForm() }}</p> }
+    </div>
+    <div class="hoja-pie">
+      <button type="button" class="b" (click)="recibirDe.set(null)">Cancelar</button>
+      <button type="button" class="b b-pri" (click)="guardarRecibir()" [disabled]="ocupado()">{{ ocupado() ? 'Guardando…' : 'Recibí ' + pesos(recibirValor || 0) }}</button>
+    </div>
+  </div>
+}
+
+<!-- Registrar compra -->
+@if (formCompra()) {
+  <button class="hoja-fondo" appSobreTodo aria-label="Cerrar" (click)="formCompra.set(false)"></button>
+  <div class="hoja" appSobreTodo role="dialog" aria-modal="true" aria-labelledby="t-compra">
+    <div class="hoja-cab">
+      <h2 id="t-compra">Registrar compra<small>Te queda {{ pesos(cuadre()) }} de base</small></h2>
+      <button type="button" class="hoja-x" aria-label="Cerrar" (click)="formCompra.set(false)"><ion-icon name="close-outline"></ion-icon></button>
+    </div>
+    <div class="hoja-cuerpo">
+      <div class="opciones dos" role="radiogroup" aria-label="Qué compraste">
+        <button type="button" role="radio" [attr.aria-checked]="deInventario()" [class.on]="deInventario()" (click)="deInventario.set(true)"><ion-icon name="cube-outline"></ion-icon>Producto del catálogo</button>
+        <button type="button" role="radio" [attr.aria-checked]="!deInventario()" [class.on]="!deInventario()" (click)="deInventario.set(false)"><ion-icon name="bag-handle-outline"></ion-icon>Otra cosa</button>
+      </div>
+      @if (deInventario()) {
+        @if (prodSel(); as p) {
+          <div class="prod-sel">
+            <span class="prod-foto">@if (p.imagen_url) { <img [src]="p.imagen_url" alt="" /> } @else { <ion-icon name="cube-outline"></ion-icon> }</span>
+            <span class="prod-txt"><strong>{{ p.nombre }}</strong><small>Costo actual: {{ p.costo ? pesos(p.costo) : 'sin costo' }}</small></span>
+            <button type="button" class="b b-chico" (click)="prodSel.set(null)">Cambiar</button>
+          </div>
+          <div class="campos-2">
+            <label class="campo"><span>¿Cuántos compraste?</span>
+              <input class="inp num" type="number" inputmode="numeric" min="1" [ngModel]="compraCant()" (ngModelChange)="compraCant.set(+$event || null)" /></label>
+            <label class="campo"><span>¿Cuánto costó cada uno?</span>
+              <input class="inp num" type="number" inputmode="numeric" min="0" step="100" [ngModel]="compraCosto()" (ngModelChange)="compraCosto.set(+$event || null)" /></label>
+          </div>
+          @if (totalInv()) { <div class="resalte"><span>Total de la compra</span><strong class="num">{{ pesos(totalInv()) }}</strong></div> }
+          @if (compraCosto() && p.costo && +compraCosto()! !== +p.costo) {
+            <p class="nota-aviso">El costo de {{ p.nombre }} va a quedar en {{ pesos(compraCosto()) }} (antes {{ pesos(p.costo) }}).</p>
+          }
+          @if (totalInv() > cuadre() && cuadre() >= 0) { <p class="error-txt">Es más de lo que queda de base ({{ pesos(cuadre()) }}).</p> }
+        } @else {
+          <div class="campo buscar-prod">
+            <label for="cbp">Busca el producto que compraste</label>
+            <input id="cbp" class="inp" autocomplete="off" [ngModel]="buscaProd()" (ngModelChange)="buscaProd.set($event)" placeholder="Nombre o SKU" />
+            @if (sugerencias().length) {
+              <ul class="sug-prod">
+                @for (p of sugerencias(); track p.id) {
+                  <li><button type="button" (click)="elegirProd(p)">
+                    <span class="prod-foto">@if (p.imagen_url) { <img [src]="p.imagen_url" alt="" loading="lazy" /> } @else { <ion-icon name="cube-outline"></ion-icon> }</span>
+                    <span class="prod-txt">{{ p.nombre }}</span><small>{{ p.costo ? pesos(p.costo) : '' }}</small>
+                  </button></li>
+                }
+              </ul>
+            } @else if (buscaProd().trim().length >= 2) {
+              <small class="ayuda">No encontramos ese producto. Si no está en el catálogo, elige "Otra cosa".</small>
+            }
+          </div>
+        }
+      } @else {
+        <label class="campo"><span>Valor</span><input class="inp num" type="number" inputmode="numeric" min="0" step="100" [(ngModel)]="compraValor" placeholder="0" /></label>
+        @if ((compraValor || 0) > cuadre() && cuadre() >= 0) { <p class="error-txt">Es más de lo que queda de base ({{ pesos(cuadre()) }}).</p> }
+        <label class="campo"><span>¿Qué compraste?</span><input class="inp" maxlength="200" [(ngModel)]="compraProducto" placeholder="Ej: bolsas, cinta" /></label>
+      }
+      <label class="campo"><span>Proveedor</span><input class="inp" maxlength="120" [(ngModel)]="compraProveedor" placeholder="Ej: Distribuidora El Centro" /></label>
+      <app-fotos-input
+        titulo="Foto de la factura"
+        pista="Foto de la factura o el recibo donde se vea el valor."
+        [carpeta]="carpeta()"
+        [obligatorio]="true"
+        [rutas]="compraFacturas()"
+        (cambio)="compraFacturas.set($event); errorForm.set('')"
+      ></app-fotos-input>
+      @if (errorForm()) { <p class="error-txt" role="alert">{{ errorForm() }}</p> }
+    </div>
+    <div class="hoja-pie">
+      <button type="button" class="b" (click)="formCompra.set(false)">Cancelar</button>
+      <button type="button" class="b b-pri" (click)="guardarCompra()" [disabled]="ocupado()">{{ ocupado() ? 'Guardando…' : 'Registrar compra' }}</button>
+    </div>
+  </div>
+}
+
+@if (visor()) {
+  <app-imagen-preview [url]="visor()" (cerrar)="visor.set(null)"></app-imagen-preview>
+}

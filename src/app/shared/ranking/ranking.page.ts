@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { IonIcon } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { trophyOutline, flagOutline } from 'ionicons/icons';
+import { trophyOutline, flagOutline, medal } from 'ionicons/icons';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { AvatarComponent } from '../avatar/avatar.component';
 import { EsqueletoComponent } from '../esqueleto/esqueleto.component';
@@ -83,13 +83,12 @@ export class RankingPage implements OnInit {
   metaTexto = '';
   guardandoMeta = false;
 
-  readonly medallas = ['🥇', '🥈', '🥉'];
 
   constructor(private supabase: SupabaseService, private cdr: ChangeDetectorRef, route: ActivatedRoute) {
     this.puedeEditarMetas = !!route.snapshot.data['editarMetas'];
     const t = route.snapshot.data['tipo'] as TipoRanking | undefined;
     if (t) this.tipo = t;
-    addIcons({ trophyOutline, flagOutline });
+    addIcons({ trophyOutline, flagOutline, medal });
   }
 
   async ngOnInit(): Promise<void> {

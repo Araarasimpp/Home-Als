@@ -1,0 +1,330 @@
+<div class="pg">
+  <header class="pg-cab">
+    <div>
+      <h1>Pagos</h1>
+      <p class="pg-sub">{{ esAdmin() ? 'Comisiones de los vendedores: lo que se debe y lo que ya se pagó' : 'Tus comisiones: lo que te deben y lo que te han pagado' }}</p>
+    </div>
+    <div class="pg-acciones">
+      <button type="button" class="b b-icono" aria-label="Actualizar" (click)="actualizar()"><ion-icon name="refresh-outline"></ion-icon></button>
+    </div>
+  </header>
+
+  <!-- Periodo: semana de sábado a viernes -->
+  <section class="caja periodo-caja" aria-label="Semana">
+    <div class="periodo">
+      <button type="button" class="b b-icono" aria-label="Semana anterior" (click)="moverSemana(-7)"><ion-icon name="chevron-back-outline"></ion-icon></button>
+      <label>Desde<input class="inp" type="date" [value]="desdeP()" [max]="hastaP()" (change)="cambiarPeriodo('desde', $any($event.target).value)" /></label>
+      <label>Hasta<input class="inp" type="date" [value]="hastaP()" [min]="desdeP()" (change)="cambiarPeriodo('hasta', $any($event.target).value)" /></label>
+      <button type="button" class="b b-icono" aria-label="Semana siguiente" (click)="moverSemana(7)"><ion-icon name="chevron-forward-outline"></ion-icon></button>
+      @if (!esSemanaPasada()) {
+        <button type="button" class="b b-chico" (click)="irSemanaPasada()">Semana pasada</button>
+      }
+    </div>
+    <p class="ayuda">
+      Las comisiones se pagan por semana, de sábado a viernes. Aquí ves {{ esAdmin() ? 'lo que se le debe a cada vendedor' : 'lo que te deben' }}
+      por los pedidos <strong>creados</strong> del {{ periodo(desdeP(), hastaP()) }} que ya se entregaron.
+    </p>
+    @if (esAdmin()) {
+      <div class="contar-desde">
+        <span>Se cuentan los pedidos creados desde</span>
+        <input class="inp" type="date" [(ngModel)]="contarDesde" [max]="hastaP()" aria-label="Contar comisiones desde" />
+        @if (contarDesde && contarDesde !== desdeGuardado()) {
+          <button type="button" class="b b-chico b-oscuro" (click)="guardarDesde()">Guardar</button>
+        }
+      </div>
+    }
+  </section>
+
+  @if (errorMsg()) {
+    <p class="error-txt" role="alert">{{ errorMsg() }}</p>
+  }
+
+  @if (esAdmin()) {
+    <!-- Resumen del periodo -->
+    <section class="resumen-pagos">
+      <div class="cifras">
+        <div class="cifra oscura">
+          <span>Por pagar esta semana</span>
+          <strong class="num">{{ pesos(totalPeriodo()) }}</strong>
+          <small>{{ conDeuda().length }} {{ conDeuda().length === 1 ? 'vendedor' : 'vendedores' }}</small>
+        </div>
+        <div class="cifra">
+          <span>Pedidos</span>
+          <strong class="num">{{ pedidosPeriodo() }}</strong>
+          <small>Creados y entregados</small>
+        </div>
+        <div class="cifra">
+          <span>De semanas anteriores</span>
+          <strong class="num">{{ pesos(totalAnteriores()) }}</strong>
+          <small>{{ totalAnteriores() ? 'Sin pagar todavía' : 'Todo al día' }}</small>
+        </div>
+        <div class="cifra">
+          <span>{{ tipoHistorial() === 'mes' ? 'Pagado este mes' : tipoHistorial() === 'anterior' ? 'Pagado el mes pasado' : 'Pagado' }}</span>
+          <strong class="num">{{ pesos(pagadoHistorial()) }}</strong>
+          <small>{{ historial().length }} {{ historial().length === 1 ? 'pago' : 'pagos' }}</small>
+        </div>
+      </div>
+    </section>
+
+    <div class="titulo-seccion"><h2>Por pagar</h2></div>
+    <div class="cuerpo-pagos">
+    <div class="vendedores" [attr.aria-busy]="cargando()">
+      @for (c of pendientes(); track c.vendedor_id) {
+        <article class="vend caja">
+          <div class="vend-cab">
+            <app-avatar [nombre]="c.nombre" [url]="c.avatar_url" [size]="40"></app-avatar>
+            <div class="vend-nombre">
+              <h3>{{ c.nombre }}</h3>
+              <span>{{ c.total ? periodo(c.desde, c.hasta) : 'Nada en esta semana' }}</span>
+            </div>
+          </div>
+          <div class="vend-monto">
+            <strong class="num">{{ pesos(c.total) }}</strong>
+            <span>{{ c.pedidos }} {{ c.pedidos === 1 ? 'pedido creado y entregado' : 'pedidos creados y entregados' }}</span>
+          </div>
+          @if (c.anteriores) {
+            <p class="nota-aviso">
+              <ion-icon name="alert-circle-outline" aria-hidden="true"></ion-icon>
+              Además tiene <strong>{{ pesos(c.anteriores) }}</strong> sin pagar de antes del {{ dia(desdeP()) }}. Usa la flecha
+              <ion-icon name="chevron-back-outline" aria-label="semana anterior"></ion-icon> para ir a esas semanas.
+            </p>
+          }
+          @if (abiertoV() === c.vendedor_id) {
+            <ul class="peds">
+              @for (p of pedidosV(); track p.id) {
+                <li><span class="peds-dia">{{ dia(p.dia) }}</span><span class="peds-cli">#{{ p.numero }} · {{ p.cliente_nombre }}</span><span class="num">{{ pesos(p.comision) }}</span></li>
+              } @empty {
+                <li class="peds-vacio">{{ cargandoPedidos() ? 'Cargando…' : 'Sin pedidos en estas fechas.' }}</li>
+              }
+            </ul>
+          }
+          <div class="vend-acc">
+            @if (c.total) {
+              <button type="button" class="b b-chico" (click)="verPedidos(c.vendedor_id)">
+                <ion-icon [name]="abiertoV() === c.vendedor_id ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
+                {{ abiertoV() === c.vendedor_id ? 'Ocultar pedidos' : 'Ver pedidos' }}
+              </button>
+              <button type="button" class="b b-chico b-pri" (click)="abrirPago(c)"><ion-icon name="wallet-outline"></ion-icon>Registrar pago</button>
+            }
+          </div>
+        </article>
+      } @empty {
+        @if (cargando()) {
+          <app-esqueleto tipo="lista" [cantidad]="3"></app-esqueleto>
+        } @else {
+          <div class="vacio-caja">
+            <ion-icon name="checkmark-circle-outline" aria-hidden="true"></ion-icon>
+            <p>No hay comisiones por pagar. Todo al día.</p>
+          </div>
+        }
+      }
+    </div>
+    <aside class="caja dona-caja">
+        <div class="caja-cab"><div><h2>A quién se le debe</h2><p>{{ periodo(desdeP(), hastaP()) }}</p></div></div>
+        <app-dona [segmentos]="dona()" [valor]="pesosCorto(totalPeriodo())" etiqueta="por pagar" [tam]="140" [formato]="pesos" textoVacio="Nada por pagar en esta semana."></app-dona>
+      </aside>
+    </div>
+  } @else {
+    <!-- Vista del vendedor -->
+    <section class="cobrar">
+      <div class="cobrar-principal">
+        <span>Por cobrar · {{ periodo(desdeP(), hastaP()) }}</span>
+        <strong class="num">{{ pesos(mio()?.total ?? 0) }}</strong>
+        <small>{{ mio()?.pedidos ? mio()!.pedidos + (mio()!.pedidos === 1 ? ' pedido entregado' : ' pedidos entregados') : 'No tienes comisiones pendientes en estas fechas' }}</small>
+      </div>
+      <div class="cifra">
+        <span>De semanas anteriores</span>
+        <strong class="num">{{ pesos(mio()?.anteriores ?? 0) }}</strong>
+        <small>{{ mio()?.anteriores ? 'Todavía no te lo han pagado' : 'Al día' }}</small>
+      </div>
+      <div class="cifra">
+        <span>{{ tipoHistorial() === 'mes' ? 'Te pagaron este mes' : tipoHistorial() === 'anterior' ? 'Te pagaron el mes pasado' : 'Te han pagado' }}</span>
+        <strong class="num">{{ pesos(pagadoHistorial()) }}</strong>
+        <small>{{ historial().length }} {{ historial().length === 1 ? 'pago' : 'pagos' }}</small>
+      </div>
+    </section>
+    @if (mio()?.pedidos) {
+      <section class="caja">
+        <div class="caja-cab"><div><h2>Pedidos por cobrar</h2><p>Creados en estas fechas y ya entregados</p></div></div>
+        <ul class="peds">
+          @for (p of pedidosV(); track p.id) {
+            <li><span class="peds-dia">{{ dia(p.dia) }}</span><span class="peds-cli">#{{ p.numero }} · {{ p.cliente_nombre }}</span><span class="num">{{ pesos(p.comision) }}</span></li>
+          }
+        </ul>
+      </section>
+    }
+  }
+
+  <!-- Historial -->
+  <div class="titulo-seccion">
+    <h2>{{ esAdmin() ? 'Pagos hechos' : 'Pagos que te han hecho' }}</h2>
+    <div class="tabs-hist" role="tablist" aria-label="Periodo del historial">
+      <button type="button" role="tab" [class.on]="tipoHistorial() === 'mes'" [attr.aria-selected]="tipoHistorial() === 'mes'" (click)="cambiarHistorial('mes')">Este mes</button>
+      <button type="button" role="tab" [class.on]="tipoHistorial() === 'anterior'" [attr.aria-selected]="tipoHistorial() === 'anterior'" (click)="cambiarHistorial('anterior')">Mes pasado</button>
+      <button type="button" role="tab" [class.on]="tipoHistorial() === 'todo'" [attr.aria-selected]="tipoHistorial() === 'todo'" (click)="cambiarHistorial('todo')">Todos</button>
+    </div>
+  </div>
+  <section class="caja hist">
+    @for (l of historial(); track l.id) {
+      <div class="pago" [class.anulado]="l.anulado">
+        <span class="pago-icono" aria-hidden="true"><ion-icon [name]="iconoMetodo(l.metodo)"></ion-icon></span>
+        <div class="pago-txt">
+          <strong>{{ esAdmin() ? l.vendedor?.nombre || '—' : 'Pedidos del ' + periodo(l.desde, l.hasta) }}</strong>
+          <span>
+            {{ esAdmin() ? periodo(l.desde, l.hasta) + ' · ' : '' }}{{ l.cantidad_pedidos }} {{ l.cantidad_pedidos === 1 ? 'pedido' : 'pedidos' }} · {{ metodo(l.metodo) }} · {{ cuando(l.pagado_at) }}
+          </span>
+        </div>
+        <div class="pago-der">
+          <strong class="num">{{ pesos(l.total) }}</strong>
+          @if (l.anulado) {
+            <span class="chip mal">Anulado</span>
+          } @else if (!l.comprobantes.length) {
+            <span class="chip aviso">Sin soporte</span>
+          }
+        </div>
+        @if (l.comprobantes.length) {
+          <button type="button" class="miniatura" (click)="verFoto(l.comprobantes[0])" aria-label="Ver soporte del pago">
+            @if (fotos()[l.comprobantes[0]]; as u) { <img [src]="u" alt="" loading="lazy" /> }
+          </button>
+        }
+        <button type="button" class="b b-chico" (click)="verDetalle(l)">Ver</button>
+      </div>
+    } @empty {
+      <div class="vacio-caja sin-borde">
+        <ion-icon name="document-text-outline" aria-hidden="true"></ion-icon>
+        <p>No hay pagos en este periodo.</p>
+      </div>
+    }
+  </section>
+</div>
+
+<!-- Registrar pago -->
+@if (pagando(); as c) {
+  <button class="hoja-fondo" appSobreTodo aria-label="Cerrar" (click)="cerrarPago()"></button>
+  <div class="hoja" appSobreTodo role="dialog" aria-modal="true" aria-labelledby="t-pago">
+    <div class="hoja-cab">
+      <h2 id="t-pago">Pagar a {{ primerNombre(c.nombre) }}<small>Pedidos del {{ periodo(desdeP(), hastaP()) }}</small></h2>
+      <button type="button" class="hoja-x" aria-label="Cerrar" (click)="cerrarPago()"><ion-icon name="close-outline"></ion-icon></button>
+    </div>
+    <div class="hoja-cuerpo">
+      <div class="resalte">
+        <span>{{ aPagar().n }} {{ aPagar().n === 1 ? 'pedido' : 'pedidos' }}</span>
+        <strong class="num">{{ pesos(aPagar().total) }}</strong>
+      </div>
+      <div class="campo">
+        <span>¿Cómo le pagaste?</span>
+        <div class="opciones" role="radiogroup" aria-label="Forma de pago">
+          @for (m of metodos; track m.id) {
+            <button type="button" role="radio" [attr.aria-checked]="pagoMetodo() === m.id" [class.on]="pagoMetodo() === m.id" (click)="pagoMetodo.set(m.id); errorHoja.set('')">
+              <ion-icon [name]="m.icon" aria-hidden="true"></ion-icon>{{ m.label }}
+            </button>
+          }
+        </div>
+      </div>
+      <app-fotos-input
+        titulo="Comprobante del pago"
+        pista="Pantallazo de la transferencia o foto del recibo firmado."
+        carpeta="pagos"
+        [obligatorio]="pagoMetodo() === 'transferencia'"
+        [rutas]="pagoSoportes()"
+        (cambio)="pagoSoportes.set($event); errorHoja.set('')"
+      ></app-fotos-input>
+      <label class="campo">
+        <span>Nota (opcional)</span>
+        <input class="inp" maxlength="200" [(ngModel)]="pagoNota" placeholder="Ej: semana del 14 al 20 de noviembre" />
+      </label>
+      @if (errorHoja()) { <p class="error-txt" role="alert">{{ errorHoja() }}</p> }
+    </div>
+    <div class="hoja-pie">
+      <button type="button" class="b" (click)="cerrarPago()">Cancelar</button>
+      <button type="button" class="b b-pri" (click)="pagar()" [disabled]="ocupado() || !aPagar().n">
+        {{ ocupado() ? 'Guardando…' : 'Registrar ' + pesos(aPagar().total) }}
+      </button>
+    </div>
+  </div>
+}
+
+<!-- Detalle de un pago -->
+@if (detalle(); as l) {
+  <button class="hoja-fondo" appSobreTodo aria-label="Cerrar" (click)="cerrarDetalle()"></button>
+  <div class="hoja" appSobreTodo role="dialog" aria-modal="true" aria-labelledby="t-det">
+    <div class="hoja-cab">
+      <h2 id="t-det">Pago {{ numero(l.numero) }}<small>{{ cuando(l.pagado_at) }}</small></h2>
+      <button type="button" class="hoja-x" aria-label="Cerrar" (click)="cerrarDetalle()"><ion-icon name="close-outline"></ion-icon></button>
+    </div>
+    <div class="hoja-cuerpo">
+      <div class="resalte" [class.mal]="l.anulado">
+        <span>{{ l.anulado ? 'Pago anulado' : esAdmin() ? 'Pagado a ' + (l.vendedor?.nombre ?? '') : 'Te pagaron' }}</span>
+        <strong class="num">{{ pesos(l.total) }}</strong>
+      </div>
+      <dl class="datos">
+        <dt>Pedidos del</dt><dd>{{ periodo(l.desde, l.hasta) }}</dd>
+        <dt>Forma</dt><dd>{{ metodo(l.metodo) }}</dd>
+        @if (l.pagado_por_nombre) { <dt>Pagó</dt><dd>{{ l.pagado_por_nombre }}</dd> }
+        @if (l.nota) { <dt>Nota</dt><dd>{{ l.nota }}</dd> }
+      </dl>
+      <div class="campo">
+        <span>Comprobante</span>
+        @if (l.comprobantes.length) {
+          <div class="fotos-det">
+            @for (f of l.comprobantes; track f; let i = $index) {
+              <button type="button" class="miniatura grande" (click)="verFoto(f)" [attr.aria-label]="'Ver comprobante ' + (i + 1)">
+                @if (fotos()[f]; as u) { <img [src]="u" alt="" loading="lazy" /> }
+              </button>
+            }
+          </div>
+        } @else {
+          <p class="nota-aviso">{{ esAdmin() ? 'Este pago no tiene soporte todavía.' : 'Todavía no han subido el comprobante. Te llega un aviso cuando lo suban.' }}</p>
+        }
+      </div>
+      <div class="campo">
+        <span>{{ l.cantidad_pedidos }} {{ l.cantidad_pedidos === 1 ? 'pedido pagado' : 'pedidos pagados' }}</span>
+        <ul class="peds">
+          @for (p of pedidosDet(); track p.id) {
+            <li><span class="peds-dia">{{ dia(p.dia) }}</span><span class="peds-cli">#{{ p.numero }} · {{ p.cliente_nombre }}</span><span class="num">{{ pesos(p.comision) }}</span></li>
+          } @empty {
+            <li class="peds-vacio">Cargando…</li>
+          }
+        </ul>
+      </div>
+    </div>
+    @if (esAdmin() && !l.anulado) {
+      <div class="hoja-pie">
+        <button type="button" class="b b-peligro" (click)="anular(l)">Anular pago</button>
+        @if (!l.comprobantes.length) {
+          <button type="button" class="b b-pri" (click)="cerrarDetalle(); abrirSoporte(l)">Subir soporte</button>
+        }
+      </div>
+    }
+  </div>
+}
+
+<!-- Subir soporte después -->
+@if (soporteDe(); as l) {
+  <button class="hoja-fondo" appSobreTodo aria-label="Cerrar" (click)="soporteDe.set(null)"></button>
+  <div class="hoja" appSobreTodo role="dialog" aria-modal="true" aria-labelledby="t-sop">
+    <div class="hoja-cab">
+      <h2 id="t-sop">Soporte del pago<small>{{ l.vendedor?.nombre }} · {{ pesos(l.total) }} · {{ metodo(l.metodo) }}</small></h2>
+      <button type="button" class="hoja-x" aria-label="Cerrar" (click)="soporteDe.set(null)"><ion-icon name="close-outline"></ion-icon></button>
+    </div>
+    <div class="hoja-cuerpo">
+      <app-fotos-input
+        titulo="Fotos del soporte"
+        pista="Pantallazo de la transferencia o foto del recibo firmado."
+        carpeta="pagos"
+        [obligatorio]="true"
+        [rutas]="soporteFotos()"
+        (cambio)="soporteFotos.set($event)"
+      ></app-fotos-input>
+      @if (errorHoja()) { <p class="error-txt" role="alert">{{ errorHoja() }}</p> }
+    </div>
+    <div class="hoja-pie">
+      <button type="button" class="b" (click)="soporteDe.set(null)">Cancelar</button>
+      <button type="button" class="b b-pri" (click)="guardarSoporte()" [disabled]="ocupado() || !soporteFotos().length">{{ ocupado() ? 'Guardando…' : 'Guardar soporte' }}</button>
+    </div>
+  </div>
+}
+
+@if (visor()) {
+  <app-imagen-preview [url]="visor()" (cerrar)="visor.set(null)"></app-imagen-preview>
+}

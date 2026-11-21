@@ -32,7 +32,9 @@
 }
 
 .sep {
-  color: var(--border-strong);
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--text-muted);
 }
 
 .buscar {

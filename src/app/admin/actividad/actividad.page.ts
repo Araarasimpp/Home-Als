@@ -114,6 +114,6 @@ export class ActividadPage implements OnInit {
   }
 
   rol(r: string | null): string {
-    return r === 'admin' ? 'Admin' : r === 'despachador' ? 'Despachador' : r === 'vendedor' ? 'Vendedor' : r === 'domiciliario' ? 'Domiciliario' : 'Sistema';
+    return r === 'admin' ? 'Admin' : r === 'despachador' ? 'Despachador' : r === 'vendedor' ? 'Vendedor' : r === 'domiciliario' ? 'Domiciliario' : r === 'recolector' ? 'Recolector' : 'Sistema';
   }
 }

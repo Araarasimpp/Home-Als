@@ -2,6 +2,7 @@
 import { Routes } from '@angular/router';
 import { RoleGuard } from '../core/guards/role.guard';
 import { DomiciliarioLayoutComponent } from './domiciliario-layout/domiciliario-layout.component';
+import { SECCIONES_DOMICILIARIO } from '../shared/escritorio/secciones';
 
 export const DOMICILIARIO_ROUTES: Routes = [
   {
@@ -22,6 +23,12 @@ export const DOMICILIARIO_ROUTES: Routes = [
       {
         path: 'cuadres',
         loadComponent: () => import('./cuadres/cuadres.page').then((m) => m.CuadresPage),
+      },
+      {
+        // "Tú" en el celular: perfil, todas las páginas, rol, tema y salir
+        path: 'tu',
+        data: { base: '/domiciliario', secciones: SECCIONES_DOMICILIARIO, ocultar: ['/domiciliario', '/domiciliario/cuadres'] },
+        loadComponent: () => import('../shared/tu/tu.page').then((m) => m.TuPage),
       },
       {
         path: 'ranking',
