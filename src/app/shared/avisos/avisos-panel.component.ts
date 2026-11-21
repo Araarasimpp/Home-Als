@@ -3,8 +3,8 @@ import { NotificacionesService, Aviso } from '../../core/services/notificaciones
 
 /**
  * Panel de avisos. Se abre con el botón de campana del layout.
- * posicion = 'sidebar': bajo la campana de la barra superior (escritorio)
- * posicion = 'barra':   sobre la barra inferior (celular)
+ * Siempre se abre bajo la campana: en el escritorio la de la barra superior,
+ * en el celular la de la página "Tú" (arriba a la derecha).
  */
 @Component({
   selector: 'app-avisos-panel',
@@ -85,22 +85,19 @@ import { NotificacionesService, Aviso } from '../../core/services/notificaciones
         border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); overflow: hidden;
         animation: subir 180ms var(--ease);
       }
-      /* Celular: hoja sobre la barra inferior, como máximo el 65% de la pantalla
-         y sin meterse debajo de la barra de estado del iPhone (notch). */
-      .panel.barra {
-        --panel-max: min(65vh, calc(100vh - var(--tabbar-h) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px));
-        left: 8px; right: 8px; top: auto; width: auto; margin: 0 auto; max-width: 480px;
-        bottom: calc(var(--tabbar-gap) + var(--tabbar-pill) + 8px);
-        max-height: var(--panel-max);
-      }
+      /* Celular: siempre baja desde la campana (arriba a la derecha, en "Tú"),
+         sin meterse debajo de la barra de estado del iPhone ni de la barra flotante. */
       @media (max-width: 860px) {
-        .panel:not(.barra) {
-          --panel-max: min(65vh, calc(100vh - var(--tabbar-h) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px));
-            left: 8px; right: 8px; top: auto; width: auto;
-          bottom: calc(var(--tabbar-gap) + var(--tabbar-pill) + 8px);
+        .panel {
+          left: 8px; right: 8px; width: auto; margin: 0 auto; max-width: 480px;
+          top: calc(env(safe-area-inset-top) + 60px); bottom: auto;
+          --panel-max: calc(100dvh - env(safe-area-inset-top) - 60px - var(--tabbar-gap) - var(--tabbar-pill) - 20px);
           max-height: var(--panel-max);
+          transform-origin: top right;
+          animation: bajar 200ms var(--ease);
         }
       }
+      @keyframes bajar { from { opacity: 0; transform: translateY(-8px) scale(0.98); } }
       @keyframes subir { from { opacity: 0; transform: translateY(6px); } }
       header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--border-soft); }
       h2 { margin: 0; font-size: 15px; font-weight: 600; }

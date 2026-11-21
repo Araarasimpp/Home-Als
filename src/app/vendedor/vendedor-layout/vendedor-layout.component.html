@@ -18,15 +18,15 @@
         <span class="tab-label">Nuevo pedido</span>
       </a>
     </div>
-    <button class="tab" [class.active]="avisos.abierto()" (click)="avisos.toggle()" [attr.aria-expanded]="avisos.abierto()">
-      <span class="icono-badge">
-        <ion-icon name="notifications-outline"></ion-icon>
-        <span class="badge-num num" *ngIf="avisos.noLeidas()">{{ avisos.noLeidas() > 9 ? '9+' : avisos.noLeidas() }}</span>
-      </span>
-      <span class="tab-label">Avisos</span>
-    </button>
+    <a routerLink="/vendedor/pagos" routerLinkActive="active" (click)="avisos.cerrar()">
+      <ion-icon name="card-outline"></ion-icon>
+      <span class="tab-label">Pagos</span>
+    </a>
     <a routerLink="/vendedor/tu" routerLinkActive="active" class="tab-perfil" (click)="avisos.cerrar()" aria-label="Tú: tu perfil, todas las páginas y más opciones">
-      <app-avatar [nombre]="supabase.perfil()?.nombre" [url]="supabase.perfil()?.avatar_url" [size]="24"></app-avatar>
+      <span class="icono-badge">
+        <app-avatar [nombre]="supabase.perfil()?.nombre" [url]="supabase.perfil()?.avatar_url" [size]="24"></app-avatar>
+        <span class="badge-num num" *ngIf="avisos.noLeidas()" [attr.aria-label]="avisos.noLeidas() + ' avisos sin leer'">{{ avisos.noLeidas() > 9 ? '9+' : avisos.noLeidas() }}</span>
+      </span>
       <span class="tab-label">Tú</span>
     </a>
   </nav>
