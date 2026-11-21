@@ -136,3 +136,20 @@ input[type='checkbox']:disabled {
   opacity: 0.5;
   cursor: default;
 }
+
+// ---------- App instalada (PWA) ----------
+// Sin el retraso del doble toque en botones y enlaces (Android y iPhone)
+a,
+button,
+[role='button'],
+label,
+select,
+summary {
+  touch-action: manipulation;
+}
+
+// Sin "rebote" que arrastra toda la app ni recargas accidentales al deslizar
+html,
+body {
+  overscroll-behavior: none;
+}

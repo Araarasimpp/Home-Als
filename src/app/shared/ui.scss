@@ -328,3 +328,33 @@ h2 {
     flex: 1;
   }
 }
+
+// ---------- Tarjetas en caja: cada cifra es su propia tarjeta redondeada ----------
+.kpis.kpis {
+  gap: 10px;
+  border: none;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.kpis.kpis > .kpi {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.kpis.kpis > .kpi-principal,
+.kpis.kpis > .kpi.destacado {
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  background: linear-gradient(160deg, var(--accent-wash), var(--surface) 70%);
+}
+
+// Paneles en caja, igual que las tarjetas
+.panel.panel {
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}

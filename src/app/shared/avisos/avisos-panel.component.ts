@@ -90,14 +90,14 @@ import { NotificacionesService, Aviso } from '../../core/services/notificaciones
       .panel.barra {
         --panel-max: min(65vh, calc(100vh - var(--tabbar-h) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px));
         left: 8px; right: 8px; top: auto; width: auto; margin: 0 auto; max-width: 480px;
-        bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 8px);
+        bottom: calc(var(--tabbar-gap) + var(--tabbar-pill) + 8px);
         max-height: var(--panel-max);
       }
       @media (max-width: 860px) {
         .panel:not(.barra) {
           --panel-max: min(65vh, calc(100vh - var(--tabbar-h) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px));
             left: 8px; right: 8px; top: auto; width: auto;
-          bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 8px);
+          bottom: calc(var(--tabbar-gap) + var(--tabbar-pill) + 8px);
           max-height: var(--panel-max);
         }
       }

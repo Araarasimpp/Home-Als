@@ -10,6 +10,8 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { EstadoPedido, MetodoPago, efectivoDePedido, etiquetaMetodo, transferenciaDePedido } from '../../shared/models/models';
 import { finDiaColombia, formatoFechaCO, formatoHoraCO, hoyColombiaISO, inicioDiaColombia } from '../../shared/fecha-colombia';
 import { ImagenPreviewComponent } from '../../shared/imagen-preview/imagen-preview.component';
+import { DonaComponent, Segmento } from '../../shared/graficas/dona.component';
+import { gananciaTiendaPedido } from '../../shared/ganancia';
 
 interface VentaLocal {
   id: string;
@@ -25,6 +27,8 @@ interface VentaLocal {
   observaciones: string | null;
   created_at: string;
   productos: string;
+  /** Ganancia de la tienda en la venta (solo si quien mira puede verla) */
+  ganancia: number | null;
 }
 
 type FiltroMetodo = 'todos' | MetodoPago;
@@ -37,7 +41,7 @@ type FiltroMetodo = 'todos' | MetodoPago;
 @Component({
   selector: 'app-ventas-local',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IonIcon, ImagenPreviewComponent],
+  imports: [CommonModule, FormsModule, RouterLink, IonIcon, ImagenPreviewComponent, DonaComponent],
   templateUrl: './ventas-local.page.html',
   styleUrls: ['../../shared/ui.scss', './ventas-local.page.scss'],
 })
@@ -55,6 +59,8 @@ export class VentasLocalPage implements OnInit, OnDestroy {
   readonly rutaEditar: string | null;
   /** Solo el admin puede eliminar ventas del local. */
   readonly puedeEliminar: boolean;
+  /** Admin y despachador ven la ganancia de la tienda; el vendedor no */
+  readonly verGanancia: boolean;
   eliminandoId: string | null = null;
 
   previewUrl: string | null = null;
@@ -67,6 +73,7 @@ export class VentasLocalPage implements OnInit, OnDestroy {
     this.rutaNueva = (route.snapshot.data['rutaNueva'] as string) ?? '../venta-local';
     this.rutaEditar = (route.snapshot.data['rutaEditar'] as string) ?? null;
     this.puedeEliminar = !!route.snapshot.data['puedeEliminar'];
+    this.verGanancia = !!route.snapshot.data['verGanancia'];
     addIcons({ add, receiptOutline, cashOutline, phonePortraitOutline, swapHorizontalOutline, alertCircleOutline, createOutline, trashOutline });
   }
 
@@ -99,7 +106,9 @@ export class VentasLocalPage implements OnInit, OnDestroy {
     const { data, error } = await this.supabase.client
       .from('pedidos')
       .select(
-        'id, numero, vendedor_id, cliente_nombre, estado, total, metodo_pago, monto_efectivo, monto_transferencia, comprobante_url, observaciones, created_at, items:pedido_items(cantidad, producto:productos(nombre))'
+        this.verGanancia
+          ? 'id, numero, vendedor_id, cliente_nombre, estado, total, metodo_pago, monto_efectivo, monto_transferencia, comprobante_url, observaciones, created_at, canal, comision_tipo, comision_porcentaje, items:pedido_items(cantidad, precio_unitario, precio_base, producto:productos(nombre, costo))'
+          : 'id, numero, vendedor_id, cliente_nombre, estado, total, metodo_pago, monto_efectivo, monto_transferencia, comprobante_url, observaciones, created_at, items:pedido_items(cantidad, producto:productos(nombre))'
       )
       .eq('canal', 'local')
       .gte('created_at', inicioDiaColombia(this.fecha).toISOString())
@@ -117,6 +126,7 @@ export class VentasLocalPage implements OnInit, OnDestroy {
             return Number(i.cantidad) > 1 ? `${nombre} ×${i.cantidad}` : nombre;
           })
           .join(', '),
+        ganancia: this.verGanancia ? gananciaTiendaPedido(v, v.items ?? []) : null,
       }));
     }
     this.loading = false;
@@ -156,6 +166,39 @@ export class VentasLocalPage implements OnInit, OnDestroy {
 
   get totalEfectivo(): number {
     return this.vigentes.reduce((s, v) => s + efectivoDePedido(v), 0);
+  }
+
+  // ---------- Ganancia y dona (admin y despachador) ----------
+  get gananciaTienda(): number {
+    return this.vigentes.reduce((s, v) => s + Number(v.ganancia ?? 0), 0);
+  }
+
+  get ticketPromedio(): number {
+    return this.vigentes.length ? this.totalVendido / this.vigentes.length : 0;
+  }
+
+  get margen(): number | null {
+    return this.totalVendido ? Math.round((this.gananciaTienda / this.totalVendido) * 100) : null;
+  }
+
+  get vigentesCount(): number {
+    return this.vigentes.length;
+  }
+
+  get donaPagos(): Segmento[] {
+    return [
+      { etiqueta: 'Efectivo', valor: this.totalEfectivo, color: 'var(--data-green)' },
+      { etiqueta: 'Transferencia', valor: this.totalTransferencia, color: 'var(--data-orange)' },
+    ];
+  }
+
+  readonly pesos = (n: number) => this.formatoMoneda(n);
+
+  /** $1,2 M / $850 mil, para el centro de la dona */
+  pesosCorto(n: number): string {
+    if (Math.abs(n) >= 1_000_000) return '$' + (n / 1_000_000).toLocaleString('es-CO', { maximumFractionDigits: 1 }) + ' M';
+    if (Math.abs(n) >= 1000) return '$' + Math.round(n / 1000).toLocaleString('es-CO') + ' mil';
+    return '$' + n.toLocaleString('es-CO');
   }
 
   get totalTransferencia(): number {

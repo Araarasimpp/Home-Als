@@ -1,7 +1,10 @@
 <div class="inicio-despachador">
   <header class="page-header">
-    <h1>Inicio</h1>
-    <a routerLink="/despachador/pedidos/nuevo" class="btn-primary">+ Nuevo pedido</a>
+    <div>
+      <h1>{{ saludo }}</h1>
+      <p class="saludo-sub">{{ totalDia }} pedidos activos hoy · {{ entregadosHoy }} entregados</p>
+    </div>
+    <a routerLink="/despachador/pedidos/nuevo" class="btn-primary solo-celular">+ Nuevo pedido</a>
   </header>
 
   <ng-container *ngIf="!loading; else cargando">
@@ -21,6 +24,29 @@
       <div class="stat-card">
         <span class="stat-label">Entregados hoy</span>
         <span class="stat-valor">{{ entregadosHoy }}</span>
+      </div>
+    </section>
+
+    <section class="panel estado-dia">
+      <div class="panel-header">
+        <h2>Estado del día</h2>
+        <a routerLink="/despachador/pedidos" class="ver-todos">Ver pedidos</a>
+      </div>
+      <div class="estado-cuerpo">
+        <app-dona [segmentos]="donaDia" [valor]="totalDia" etiqueta="pedidos" [tam]="150" textoVacio="Todavía no hay pedidos hoy."></app-dona>
+        <div class="avance-doms">
+          <p class="mini-titulo">Avance por domiciliario</p>
+          <div class="avance-dom" *ngFor="let a of avance">
+            <app-avatar [nombre]="nombreDomiciliario(a.id)" [url]="fotosPorId.get(a.id) ?? null" [size]="28"></app-avatar>
+            <app-barra-estado
+              [segmentos]="segmentos(a)"
+              [titulo]="nombreDomiciliario(a.id)"
+              [resumen]="a.entregados + ' de ' + (a.entregados + a.enRuta)"
+              [leyenda]="false"
+            ></app-barra-estado>
+          </div>
+          <p class="empty-msg" *ngIf="!avance.length">Nadie ha salido a entregar todavía.</p>
+        </div>
       </div>
     </section>
 

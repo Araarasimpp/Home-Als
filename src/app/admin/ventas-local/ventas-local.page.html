@@ -57,6 +57,21 @@
       </div>
     </section>
 
+    <!-- Cómo pagaron y cuánto le quedó a la tienda (como en Jasta) -->
+    <section class="panel vl-resumen" *ngIf="vigentesCount" aria-label="Cómo pagaron y ganancia">
+      <app-dona [segmentos]="donaPagos" [valor]="pesosCorto(totalVendido)" etiqueta="vendido" [tam]="150" [formato]="pesos"></app-dona>
+      <div class="vl-minis">
+        <div class="vl-mini destacado" *ngIf="verGanancia">
+          <span>Ganancia tienda</span><strong class="num">{{ formatoMoneda(gananciaTienda) }}</strong>
+          <small *ngIf="margen !== null">{{ margen }}% de lo vendido</small>
+        </div>
+        <div class="vl-mini">
+          <span>Ticket promedio</span><strong class="num">{{ formatoMoneda(ticketPromedio) }}</strong>
+          <small>{{ vigentesCount }} {{ vigentesCount === 1 ? 'venta' : 'ventas' }}</small>
+        </div>
+      </div>
+    </section>
+
     <ul class="vl-lista" *ngIf="filtradas.length; else vacio">
       <li class="vl-venta" *ngFor="let v of filtradas; trackBy: trackVenta" [class.cancelada]="v.estado === 'cancelado'">
         <div class="vl-hora">

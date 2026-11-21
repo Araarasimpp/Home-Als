@@ -19,6 +19,15 @@
       </a>
     </section>
 
+    <section class="panel tu-dia" *ngIf="entregadosHoy + pedidos.length" aria-label="Tu día">
+      <app-barra-estado
+        [segmentos]="segmentosDia"
+        titulo="Tu día"
+        [resumen]="entregadosHoy + ' de ' + (entregadosHoy + pedidos.length) + ' entregados'"
+        [alto]="12"
+      ></app-barra-estado>
+    </section>
+
     <app-mi-puesto tipo="domiciliario" ruta="/domiciliario/ranking"></app-mi-puesto>
 
     <div class="lista" *ngIf="pedidos.length; else vacio">

@@ -287,3 +287,60 @@ button.vl-editar {
     min-height: 32px;
   }
 }
+
+// ---------- Resumen con dona (cómo pagaron y ganancia) ----------
+.vl-resumen {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.vl-minis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.vl-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.vl-mini span {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.vl-mini strong {
+  font-family: var(--display-font);
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.vl-mini small {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.vl-mini.destacado {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: linear-gradient(160deg, var(--accent-wash), var(--surface) 75%);
+}
+
+.vl-mini.destacado strong {
+  color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .vl-resumen {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

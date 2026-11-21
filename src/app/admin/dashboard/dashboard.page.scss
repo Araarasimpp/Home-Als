@@ -595,3 +595,179 @@ h2 {
     display: none;
   }
 }
+
+// ---------- Tarjetas en caja: cada cifra es su propia tarjeta redondeada ----------
+.kpis.kpis {
+  gap: 10px;
+  border: none;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.kpis.kpis > .kpi {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.kpis.kpis > .kpi-principal,
+.kpis.kpis > .kpi.destacado {
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  background: linear-gradient(160deg, var(--accent-wash), var(--surface) 70%);
+}
+
+// Paneles en caja, igual que las tarjetas
+.panel.panel {
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+// ---------- Donas y barras de estado ----------
+.graficas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 16px;
+}
+
+.g-estado {
+  grid-column: 1 / -1;
+}
+
+.fechas-local {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.fechas-local label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.fechas-local input {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+}
+
+.local-cuerpo {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+}
+
+.mini-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.mini {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-2);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.mini span {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.mini strong {
+  font-family: var(--display-font);
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.mini.destacado {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: linear-gradient(160deg, var(--accent-wash), var(--surface) 75%);
+}
+
+.mini.destacado strong {
+  color: var(--accent);
+}
+
+a.mini:hover {
+  border-color: var(--border-strong);
+}
+
+.estado-cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.mini-titulo {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.avance-doms {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.avance-dom {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+@media (max-width: 1100px) {
+  .graficas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .estado-cuerpo {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .local-cuerpo {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .fechas-local {
+    width: 100%;
+  }
+
+  .fechas-local label {
+    flex: 1;
+  }
+
+  .fechas-local input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}

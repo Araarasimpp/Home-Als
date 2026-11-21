@@ -1,0 +1,189 @@
+<div class="cal">
+  <header class="cal-cabeza">
+    <div class="cal-titulo">
+      <h1>Calendario</h1>
+      <p>
+        {{ rangoTexto }} · {{ totalEventos }} {{ totalEventos === 1 ? 'evento' : 'eventos' }}
+        <span class="solo-pc">· toca un espacio vacío para agregar, arrastra un evento para moverlo</span>
+      </p>
+    </div>
+    <div class="cal-acciones">
+      <div class="navegar" role="group" aria-label="Cambiar de semana">
+        <button type="button" class="nav-btn" (click)="moverSemana(-1)" aria-label="Semana anterior">
+          <ion-icon name="chevron-back-outline"></ion-icon>
+        </button>
+        <button type="button" class="hoy-btn" (click)="irAHoy()" [disabled]="esEstaSemana && diaSel === hoy">Hoy</button>
+        <button type="button" class="nav-btn" (click)="moverSemana(1)" aria-label="Semana siguiente">
+          <ion-icon name="chevron-forward-outline"></ion-icon>
+        </button>
+      </div>
+      <button type="button" class="nuevo" (click)="nuevo()">
+        <ion-icon name="add" aria-hidden="true"></ion-icon>
+        Nuevo evento
+      </button>
+    </div>
+  </header>
+
+  <p class="cal-error" role="alert" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+  <!-- ===================== Computador: semana por horas ===================== -->
+  <section class="semana solo-pc" aria-label="Semana">
+    <div class="sem-cabeza">
+      <span class="esquina"></span>
+      <div class="dia-cab" *ngFor="let d of dias" [class.hoy]="d.hoy">
+        <span class="dia-nombre">{{ d.corto }}</span>
+        <span class="dia-num num">{{ d.num }}</span>
+        <span class="dia-ventas num" *ngIf="ventasDe(d.iso) as v" [title]="v.pedidos + ' pedidos'">
+          {{ pesosCorto(v.total) }} · {{ v.pedidos }} ped.
+        </span>
+      </div>
+    </div>
+
+    <div class="sem-cuerpo">
+      <div class="col-horas" aria-hidden="true">
+        <span class="hora" *ngFor="let h of horas" [style.height.px]="altoHora">{{ etiquetaHora(h) }}</span>
+      </div>
+
+      <div class="col-dia" *ngFor="let d of dias" [class.hoy]="d.hoy" [style.height.px]="horas.length * altoHora">
+        <!-- Espacios de una hora: tocar = nuevo evento; soltar = mover aquí -->
+        <button
+          type="button"
+          class="hueco"
+          *ngFor="let h of horas"
+          [style.height.px]="altoHora"
+          (click)="nuevoEn(d.iso, h)"
+          (dragover)="permitirSoltar($event)"
+          (drop)="soltarEn(d.iso, h, $event)"
+          [attr.aria-label]="'Agregar evento el ' + d.corto + ' ' + d.num + ' a las ' + etiquetaHora(h)"
+        ></button>
+
+        <div class="ahora" *ngIf="d.hoy && lineaAhora !== null" [style.top.px]="lineaAhora" aria-hidden="true"></div>
+
+        <button
+          type="button"
+          class="evento"
+          *ngFor="let e of colocados(d.iso); trackBy: trackEvento"
+          [attr.data-tipo]="e.tipo"
+          [class.corto]="e.alto < 44"
+          [style.top.px]="e.top"
+          [style.height.px]="e.alto"
+          [style.left]="'calc(' + e.izq + '% + 3px)'"
+          [style.width]="'calc(' + e.ancho + '% - 6px)'"
+          draggable="true"
+          (dragstart)="alArrastrar(e, $event)"
+          (click)="abrir(e, $event)"
+          [attr.aria-label]="etiquetaTipo(e.tipo) + ': ' + e.titulo + ', ' + rangoEvento(e)"
+        >
+          <strong>{{ e.titulo }}</strong>
+          <span>{{ rangoEvento(e) }}<ng-container *ngIf="e.nota"> · {{ e.nota }}</ng-container></span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== Celular: un día a la vez ===================== -->
+  <section class="movil solo-movil" aria-label="Agenda">
+    <div class="franja" role="tablist" aria-label="Días de la semana">
+      <button
+        type="button"
+        role="tab"
+        class="franja-dia"
+        *ngFor="let d of dias"
+        [class.on]="d.iso === diaSel"
+        [class.hoy]="d.hoy"
+        [attr.aria-selected]="d.iso === diaSel"
+        (click)="diaSel = d.iso"
+      >
+        <span>{{ d.corto }}</span>
+        <strong class="num">{{ d.num }}</strong>
+        <i *ngIf="cuantosEventos(d.iso)" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <div class="resumen-dia" *ngIf="ventasDe(diaSel) as v">
+      <span>Ventas del día</span>
+      <strong class="num">{{ pesosCorto(v.total) }}</strong>
+      <span class="num">{{ v.pedidos }} {{ v.pedidos === 1 ? 'pedido' : 'pedidos' }}</span>
+    </div>
+
+    <div class="agenda">
+      <button type="button" class="ag-evento" *ngFor="let e of eventosDelDia(diaSel); trackBy: trackEvento" [attr.data-tipo]="e.tipo" (click)="abrir(e)">
+        <span class="ag-hora num">{{ rangoEvento(e) }}</span>
+        <strong>{{ e.titulo }}</strong>
+        <span class="ag-nota" *ngIf="e.nota">{{ e.nota }}</span>
+        <span class="ag-tipo">{{ etiquetaTipo(e.tipo) }}</span>
+      </button>
+      <div class="ag-vacio" *ngIf="!eventosDelDia(diaSel).length && !cargando">
+        <p>No hay eventos este día.</p>
+        <button type="button" class="btn-sec" (click)="nuevo()">Agregar uno</button>
+      </div>
+    </div>
+  </section>
+
+  <ul class="leyenda" aria-label="Tipos de evento">
+    <li *ngFor="let t of tipos" [attr.data-tipo]="t.valor"><i aria-hidden="true"></i>{{ t.etiqueta }}</li>
+  </ul>
+</div>
+
+<!-- Editor de evento -->
+<ng-container *ngIf="editando as e">
+  <div class="ed-fondo" appSobreTodo (click)="cerrarEditor()"></div>
+  <form class="editor" appSobreTodo role="dialog" aria-modal="true" aria-labelledby="ed-titulo" (ngSubmit)="guardar()">
+    <header class="ed-cabeza">
+      <h2 id="ed-titulo">{{ e.id ? 'Editar evento' : 'Nuevo evento' }}</h2>
+      <button type="button" class="ed-cerrar" (click)="cerrarEditor()" aria-label="Cerrar">
+        <ion-icon name="close"></ion-icon>
+      </button>
+    </header>
+
+    <label class="ed-campo">
+      <span>Nombre</span>
+      <input name="titulo" [(ngModel)]="e.titulo" maxlength="120" placeholder="Ej. Reunión con domiciliarios" autocomplete="off" required />
+    </label>
+
+    <div class="ed-tipos" role="radiogroup" aria-label="Tipo">
+      <button
+        type="button"
+        *ngFor="let t of tipos"
+        role="radio"
+        [attr.aria-checked]="e.tipo === t.valor"
+        [class.on]="e.tipo === t.valor"
+        [attr.data-tipo]="t.valor"
+        (click)="e.tipo = t.valor"
+      >
+        <i aria-hidden="true"></i>{{ t.etiqueta }}
+      </button>
+    </div>
+
+    <div class="ed-fila">
+      <label class="ed-campo">
+        <span>Día</span>
+        <input type="date" name="dia" [(ngModel)]="e.dia" required />
+      </label>
+      <label class="ed-campo">
+        <span>Desde</span>
+        <input type="time" name="ini" [(ngModel)]="e.hora_inicio" required />
+      </label>
+      <label class="ed-campo">
+        <span>Hasta</span>
+        <input type="time" name="fin" [(ngModel)]="e.hora_fin" required />
+      </label>
+    </div>
+
+    <label class="ed-campo">
+      <span>Nota (opcional)</span>
+      <textarea name="nota" rows="2" [(ngModel)]="e.nota" maxlength="500" placeholder="Lugar, a quién llamar, monto…"></textarea>
+    </label>
+
+    <p class="ed-error" role="alert" *ngIf="errorEditor">{{ errorEditor }}</p>
+
+    <footer class="ed-pie">
+      <button type="button" class="ed-borrar" *ngIf="e.id" (click)="eliminar()" [disabled]="guardando">
+        <ion-icon name="trash-outline" aria-hidden="true"></ion-icon>Eliminar
+      </button>
+      <span class="ed-espacio"></span>
+      <button type="button" class="btn-sec" (click)="cerrarEditor()" [disabled]="guardando">Cancelar</button>
+      <button type="submit" class="btn-pri" [disabled]="guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
+    </footer>
+  </form>
+</ng-container>

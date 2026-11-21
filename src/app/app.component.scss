@@ -1,0 +1,46 @@
+// Aviso de versión nueva (app instalada): arriba, debajo de la barra de estado
+.version-nueva {
+  position: fixed;
+  z-index: 3000;
+  top: calc(env(safe-area-inset-top) + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 24px);
+  padding: 8px 8px 8px 16px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: var(--chip-on);
+  color: var(--on-chip-on);
+  font-size: 13.5px;
+  box-shadow: var(--shadow-pop);
+  animation: bajar 260ms var(--ease);
+}
+
+.version-nueva span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.version-nueva button {
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@keyframes bajar {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -12px);
+  }
+}

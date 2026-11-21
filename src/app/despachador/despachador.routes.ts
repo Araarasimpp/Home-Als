@@ -43,7 +43,7 @@ export const DESPACHADOR_ROUTES: Routes = [
       },
       {
         path: 'ventas-del-local',
-        data: { rutaNueva: '/despachador/venta-local', rutaEditar: '/despachador/ventas-del-local' },
+        data: { rutaNueva: '/despachador/venta-local', rutaEditar: '/despachador/ventas-del-local', verGanancia: true },
         loadComponent: () =>
           import('../admin/ventas-local/ventas-local.page').then((m) => m.VentasLocalPage),
       },
@@ -53,6 +53,10 @@ export const DESPACHADOR_ROUTES: Routes = [
         data: { volverA: '/despachador/ventas-del-local' },
         loadComponent: () =>
           import('../vendedor/nuevo-pedido/nuevo-pedido.page').then((m) => m.NuevoPedidoPage),
+      },
+      {
+        path: 'calendario',
+        loadComponent: () => import('../shared/calendario/calendario.page').then((m) => m.CalendarioPage),
       },
       {
         path: 'ranking',

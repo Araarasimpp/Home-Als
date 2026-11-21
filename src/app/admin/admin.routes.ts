@@ -46,7 +46,7 @@ export const ADMIN_ROUTES: Routes = [
       },
       {
         path: 'ventas-del-local',
-        data: { rutaNueva: '/admin/venta-local', rutaEditar: '/admin/ventas-del-local', puedeEliminar: true },
+        data: { rutaNueva: '/admin/venta-local', rutaEditar: '/admin/ventas-del-local', puedeEliminar: true, verGanancia: true },
         loadComponent: () =>
           import('./ventas-local/ventas-local.page').then((m) => m.VentasLocalPage),
       },
@@ -56,6 +56,10 @@ export const ADMIN_ROUTES: Routes = [
         data: { volverA: '/admin/ventas-del-local' },
         loadComponent: () =>
           import('../vendedor/nuevo-pedido/nuevo-pedido.page').then((m) => m.NuevoPedidoPage),
+      },
+      {
+        path: 'calendario',
+        loadComponent: () => import('../shared/calendario/calendario.page').then((m) => m.CalendarioPage),
       },
       {
         path: 'ranking',

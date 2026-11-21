@@ -194,3 +194,63 @@
   margin-top: -8px;
   margin-bottom: -8px;
 }
+
+// ---------- Diseño nuevo: saludo, tarjetas en caja y estado del día ----------
+.page-header h1 {
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.saludo-sub {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  color: var(--text-soft);
+}
+
+.stat-card,
+.panel {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.estado-cuerpo {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  align-items: center;
+  gap: 28px;
+}
+
+.mini-titulo {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.avance-doms {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.avance-dom {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+@media (min-width: 861px) {
+  // "+ Nuevo pedido" ya está en la barra superior
+  .solo-celular {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .estado-cuerpo {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+}

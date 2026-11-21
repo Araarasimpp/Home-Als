@@ -106,16 +106,20 @@ function ultimoRol(): UserRole | null {
         box-sizing: border-box;
         overflow: hidden;
       }
+      /* Igual que la barra flotante real, para que no "salte" al terminar de cargar */
       .ai-tabs {
         position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
+        left: max(12px, env(safe-area-inset-left));
+        right: max(12px, env(safe-area-inset-right));
+        bottom: var(--tabbar-gap, 10px);
         display: flex;
-        height: calc(var(--tabbar-h, 56px) + env(safe-area-inset-bottom));
-        padding-bottom: env(safe-area-inset-bottom);
+        max-width: 560px;
+        height: var(--tabbar-pill, 62px);
+        margin: 0 auto;
+        border: 1px solid var(--border);
+        border-radius: 24px;
         background: var(--surface);
-        border-top: 1px solid var(--border);
+        box-shadow: 0 12px 30px -10px rgba(27, 33, 29, 0.28);
       }
       .ai-tab {
         flex: 1;

@@ -1,3 +1,10 @@
 <ion-app>
   <ion-router-outlet></ion-router-outlet>
 </ion-app>
+
+@if (pwa.versionNueva()) {
+  <div class="version-nueva" role="status">
+    <span>Hay una versión nueva de Home ALS</span>
+    <button type="button" (click)="pwa.actualizar()">Actualizar</button>
+  </div>
+}

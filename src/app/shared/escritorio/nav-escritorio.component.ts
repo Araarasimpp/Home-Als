@@ -34,6 +34,7 @@ import {
   personCircleOutline,
   checkmarkCircleOutline,
   bicycleOutline,
+  calendarOutline,
 } from 'ionicons/icons';
 import { filter } from 'rxjs/operators';
 import { SupabaseService } from '../../core/services/supabase.service';
@@ -244,7 +245,7 @@ export class NavEscritorioComponent implements OnInit {
     addIcons({
       chevronBackOutline, logOutOutline, homeOutline, receiptOutline, storefrontOutline, listOutline,
       peopleCircleOutline, walletOutline, barChartOutline, cubeOutline, peopleOutline, trophyOutline,
-      timeOutline, settingsOutline, shieldCheckmarkOutline, personCircleOutline, checkmarkCircleOutline, bicycleOutline,
+      timeOutline, settingsOutline, shieldCheckmarkOutline, personCircleOutline, checkmarkCircleOutline, bicycleOutline, calendarOutline,
     });
     const sub = this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe(() => {
       this.url.set(this.router.url);
@@ -305,7 +306,7 @@ export class NavEscritorioComponent implements OnInit {
     <nav class="migas" aria-label="Estás en">
       <span>Home ALS</span>
       <span class="sep" aria-hidden="true">›</span>
-      @if (actual().seccion.paginas.length > 1) {
+      @if (actual().seccion.label !== actual().pagina.label) {
         <span>{{ actual().seccion.label }}</span>
         <span class="sep" aria-hidden="true">›</span>
       }

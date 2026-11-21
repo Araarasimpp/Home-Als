@@ -36,6 +36,24 @@
     </div>
   </div>
 
+  <div class="rep-graficas" *ngIf="!loading && filas.length">
+    <section class="rep-card" aria-labelledby="t-reparto">
+      <h2 id="t-reparto">Reparto de la ganancia</h2>
+      <p class="rep-sub">Solo pedidos entregados del periodo</p>
+      <app-dona [segmentos]="donaReparto" [valor]="pesosCorto(totalReparto)" etiqueta="ganancia bruta" [tam]="150" [formato]="pesos"></app-dona>
+    </section>
+    <section class="rep-card" aria-labelledby="t-estados">
+      <h2 id="t-estados">Pedidos del periodo</h2>
+      <p class="rep-sub">{{ totalPedidosPeriodo }} pedidos · {{ pctEntregados }}% entregados</p>
+      <app-barra-estado [segmentos]="barraEstados" titulo="Por estado" [resumen]="totalPedidosPeriodo + ' pedidos'" [alto]="14"></app-barra-estado>
+      <div class="rep-cifras">
+        <div><span>Total vendido</span><strong class="num">{{ formatoMoneda(totalPedido) }}</strong></div>
+        <div><span>Ganancia tienda</span><strong class="num gan">{{ formatoMoneda(totalGananciaTienda) }}</strong></div>
+        <div><span>Comisiones</span><strong class="num">{{ formatoMoneda(totalComision) }}</strong></div>
+      </div>
+    </section>
+  </div>
+
   <div class="table-card">
     <ng-container *ngIf="!loading; else cargando">
       <table *ngIf="filas.length; else vacio">

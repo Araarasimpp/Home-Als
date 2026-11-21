@@ -7,6 +7,8 @@ import { EstadoPedido } from '../../shared/models/models';
 import { hoyColombiaISO, inicioDiaColombia, finDiaColombia, formatoFechaCO } from '../../shared/fecha-colombia';
 import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
 import { repartoEnvio } from '../../shared/envio';
+import { DonaComponent, Segmento } from '../../shared/graficas/dona.component';
+import { BarraEstadoComponent } from '../../shared/graficas/barra-estado.component';
 import { itemsDePedidos } from '../../shared/en-lotes';
 
 interface FilaReporte {
@@ -43,7 +45,7 @@ type FiltroEstado = 'todos' | EstadoPedido;
 @Component({
   selector: 'app-reportes',
   standalone: true,
-  imports: [EsqueletoComponent, CommonModule, FormsModule],
+  imports: [EsqueletoComponent, CommonModule, FormsModule, DonaComponent, BarraEstadoComponent],
   templateUrl: './reportes.page.html',
   styleUrls: ['./reportes.page.scss', './reportes-esquema.scss'],
 })
@@ -67,6 +69,7 @@ export class ReportesPage implements OnInit {
     comision: number;
     envioTienda: number;
     envioVendedor: number;
+    estado: EstadoPedido;
     cancelado: boolean;
     entregado: boolean;
   }[] = [];
@@ -166,6 +169,7 @@ export class ReportesPage implements OnInit {
         comision: Number(p.comision ?? 0) - envio.vendedor,
         envioTienda: envio.tienda,
         envioVendedor: envio.vendedor,
+        estado: p.estado,
         cancelado: p.estado === 'cancelado',
         entregado: p.estado === 'entregado',
       };
@@ -273,6 +277,47 @@ export class ReportesPage implements OnInit {
 
   get totalGananciaTienda(): number {
     return this.filas.filter((f) => f.estado === 'entregado').reduce((s, f) => s + f.gananciaItem, 0);
+  }
+
+  // ---------- Donas y barras ----------
+  readonly pesos = (n: number) => this.formatoMoneda(n);
+
+  /** A dónde se fue la ganancia de lo entregado */
+  get donaReparto(): Segmento[] {
+    return [
+      { etiqueta: 'Ganancia tienda', valor: Math.max(0, this.totalGananciaTienda), color: 'var(--data-green)' },
+      { etiqueta: 'Comisión vendedores', valor: Math.max(0, this.totalComision), color: 'var(--data-orange)' },
+      { etiqueta: 'Envíos que se pusieron', valor: this.totalEnvioTienda + this.totalEnvioVendedor, color: 'var(--data-terracota)' },
+    ];
+  }
+
+  get totalReparto(): number {
+    return this.donaReparto.reduce((s, x) => s + x.valor, 0);
+  }
+
+  /** Pedidos del periodo por estado */
+  get barraEstados(): Segmento[] {
+    const n = (e: EstadoPedido) => this.pedidosUnicos.filter((p) => p.estado === e).length;
+    return [
+      { etiqueta: 'Entregados', valor: n('entregado'), color: 'var(--data-green)' },
+      { etiqueta: 'En ruta', valor: n('en_ruta'), color: 'var(--data-orange)' },
+      { etiqueta: 'Pendientes', valor: n('pendiente'), color: 'var(--data-green-soft)' },
+      { etiqueta: 'Cancelados', valor: n('cancelado'), color: 'var(--data-terracota)' },
+    ];
+  }
+
+  get totalPedidosPeriodo(): number {
+    return this.pedidosUnicos.length;
+  }
+
+  get pctEntregados(): number {
+    return this.totalPedidosPeriodo ? Math.round((this.entregados.length / this.totalPedidosPeriodo) * 100) : 0;
+  }
+
+  pesosCorto(n: number): string {
+    if (Math.abs(n) >= 1_000_000) return '$' + (n / 1_000_000).toLocaleString('es-CO', { maximumFractionDigits: 1 }) + ' M';
+    if (Math.abs(n) >= 1000) return '$' + Math.round(n / 1000).toLocaleString('es-CO') + ' mil';
+    return '$' + n.toLocaleString('es-CO');
   }
 
   get totalCantidad(): number {

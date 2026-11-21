@@ -19,6 +19,10 @@ export const SECCIONES_ADMIN: SeccionNav[] = [
     paginas: [{ label: 'Resumen', path: '/admin', icon: 'home-outline' }, ...atajos('/admin', true)],
   },
   {
+    id: 'calendario', label: 'Calendario', icon: 'calendar-outline', subtitulo: 'Reuniones, pagos y entregas de la semana',
+    paginas: [{ label: 'Semana', path: '/admin/calendario', icon: 'calendar-outline' }],
+  },
+  {
     id: 'ventas', label: 'Ventas', icon: 'receipt-outline', subtitulo: 'Pedidos, ventas en el local y clientes',
     paginas: [
       { label: 'Pedidos', path: '/admin/pedidos', icon: 'receipt-outline', conteo: 'porAlistar' },
@@ -60,6 +64,10 @@ export const SECCIONES_DESPACHADOR: SeccionNav[] = [
   {
     id: 'inicio', label: 'Inicio', icon: 'home-outline', subtitulo: 'Cómo va el despacho hoy',
     paginas: [{ label: 'Resumen', path: '/despachador', icon: 'home-outline' }, ...atajos('/despachador', true)],
+  },
+  {
+    id: 'calendario', label: 'Calendario', icon: 'calendar-outline', subtitulo: 'Reuniones, pagos y entregas de la semana',
+    paginas: [{ label: 'Semana', path: '/despachador/calendario', icon: 'calendar-outline' }],
   },
   {
     id: 'ventas', label: 'Ventas', icon: 'receipt-outline', subtitulo: 'Pedidos y ventas en el local',

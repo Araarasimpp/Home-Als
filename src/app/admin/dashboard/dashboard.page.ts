@@ -20,10 +20,15 @@ import {
   Tooltip,
 } from 'chart.js';
 import { SupabaseService } from '../../core/services/supabase.service';
-import { diaColombiaDe, hoyColombiaISO, inicioDiaColombia } from '../../shared/fecha-colombia';
+import { diaColombiaDe, finDiaColombia, hoyColombiaISO, inicioDiaColombia } from '../../shared/fecha-colombia';
 import { EstadoIconComponent } from '../../shared/estado-icon/estado-icon.component';
 import { AvatarComponent } from '../../shared/avatar/avatar.component';
 import { EstadoPedido } from '../../shared/models/models';
+import { DonaComponent, Segmento } from '../../shared/graficas/dona.component';
+import { BarraEstadoComponent } from '../../shared/graficas/barra-estado.component';
+import { itemsDePedidos } from '../../shared/en-lotes';
+import { gananciaTiendaPedido } from '../../shared/ganancia';
+import { FormsModule } from '@angular/forms';
 
 // Solo lo que usamos de Chart.js, para no cargar la librería entera
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, DoughnutController, ArcElement);
@@ -79,7 +84,7 @@ const ETIQUETAS: Record<EstadoPedido, string> = {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, EstadoIconComponent, AvatarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, EstadoIconComponent, AvatarComponent, DonaComponent, BarraEstadoComponent],
   templateUrl: './dashboard.page.html',
   styleUrls: ['./dashboard.page.scss'],
 })
@@ -118,6 +123,121 @@ export class DashboardPage implements OnInit, OnDestroy {
   pedidosPeriodo = 0;
   variacion: number | null = null; // % contra el periodo anterior
   cargandoGrafica = false;
+
+  // ---------- Donas y barras de estado ----------
+  /** Cómo pagaron lo entregado hoy */
+  pagosHoy: Segmento[] = [];
+  /** Avance de cada domiciliario hoy: entregados y en ruta */
+  avanceDomiciliarios: { nombre: string; avatar_url: string | null; entregados: number; enRuta: number }[] = [];
+  /** Ventas del local en el periodo (como en Jasta): dona de cómo pagaron + ganancia */
+  desdeLocal = hoyColombiaISO().slice(0, 8) + '01';
+  hastaLocal = hoyColombiaISO();
+  local: { ventas: number; unidades: number; total: number; efectivo: number; transferencia: number; ganancia: number } | null = null;
+  readonly pesos = (n: number) => this.formatoMoneda(n);
+
+  get donaLocal(): Segmento[] {
+    return [
+      { etiqueta: 'Efectivo', valor: this.local?.efectivo ?? 0, color: 'var(--data-green)' },
+      { etiqueta: 'Transferencia', valor: this.local?.transferencia ?? 0, color: 'var(--data-orange)' },
+    ];
+  }
+
+  get barraEstadosHoy(): Segmento[] {
+    const color: Record<string, string> = {
+      entregado: 'var(--data-green)',
+      en_ruta: 'var(--data-orange)',
+      pendiente: 'var(--data-green-soft)',
+      cancelado: 'var(--data-terracota)',
+    };
+    return this.estadosHoy.map((e) => ({ etiqueta: e.etiqueta, valor: e.cantidad, color: color[e.estado] }));
+  }
+
+  segmentosDomiciliario(d: { entregados: number; enRuta: number }): Segmento[] {
+    return [
+      { etiqueta: 'Entregados', valor: d.entregados, color: 'var(--data-green)' },
+      { etiqueta: 'En ruta', valor: d.enRuta, color: 'var(--data-orange)' },
+    ];
+  }
+
+  /** $1,2 M / $850 mil, para el centro de las donas */
+  pesosCorto(n: number | null | undefined): string {
+    const x = Number(n ?? 0);
+    if (Math.abs(x) >= 1_000_000) return `$${(x / 1_000_000).toLocaleString('es-CO', { maximumFractionDigits: 1 })} M`;
+    if (Math.abs(x) >= 1000) return `$${Math.round(x / 1000).toLocaleString('es-CO')} mil`;
+    return `$${x.toLocaleString('es-CO')}`;
+  }
+
+  get totalPagosHoy(): number {
+    return this.pagosHoy.reduce((s, x) => s + x.valor, 0);
+  }
+
+  private async cargarGraficas(): Promise<void> {
+    const db = this.supabase.client;
+    const inicioHoy = inicioDiaColombia().toISOString();
+    const [entregadosRes, rutaRes, perfilesRes] = await Promise.all([
+      db.from('pedidos').select('total, metodo_pago, monto_efectivo, monto_transferencia, domiciliario_id').eq('estado', 'entregado').gte('entregado_at', inicioHoy),
+      db.from('pedidos').select('domiciliario_id').eq('estado', 'en_ruta'),
+      db.from('profiles').select('id, nombre, avatar_url'),
+    ]);
+    const ent = (entregadosRes.data ?? []) as any[];
+    const efectivo = ent.reduce((s, p) => s + Number(p.monto_efectivo ?? (p.metodo_pago === 'efectivo' ? p.total : 0)), 0);
+    const transf = ent.reduce((s, p) => s + Number(p.monto_transferencia ?? (p.metodo_pago === 'transferencia' ? p.total : 0)), 0);
+    this.pagosHoy = [
+      { etiqueta: 'Efectivo', valor: efectivo, color: 'var(--data-green)' },
+      { etiqueta: 'Transferencia', valor: transf, color: 'var(--data-orange)' },
+    ];
+    const perfiles = new Map<string, any>(((perfilesRes.data ?? []) as any[]).map((p) => [p.id, p]));
+    const por = new Map<string, { nombre: string; avatar_url: string | null; entregados: number; enRuta: number }>();
+    const fila = (id: string) => {
+      if (!por.has(id)) {
+        por.set(id, { nombre: perfiles.get(id)?.nombre ?? 'Domiciliario', avatar_url: perfiles.get(id)?.avatar_url ?? null, entregados: 0, enRuta: 0 });
+      }
+      return por.get(id)!;
+    };
+    for (const p of ent) if (p.domiciliario_id) fila(p.domiciliario_id).entregados++;
+    for (const p of (rutaRes.data ?? []) as any[]) if (p.domiciliario_id) fila(p.domiciliario_id).enRuta++;
+    this.avanceDomiciliarios = [...por.values()].sort((a, b) => b.entregados + b.enRuta - (a.entregados + a.enRuta));
+  }
+
+  async cargarLocal(): Promise<void> {
+    if (!this.desdeLocal || !this.hastaLocal) return;
+    const db = this.supabase.client;
+    const { data } = await db
+      .from('pedidos')
+      .select('id, total, metodo_pago, monto_efectivo, monto_transferencia, canal, comision_tipo, comision_porcentaje, valor_domicilio, pago_domiciliario')
+      .eq('canal', 'local')
+      .eq('estado', 'entregado')
+      .gte('created_at', inicioDiaColombia(this.desdeLocal).toISOString())
+      .lte('created_at', finDiaColombia(this.hastaLocal).toISOString());
+    const ventas = (data ?? []) as any[];
+    const items = ventas.length
+      ? (await itemsDePedidos(db, 'pedido_id, cantidad, precio_unitario, precio_base, producto:productos(costo)', ventas.map((v) => v.id))).data
+      : [];
+    const porPedido = new Map<string, any[]>();
+    for (const i of items as any[]) porPedido.set(i.pedido_id, [...(porPedido.get(i.pedido_id) ?? []), i]);
+    this.local = ventas.reduce(
+      (a, v) => ({
+        ventas: a.ventas + 1,
+        unidades: a.unidades + (porPedido.get(v.id) ?? []).reduce((s: number, i: any) => s + Number(i.cantidad || 0), 0),
+        total: a.total + Number(v.total || 0),
+        efectivo: a.efectivo + Number(v.monto_efectivo ?? (v.metodo_pago === 'efectivo' ? v.total : 0)),
+        transferencia: a.transferencia + Number(v.monto_transferencia ?? (v.metodo_pago === 'transferencia' ? v.total : 0)),
+        ganancia: a.ganancia + gananciaTiendaPedido(v, porPedido.get(v.id) ?? []),
+      }),
+      { ventas: 0, unidades: 0, total: 0, efectivo: 0, transferencia: 0, ganancia: 0 }
+    );
+    this.cdr.detectChanges();
+  }
+
+  get esMesActualLocal(): boolean {
+    return this.desdeLocal === hoyColombiaISO().slice(0, 8) + '01' && this.hastaLocal === hoyColombiaISO();
+  }
+
+  mesActualLocal(): void {
+    this.desdeLocal = hoyColombiaISO().slice(0, 8) + '01';
+    this.hastaLocal = hoyColombiaISO();
+    this.cargarLocal();
+  }
 
   // Gráfica de estados de hoy
   estadosHoy: { estado: EstadoPedido; etiqueta: string; cantidad: number; pct: number }[] = [];
@@ -186,7 +306,7 @@ export class DashboardPage implements OnInit, OnDestroy {
     if (this.cargando) return;
     this.cargando = true;
     try {
-      await Promise.all([this.cargarResumen(), this.cargarVentas()]);
+      await Promise.all([this.cargarResumen(), this.cargarVentas(), this.cargarGraficas(), this.cargarLocal()]);
     } finally {
       this.cargando = false;
       this.loading = false;

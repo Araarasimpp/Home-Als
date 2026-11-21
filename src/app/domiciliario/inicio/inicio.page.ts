@@ -13,6 +13,8 @@ import { EntregarPedidoComponent } from '../entregar-pedido/entregar-pedido.comp
 import { EsqueletoComponent } from '../../shared/esqueleto/esqueleto.component';
 import { MiPuestoComponent } from '../../shared/ranking/mi-puesto.component';
 import { itemsDePedidos } from '../../shared/en-lotes';
+import { BarraEstadoComponent } from '../../shared/graficas/barra-estado.component';
+import { Segmento } from '../../shared/graficas/dona.component';
 
 interface PedidoRuta {
   id: string;
@@ -31,7 +33,7 @@ interface PedidoRuta {
 @Component({
   selector: 'app-inicio-domiciliario',
   standalone: true,
-  imports: [MiPuestoComponent, EsqueletoComponent, CommonModule, RouterLink, IonIcon, EstadoIconComponent, EntregarPedidoComponent],
+  imports: [MiPuestoComponent, EsqueletoComponent, CommonModule, RouterLink, IonIcon, EstadoIconComponent, EntregarPedidoComponent, BarraEstadoComponent],
   templateUrl: './inicio.page.html',
   styleUrls: ['../../shared/ui.scss', './inicio.page.scss'],
 })
@@ -42,6 +44,14 @@ export class InicioDomiciliarioPage implements OnInit, OnDestroy {
 
   // Resumen del día
   entregadosHoy = 0;
+
+  /** Barra de "Tu día": lo entregado y lo que falta */
+  get segmentosDia(): Segmento[] {
+    return [
+      { etiqueta: 'Entregados', valor: this.entregadosHoy, color: 'var(--data-green)' },
+      { etiqueta: 'Por entregar', valor: this.pedidos.length, color: 'var(--data-orange)' },
+    ];
+  }
   efectivoEnMano = 0; // efectivo cobrado hoy que todavía no está en un cuadre
   porCuadrar = 0;
 

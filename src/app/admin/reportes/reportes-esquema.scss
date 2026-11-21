@@ -16,3 +16,78 @@
   color: var(--text-muted);
   white-space: nowrap;
 }
+
+// ---------- Donas y barras del periodo ----------
+.rep-graficas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.rep-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.rep-card h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.rep-sub {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.rep-cifras {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.rep-cifras div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.rep-cifras span {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.rep-cifras strong {
+  font-family: var(--display-font);
+  font-size: 19px;
+  font-weight: 500;
+}
+
+.rep-cifras .gan {
+  color: var(--accent);
+}
+
+@media (max-width: 900px) {
+  .rep-graficas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .rep-cifras {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

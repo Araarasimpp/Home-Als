@@ -84,6 +84,92 @@
         <p class="panel-foot">Cuenta los pedidos en ruta y entregados. Pasa el cursor o toca una barra para ver el detalle.</p>
       </section>
 
+      <!-- Donas y barras de estado -->
+      <div class="graficas">
+        <section class="panel g-pagos" aria-labelledby="t-pagos">
+          <div class="panel-head">
+            <div>
+              <h2 id="t-pagos">Cómo pagaron hoy</h2>
+              <p class="panel-sub">Lo entregado hoy, por forma de pago</p>
+            </div>
+          </div>
+          <app-dona
+            [segmentos]="pagosHoy"
+            [valor]="pesosCorto(totalPagosHoy)"
+            etiqueta="cobrado hoy"
+            [tam]="150"
+            [formato]="pesos"
+            textoVacio="Todavía no se ha entregado nada hoy."
+          ></app-dona>
+        </section>
+
+        <section class="panel g-local" aria-labelledby="t-local">
+          <div class="panel-head">
+            <div>
+              <h2 id="t-local">Ventas del local</h2>
+              <p class="panel-sub" *ngIf="local">
+                {{ local.ventas }} {{ local.ventas === 1 ? 'venta' : 'ventas' }} · {{ local.unidades }} {{ local.unidades === 1 ? 'unidad' : 'unidades' }}
+              </p>
+            </div>
+            <div class="fechas-local" role="group" aria-label="Periodo de las ventas del local">
+              <label>Desde<input type="date" [(ngModel)]="desdeLocal" [max]="hastaLocal" (change)="cargarLocal()" /></label>
+              <label>Hasta<input type="date" [(ngModel)]="hastaLocal" [min]="desdeLocal" (change)="cargarLocal()" /></label>
+              <button type="button" class="btn btn-sm" *ngIf="!esMesActualLocal" (click)="mesActualLocal()">Este mes</button>
+            </div>
+          </div>
+          <div class="local-cuerpo">
+            <app-dona
+              [segmentos]="donaLocal"
+              [valor]="pesosCorto(local?.total)"
+              etiqueta="vendido"
+              [tam]="160"
+              [formato]="pesos"
+              textoVacio="No hay ventas del local en estas fechas."
+            ></app-dona>
+            <div class="mini-kpis">
+              <a class="mini destacado" routerLink="/admin/ventas-del-local">
+                <span>Ganancia tienda</span><strong class="num">{{ formatoMoneda(local?.ganancia ?? 0) }}</strong>
+              </a>
+              <a class="mini" routerLink="/admin/ventas-del-local">
+                <span>Vendido</span><strong class="num">{{ formatoMoneda(local?.total ?? 0) }}</strong>
+              </a>
+              <div class="mini">
+                <span>Ticket promedio</span><strong class="num">{{ formatoMoneda(local?.ventas ? local!.total / local!.ventas : 0) }}</strong>
+              </div>
+              <div class="mini">
+                <span>Margen</span>
+                <strong class="num">{{ local?.total ? ((local!.ganancia / local!.total) * 100 | number: '1.0-0') + '%' : '—' }}</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel g-estado" aria-labelledby="t-estado">
+          <div class="panel-head">
+            <div>
+              <h2 id="t-estado">Estado del día</h2>
+              <p class="panel-sub">{{ pedidosHoy }} pedidos hoy · {{ pctEntregado }}% entregado</p>
+            </div>
+          </div>
+          <div class="estado-cuerpo">
+            <app-barra-estado [segmentos]="barraEstadosHoy" titulo="Pedidos de hoy" [resumen]="pedidosHoy + ' pedidos'" [alto]="14"></app-barra-estado>
+            <div class="avance-doms">
+              <p class="mini-titulo">Avance por domiciliario</p>
+              <div class="avance-dom" *ngFor="let d of avanceDomiciliarios">
+                <app-avatar [nombre]="d.nombre" [url]="d.avatar_url" [size]="28"></app-avatar>
+                <app-barra-estado
+                  [segmentos]="segmentosDomiciliario(d)"
+                  [titulo]="d.nombre"
+                  [resumen]="d.entregados + ' de ' + (d.entregados + d.enRuta)"
+                  [leyenda]="false"
+                ></app-barra-estado>
+              </div>
+              <p class="vacio-inline" *ngIf="!avanceDomiciliarios.length">Todavía nadie ha salido a entregar hoy.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+
       <div class="cols">
         <!-- Necesita atención -->
         <section aria-labelledby="t-atencion">
