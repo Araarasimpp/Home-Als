@@ -1,0 +1,413 @@
+// Riel de íconos + panel de la sección (solo escritorio)
+:host {
+  display: flex;
+  flex-shrink: 0;
+  height: 100vh;
+  height: 100dvh;
+}
+
+// ---------- Riel ----------
+.riel {
+  width: 60px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  box-sizing: border-box;
+  background: var(--rail);
+  border-right: 1px solid var(--border-soft);
+}
+
+.marca {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: var(--chip-on);
+  overflow: hidden;
+}
+
+.marca img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.riel-grupo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.riel-abajo {
+  margin-top: auto;
+}
+
+.riel-item {
+  position: relative;
+}
+
+.riel-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  color: var(--text-soft);
+  font-size: 19px;
+  text-decoration: none;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.riel-btn:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.riel-item.activa .riel-btn {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+.riel-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.punto {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--data-orange);
+  box-shadow: 0 0 0 2px var(--rail);
+}
+
+.riel-avatar {
+  display: grid;
+  place-items: center;
+  margin-top: 4px;
+  border-radius: 50%;
+}
+
+.riel-avatar:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+// Menú flotante de la sección, solo con el panel cerrado
+.flyout {
+  display: none;
+  position: absolute;
+  left: calc(100% + 10px);
+  top: -4px;
+  z-index: 60;
+  min-width: 170px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+}
+
+:host(.colapsado) .riel-item:hover .flyout,
+:host(.colapsado) .riel-item:focus-within .flyout {
+  display: block;
+}
+
+// Puente invisible para que el mouse llegue al menú sin cerrarlo
+:host(.colapsado) .riel-item:hover::after {
+  content: '';
+  position: absolute;
+  left: 100%;
+  top: 0;
+  width: 14px;
+  height: 100%;
+}
+
+.flyout-titulo {
+  margin: 4px 8px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.flyout a {
+  display: block;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 13.5px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.flyout a:hover {
+  background: var(--hover);
+}
+
+// ---------- Panel de la sección ----------
+.panel {
+  width: 220px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 16px 12px 12px;
+  background: color-mix(in srgb, var(--sidebar) 82%, transparent);
+  border-right: 1px solid var(--border-soft);
+  animation: entrar 200ms var(--ease);
+}
+
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: none;
+  }
+}
+
+.panel-cabeza {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 4px 16px;
+}
+
+.panel-cabeza h2 {
+  margin: 0;
+  font-family: var(--display-font);
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.panel-cabeza p {
+  margin: 3px 0 0;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+.cerrar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-soft);
+  cursor: pointer;
+}
+
+.cerrar:hover {
+  color: var(--text);
+}
+
+.paginas {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pagina {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 34px;
+  padding: 0 10px 0 12px;
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  font-size: 13.5px;
+  text-decoration: none;
+  transition: background var(--dur) var(--ease);
+}
+
+.pagina:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.pagina.activa {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 500;
+  box-shadow: var(--shadow-card);
+}
+
+.pagina.activa::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  bottom: 9px;
+  width: 2.5px;
+  border-radius: 2px;
+  background: var(--chip-on);
+}
+
+.pagina:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.conteo {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: var(--selected);
+  color: var(--text-soft);
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 20px;
+  text-align: center;
+}
+
+.panel-pie {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.avance {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.avance-fila {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+}
+
+.avance-fila strong {
+  font-weight: 500;
+}
+
+.avance-fila .num {
+  color: var(--text-muted);
+}
+
+.avance-barra {
+  display: block;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--selected);
+  overflow: hidden;
+}
+
+.avance-barra i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+  transition: width 400ms var(--ease);
+}
+
+.avance-nota {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.persona {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 6px 2px 8px;
+}
+
+.persona-texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.persona-texto strong {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.persona-texto span {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.salir {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--text-muted);
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.salir:hover {
+  background: var(--hover);
+  color: var(--danger);
+}
+
+// "Necesita atención" (atajos con contador en Inicio)
+.atencion-titulo {
+  margin: 18px 10px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.atajo-texto {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.atajo-texto ion-icon {
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+.conteo.cero {
+  background: none;
+  color: var(--text-muted);
+}

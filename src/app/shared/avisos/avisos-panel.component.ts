@@ -3,7 +3,7 @@ import { NotificacionesService, Aviso } from '../../core/services/notificaciones
 
 /**
  * Panel de avisos. Se abre con el botón de campana del layout.
- * posicion = 'sidebar': junto al menú lateral (escritorio)
+ * posicion = 'sidebar': bajo la campana de la barra superior (escritorio)
  * posicion = 'barra':   sobre la barra inferior (celular)
  */
 @Component({
@@ -79,8 +79,8 @@ import { NotificacionesService, Aviso } from '../../core/services/notificaciones
     `
       .fondo { position: fixed; inset: 0; z-index: 140; border: none; padding: 0; background: rgba(15, 16, 19, 0.2); }
       .panel {
-        position: fixed; z-index: 141; left: 240px; bottom: 16px; width: 380px;
-        --panel-max: min(560px, calc(100vh - 32px)); max-height: var(--panel-max); display: flex; flex-direction: column;
+        position: fixed; z-index: 141; right: 16px; top: 62px; width: 380px;
+        --panel-max: min(560px, calc(100vh - 80px)); max-height: var(--panel-max); display: flex; flex-direction: column;
         background: var(--surface); color: var(--text); border: 1px solid var(--border);
         border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); overflow: hidden;
         animation: subir 180ms var(--ease);
@@ -89,14 +89,14 @@ import { NotificacionesService, Aviso } from '../../core/services/notificaciones
          y sin meterse debajo de la barra de estado del iPhone (notch). */
       .panel.barra {
         --panel-max: min(65vh, calc(100vh - var(--tabbar-h) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px));
-        left: 8px; right: 8px; width: auto; margin: 0 auto; max-width: 480px;
+        left: 8px; right: 8px; top: auto; width: auto; margin: 0 auto; max-width: 480px;
         bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 8px);
         max-height: var(--panel-max);
       }
       @media (max-width: 860px) {
         .panel:not(.barra) {
           --panel-max: min(65vh, calc(100vh - var(--tabbar-h) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px));
-            left: 8px; right: 8px; width: auto;
+            left: 8px; right: 8px; top: auto; width: auto;
           bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 8px);
           max-height: var(--panel-max);
         }

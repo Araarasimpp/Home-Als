@@ -51,7 +51,7 @@ h2 {
   height: 40px;
   padding: 0 14px;
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
+  border-radius: 999px;
   background: var(--surface);
   color: var(--text);
   font-size: 14px;
@@ -170,35 +170,68 @@ h2 {
   flex-wrap: wrap;
 }
 
-// ---------- Segmentado ----------
-.segmented,
-.tabs {
+// ---------- Segmentado (píldora clara con la opción activa en blanco) ----------
+.segmented {
   display: inline-flex;
-  padding: 2px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
   background: var(--surface-2);
 }
 
-.segmented button,
-.tabs button {
+.segmented button {
   height: 30px;
-  padding: 0 10px;
+  padding: 0 12px;
   border: none;
-  border-radius: 4px;
+  border-radius: 999px;
   background: none;
   color: var(--text-soft);
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
 }
 
-.segmented button.on,
-.tabs button.on {
+.segmented button.on {
   background: var(--surface);
   color: var(--text);
-  box-shadow: 0 1px 2px rgba(22, 24, 29, 0.08), 0 0 0 1px var(--border);
+  box-shadow: var(--shadow-card), 0 0 0 1px var(--border);
+}
+
+// ---------- Filtros en píldoras (la activa en negro, como "Todas") ----------
+.tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tabs button {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.tabs button:hover {
+  background: var(--surface);
+}
+
+.tabs button.on {
+  border-color: var(--chip-on);
+  background: var(--chip-on);
+  color: var(--on-chip-on);
+}
+
+.tabs button.on .num {
+  color: color-mix(in srgb, var(--on-chip-on) 70%, transparent);
 }
 
 .tabs button .num {

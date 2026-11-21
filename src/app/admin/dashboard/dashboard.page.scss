@@ -558,3 +558,40 @@ h2 {
   margin-top: -8px;
   margin-bottom: -8px;
 }
+
+// ---------- Diseño nuevo: título grande y contenido en tarjetas sobre el fondo crema ----------
+:host {
+  background: transparent;
+}
+
+.page-header {
+  border-bottom: none;
+}
+
+.title {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.title h1 {
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.subtitle strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+@media (min-width: 861px) {
+  .page-header {
+    padding: 22px 28px 10px;
+  }
+
+  // "Nuevo pedido" ya está en la barra superior
+  .solo-celular {
+    display: none;
+  }
+}

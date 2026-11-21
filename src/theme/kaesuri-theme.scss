@@ -1,92 +1,114 @@
 // src/theme/kaesuri-theme.scss
 // Sistema visual de Home ALS.
-// Neutros + un solo azul para acciones. El color de estado solo se usa para estados.
+// Crema + un solo verde para acciones. El color de estado solo se usa para estados.
 // Las variables --k-* del tema anterior quedan como alias al final, para que las
 // pantallas que aún no se rediseñan tomen la paleta nueva sin tocarlas.
 
+// Paleta tomada del dashboard de referencia (finanzas): crema verdoso, verde
+// profundo para acciones, naranja y terracota solo como acentos de datos.
 :root {
-  // Tipografía
+  // Tipografía: Geist para lectura, Outfit (geométrica) para títulos y cifras grandes
   --ui-font: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --display-font: 'Outfit', var(--ui-font);
 
   // Superficies
-  --bg: #fbfbfc;
-  --surface: #ffffff;
-  --surface-2: #f7f8fa; // cabeceras de grupo, campos de solo lectura
-  --sidebar: #f4f5f7;
-  --hover: #eceef1;
-  --selected: #e6e9ee;
+  --bg: #f3f2e9;
+  --bg-grad: radial-gradient(120% 80% at 0% 0%, #e7eee3 0%, rgba(231, 238, 227, 0) 55%),
+    radial-gradient(90% 70% at 100% 100%, #f7efe2 0%, rgba(247, 239, 226, 0) 60%), #f3f2e9;
+  --surface: #fbfbf6;
+  --surface-2: #f2f2ea; // cabeceras de grupo, campos de solo lectura
+  --sidebar: #f6f6ee;
+  --rail: #f8f8f1;
+  --hover: #ebece2;
+  --selected: #e7eadf;
 
   // Texto
-  --text: #16181d;
-  --text-2: #3f4550;
-  --text-soft: #5c6370;
-  --text-muted: #6b7280;
+  --text: #1b211d;
+  --text-2: #353c37;
+  --text-soft: #5d655f;
+  --text-muted: #7b827c;
 
   // Bordes
-  --border: #e6e8ec;
-  --border-soft: #f0f1f4;
-  --border-strong: #d5d8de;
+  --border: #e3e4d9;
+  --border-soft: #ecece3;
+  --border-strong: #d3d5c8;
 
-  // Acento (acciones, selección, foco)
-  --accent: #3e5bd9;
-  --accent-hover: #2d47b8;
-  --accent-soft: #dce2fb;
-  --accent-wash: #f1f4fe;
+  // Acento: verde profundo (acciones, selección, foco)
+  --accent: #3d7a55;
+  --accent-hover: #2f6646;
+  --accent-soft: #d3e4d7;
+  --accent-wash: #e8f0e8;
   --on-accent: #ffffff;
+  // Píldora activa de filtros (negro suave, como "All")
+  --chip-on: #1f2621;
+  --on-chip-on: #f5f5ee;
+
+  // Acentos de datos (tarjetas, gráficas)
+  --data-green: #5e9474;
+  --data-green-soft: #b9d2bf;
+  --data-orange: #e8935d;
+  --data-terracota: #c66f68;
+  --data-slate: #2c312e;
 
   // Estados de pedido
-  --st-pendiente: #7a818c;
-  --st-ruta: #c2720a;
-  --st-ruta-text: #a35a06;
-  --st-entregado: #1f7a4d;
-  --st-cancelado: #8a909a;
-  --danger: #b42318;
-  --danger-wash: #fdecea;
+  --st-pendiente: #7b827c;
+  --st-ruta: #c97a2c;
+  --st-ruta-text: #a65f17;
+  --st-entregado: #3d7a55;
+  --st-cancelado: #8a908a;
+  --danger: #b5402f;
+  --danger-wash: #f7e4df;
 
   // Forma y profundidad
-  --radius-sm: 6px;
-  --radius: 8px;
-  --radius-lg: 10px;
-  --shadow-pop: 0 8px 24px rgba(22, 24, 29, 0.14), 0 2px 6px rgba(22, 24, 29, 0.08);
+  --radius-sm: 8px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --shadow-card: 0 1px 2px rgba(27, 33, 29, 0.04), 0 4px 14px -6px rgba(27, 33, 29, 0.08);
+  --shadow-pop: 0 10px 30px rgba(27, 33, 29, 0.14), 0 2px 6px rgba(27, 33, 29, 0.06);
   --dur: 160ms;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   // Barra inferior en celular (los layouts la usan para dejar espacio)
-  --tabbar-h: 58px;
+  --tabbar-h: 62px;
 }
 
 body.dark {
-  --bg: #0f1013;
-  --surface: #16181d;
-  --surface-2: #1c1e24;
-  --sidebar: #121317;
-  --hover: #23262d;
-  --selected: #2a2d35;
+  --bg: #0e1511;
+  --bg-grad: radial-gradient(120% 80% at 0% 0%, #142019 0%, rgba(20, 32, 25, 0) 55%), #0e1511;
+  --surface: #151d18;
+  --surface-2: #1a231d;
+  --sidebar: #111813;
+  --rail: #0f1612;
+  --hover: #1f2922;
+  --selected: #243028;
 
-  --text: #edeef0;
-  --text-2: #c9ccd2;
-  --text-soft: #a2a7b0;
-  --text-muted: #8f959f;
+  --text: #e8ede6;
+  --text-2: #c9d1c8;
+  --text-soft: #a3aca3;
+  --text-muted: #8e978f;
 
-  --border: #2a2d35;
-  --border-soft: #22252b;
-  --border-strong: #3a3e47;
+  --border: #26302a;
+  --border-soft: #1e2721;
+  --border-strong: #354039;
 
-  --accent: #6e86f0;
-  --accent-hover: #8a9df4;
-  --accent-soft: #26305a;
-  --accent-wash: #1b2140;
-  --on-accent: #0f1013;
+  --accent: #8cc4a0;
+  --accent-hover: #a2d2b3;
+  --accent-soft: #23392b;
+  --accent-wash: #1a2a20;
+  --on-accent: #0e1511;
+  --chip-on: #e8ede6;
+  --on-chip-on: #0e1511;
 
-  --st-pendiente: #8f959f;
-  --st-ruta: #e09a3a;
-  --st-ruta-text: #e8a64d;
-  --st-entregado: #3faf76;
-  --st-cancelado: #6b7079;
-  --danger: #f0645a;
-  --danger-wash: #3a1d1b;
+  --st-pendiente: #8e978f;
+  --st-ruta: #e3a35a;
+  --st-ruta-text: #eaae6a;
+  --st-entregado: #8cc4a0;
+  --st-cancelado: #6b746c;
+  --danger: #ec7766;
+  --danger-wash: #3a201b;
 
-  --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.35);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-pop: 0 10px 30px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
 // Ionic toma la misma paleta
@@ -128,6 +150,14 @@ body.dark {
 
 body {
   font-family: var(--ui-font);
-  background: var(--bg);
+  background: var(--bg-grad);
+  background-attachment: fixed;
   color: var(--text);
+}
+
+// Títulos y cifras grandes con la letra geométrica del diseño
+h1,
+.titulo-display {
+  font-family: var(--display-font);
+  letter-spacing: -0.02em;
 }

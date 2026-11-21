@@ -27,6 +27,8 @@ import { NotificacionesService } from '../../core/services/notificaciones.servic
 import { InactividadService } from '../../core/services/inactividad.service';
 import { AvisosPanelComponent } from '../../shared/avisos/avisos-panel.component';
 import { CambioRolComponent } from '../../shared/cambio-rol/cambio-rol.component';
+import { BarraSuperiorComponent, NavEscritorioComponent, SeccionNav } from '../../shared/escritorio/nav-escritorio.component';
+import { SECCIONES_DESPACHADOR } from '../../shared/escritorio/secciones';
 import { AvisoInactividadComponent } from '../../shared/avisos/aviso-inactividad.component';
 
 interface MenuItem {
@@ -43,6 +45,8 @@ const MINUTOS_INACTIVIDAD = 30;
   standalone: true,
   imports: [
     CambioRolComponent,
+    NavEscritorioComponent,
+    BarraSuperiorComponent,
     CommonModule,
     RouterLink,
     RouterLinkActive,
@@ -57,6 +61,17 @@ const MINUTOS_INACTIVIDAD = 30;
 export class DespachadorLayoutComponent implements OnInit, OnDestroy {
   collapsed = localStorage.getItem('sidebar-colapsado') === '1';
   masAbierto = false;
+
+  /** Secciones del riel de escritorio */
+  readonly secciones: SeccionNav[] = SECCIONES_DESPACHADOR;
+
+  /** Celular: lo que no está en la barra inferior, agrupado como en el riel */
+  readonly seccionesMas = this.secciones
+    .map((s) => ({
+      ...s,
+      paginas: s.paginas.filter((p) => !p.atajo && !['/despachador', '/despachador/pedidos'].includes(p.path)),
+    }))
+    .filter((s) => s.paginas.length);
 
   menuItems: MenuItem[] = [
     { label: 'Inicio', path: '/despachador', icon: 'home-outline' },

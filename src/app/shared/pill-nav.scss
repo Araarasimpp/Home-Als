@@ -13,8 +13,10 @@
   align-items: stretch;
   height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
-  background: var(--surface);
-  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--rail) 86%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  backdrop-filter: blur(16px) saturate(1.2);
+  border-top: 1px solid var(--border-soft);
 }
 
 .pill-nav a,
@@ -26,11 +28,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
   padding: 0;
   border: none;
   background: none;
-  color: var(--text-soft);
+  color: var(--text-muted);
   font-family: inherit;
   font-size: 11px;
   font-weight: 500;
@@ -41,12 +43,53 @@
 }
 
 .pill-nav ion-icon {
-  font-size: 21px;
+  font-size: 20px;
+}
+
+// Pestaña activa: ícono sobre una píldora verde, como el riel del escritorio.
+// La píldora es un fondo detrás del ícono (::before), así el ícono no cambia de tamaño.
+.pill-nav a,
+.pill-nav .tab {
+  position: relative;
+}
+
+.pill-nav a > ion-icon,
+.pill-nav .tab > ion-icon,
+.pill-nav .tab > .icono-badge {
+  position: relative;
+  z-index: 1;
+}
+
+.pill-nav a:not(.pill-action):not(.tab-perfil)::before,
+.pill-nav .tab::before {
+  content: '';
+  position: absolute;
+  top: calc(50% - 22px);
+  left: 50%;
+  width: 46px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--accent);
+  opacity: 0;
+  transform: translateX(-50%) scale(0.7);
+  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
 }
 
 .pill-nav a.active,
 .pill-nav .tab.active {
-  color: var(--accent);
+  color: var(--text);
+}
+
+.pill-nav a.active:not(.pill-action):not(.tab-perfil)::before,
+.pill-nav .tab.active::before {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+.pill-nav a.active:not(.pill-action):not(.tab-perfil) > ion-icon,
+.pill-nav .tab.active > ion-icon,
+.pill-nav .tab.active > .icono-badge {
+  color: var(--on-accent);
 }
 
 .pill-nav .tab-label {
@@ -76,9 +119,9 @@
   height: 28px;
   padding: 3px 0;
   box-sizing: border-box;
-  border-radius: var(--radius-sm);
-  background: var(--accent);
-  color: var(--on-accent);
+  border-radius: 12px;
+  background: var(--chip-on);
+  color: var(--on-chip-on);
   font-size: 22px;
 }
 
@@ -215,4 +258,18 @@
 
 .pill-nav .tab-perfil.active app-avatar {
   box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--accent);
+}
+
+// Títulos de sección dentro de "Más" (igual que el riel del escritorio)
+.more-titulo {
+  margin: 10px 12px 2px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.more-titulo:first-child {
+  margin-top: 4px;
 }

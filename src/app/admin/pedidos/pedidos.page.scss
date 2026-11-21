@@ -1,7 +1,6 @@
 :host {
   display: block;
   min-height: 100%;
-  background: var(--surface);
 }
 
 .pedidos-page {
@@ -153,7 +152,7 @@
 
 .tabs {
   display: flex;
-  gap: 2px;
+  gap: 6px;
   flex: 1;
   min-width: 0;
   overflow-x: auto;
@@ -166,12 +165,12 @@
 
 .tab {
   flex-shrink: 0;
-  height: 28px;
-  padding: 0 10px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  background: none;
-  color: var(--text-soft);
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  color: var(--text-2);
   font-size: 13px;
   white-space: nowrap;
   cursor: pointer;
@@ -179,14 +178,18 @@
 
 .tab:hover {
   color: var(--text);
-  background: var(--hover);
+  background: var(--surface);
 }
 
 .tab.active {
-  border-color: var(--border-strong);
-  background: var(--surface-2);
-  color: var(--text);
+  border-color: var(--chip-on);
+  background: var(--chip-on);
+  color: var(--on-chip-on);
   font-weight: 500;
+}
+
+.tab.active .count {
+  color: color-mix(in srgb, var(--on-chip-on) 70%, transparent);
 }
 
 .tab .count {
@@ -1001,5 +1004,59 @@
 
   .btn-imprimir-alistados {
     height: 34px;
+  }
+}
+
+// ---------- Diseño nuevo: título grande y la lista en una tarjeta ----------
+.page-header,
+.toolbar {
+  border-bottom: none;
+}
+
+.title {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.title h1 {
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+@media (min-width: 861px) {
+  .page-header {
+    min-height: 0;
+    padding: 22px 28px 12px;
+  }
+
+  .toolbar {
+    padding: 0 28px 12px;
+  }
+
+  .list {
+    margin: 0 28px 28px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+    overflow: clip;
+  }
+
+  // "Nuevo pedido" ya está en la barra superior
+  .solo-celular {
+    display: none;
+  }
+}
+
+@media (min-width: 861px) {
+  // El espacio para la barra de selección va fuera de la tarjeta
+  .list {
+    padding-bottom: 0;
+  }
+
+  .pedidos-page {
+    padding-bottom: 72px;
   }
 }

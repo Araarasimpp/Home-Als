@@ -133,11 +133,11 @@ export class PedidosPage implements OnInit, OnDestroy {
   constructor(
     private supabase: SupabaseService,
     private cdr: ChangeDetectorRef,
-    route: ActivatedRoute
+    private route: ActivatedRoute
   ) {
     // Se lee de la ruta activa (no de router.url, que durante la navegación
     // todavía tiene la URL anterior)
-    const ruta = route.snapshot.pathFromRoot
+    const ruta = this.route.snapshot.pathFromRoot
       .map((r) => r.url.map((s) => s.path).join('/'))
       .filter(Boolean)
       .join('/');
@@ -147,6 +147,13 @@ export class PedidosPage implements OnInit, OnDestroy {
   }
 
   async ngOnInit(): Promise<void> {
+    // Desde el buscador de la barra superior (?q=) o "Necesita atención" (?estado=)
+    this.route.queryParamMap.subscribe((q) => {
+      if (q.has('q')) this.busqueda = q.get('q') ?? '';
+      const estado = q.get('estado') as FiltroEstado | null;
+      if (estado && this.estados.some((e) => e.valor === estado)) this.filtroEstado = estado;
+      this.cdr.detectChanges();
+    });
     await Promise.all([this.cargarPedidos(), this.cargarDomiciliarios()]);
     this.suscribirRealtime();
   }

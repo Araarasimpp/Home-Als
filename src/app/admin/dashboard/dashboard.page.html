@@ -1,11 +1,11 @@
 <div class="dash">
   <header class="page-header">
     <div class="title">
-      <h1>Inicio</h1>
-      <span class="subtitle">{{ hoy }}</span>
+      <h1>{{ saludo }}</h1>
+      <span class="subtitle">{{ hoy }}<ng-container *ngIf="!loading"> · <strong class="num">{{ formatoMoneda(ventasHoy) }}</strong> vendidos hoy</ng-container></span>
     </div>
     <a class="btn" routerLink="/admin/pedidos">Ver pedidos</a>
-    <a class="btn btn-primary" routerLink="/admin/pedidos/nuevo">Nuevo pedido</a>
+    <a class="btn btn-primary solo-celular" routerLink="/admin/pedidos/nuevo">Nuevo pedido</a>
   </header>
 
   <ng-container *ngIf="!loading; else cargando">

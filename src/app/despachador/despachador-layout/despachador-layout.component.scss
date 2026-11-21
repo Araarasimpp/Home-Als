@@ -8,202 +8,6 @@
   overflow: hidden;
 }
 
-// ---------- Sidebar ----------
-.sidebar {
-  width: 232px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 12px 10px;
-  box-sizing: border-box;
-  background: var(--sidebar);
-  border-right: 1px solid var(--border);
-  color: var(--text);
-  transition: width var(--dur) var(--ease);
-}
-
-.shell.collapsed .sidebar {
-  width: 60px;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: 36px;
-  padding: 0 4px 0 6px;
-  margin-bottom: 8px;
-}
-
-.brand-mark {
-  width: 30px;
-  height: 30px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  object-fit: cover;
-  background: #ffffff; // el logo es un sello blanco, también en modo oscuro
-  box-shadow: 0 0 0 1px var(--border);
-}
-
-.brand-name {
-  flex: 1;
-  min-width: 0;
-  font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.icon-btn {
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: none;
-  color: var(--text-soft);
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.icon-btn:hover {
-  background: var(--hover);
-  color: var(--text);
-}
-
-.shell.collapsed .brand {
-  flex-direction: column;
-  height: auto;
-  gap: 6px;
-  padding: 0;
-}
-
-.new-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 34px;
-  padding: 0 10px;
-  margin-bottom: 10px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 500;
-  text-decoration: none;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.new-btn ion-icon {
-  font-size: 16px;
-  flex-shrink: 0;
-}
-
-.new-btn:hover {
-  border-color: var(--text-muted);
-}
-
-.shell.collapsed .new-btn {
-  justify-content: center;
-  padding: 0;
-}
-
-.menu {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  overflow-y: auto;
-  min-height: 0;
-}
-
-.menu-item,
-.footer-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: 32px;
-  padding: 0 10px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: none;
-  color: var(--text-2);
-  font-family: inherit;
-  font-size: 13px;
-  text-decoration: none;
-  white-space: nowrap;
-  overflow: hidden;
-  cursor: pointer;
-  transition: background var(--dur) var(--ease);
-}
-
-.menu-item ion-icon,
-.footer-btn ion-icon {
-  font-size: 17px;
-  flex-shrink: 0;
-}
-
-.menu-item:hover,
-.footer-btn:hover {
-  background: var(--hover);
-  color: var(--text);
-}
-
-.footer-btn.active {
-  background: var(--selected);
-  color: var(--text);
-}
-
-.icono-badge {
-  position: relative;
-  display: inline-flex;
-}
-
-.badge-num {
-  position: absolute;
-  top: -5px;
-  right: -8px;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  box-sizing: border-box;
-  border-radius: 999px;
-  background: var(--danger);
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 16px;
-  text-align: center;
-  box-shadow: 0 0 0 2px var(--sidebar);
-}
-
-.menu-item.active {
-  background: var(--selected);
-  color: var(--text);
-  font-weight: 500;
-}
-
-.shell.collapsed .menu-item,
-.shell.collapsed .footer-btn {
-  justify-content: center;
-  padding: 0;
-}
-
-.sidebar-footer {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
-}
-
 // ---------- Contenido ----------
 .content {
   flex: 1;
@@ -221,10 +25,6 @@
 }
 
 @media (max-width: 860px) {
-  .sidebar {
-    display: none;
-  }
-
   .pill-nav.mobile-only {
     display: flex;
   }
@@ -234,5 +34,20 @@
     padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
     // Las páginas lo usan para que sus barras fijas queden encima de la pestaña
     --tabbar-offset: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+  }
+}
+
+// ---------- Diseño nuevo: riel + panel + barra superior ----------
+.shell {
+  background: var(--bg-grad);
+}
+
+.content {
+  background: transparent;
+}
+
+@media (max-width: 860px) {
+  .desktop-only {
+    display: none;
   }
 }

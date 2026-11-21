@@ -143,6 +143,14 @@ export class DashboardPage implements OnInit, OnDestroy {
 
   constructor(private supabase: SupabaseService, private cdr: ChangeDetectorRef) {}
 
+  /** "Buenos días, Alejandra" según la hora de Colombia */
+  get saludo(): string {
+    const hora = Number(new Date().toLocaleString('en-US', { hour: 'numeric', hour12: false, timeZone: 'America/Bogota' }));
+    const parte = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
+    const nombre = (this.supabase.perfil()?.nombre ?? '').split(' ')[0];
+    return nombre ? `${parte}, ${nombre}` : parte;
+  }
+
   async ngOnInit(): Promise<void> {
     await this.cargarTodo();
     this.suscribirRealtime();
